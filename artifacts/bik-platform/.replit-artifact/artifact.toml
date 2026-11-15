@@ -1,0 +1,37 @@
+kind = "web"
+previewPath = "/"
+title = "BIK — تشخيص الأعمال"
+description = "منصة عربية تفاعلية لتشخيص الأعمال، تعرض قراءة أولية مفهومة، وتجهز تقريراً نصياً كاملاً للمستشار مع تسليم واتساب بإقرار مستقل من المستخدم."
+version = "1.0.0"
+id = "artifacts/bik-platform"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/", "/_bik-api" ]
+localPort = 18277
+
+[services.development]
+run = "pnpm --filter @workspace/bik-platform run dev"
+
+[services.production]
+
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/bik-platform", "run", "build" ]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/bik-platform", "run", "start" ]
+
+[services.production.run.env]
+PORT = "18277"
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/_bik-api/v1/health"
+
+[services.env]
+PORT = "18277"
+BASE_PATH = "/"

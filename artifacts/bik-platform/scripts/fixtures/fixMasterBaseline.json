@@ -1,0 +1,119 @@
+{
+  "sourceArchive": "bik-platform-v11.zip",
+  "sourceArchiveSHA256": "00e3755eb4b3b95905103bb1c1e39c1bfc28dbcc5a0d4dc6a242b684958e1faf",
+  "banks": {
+    "universal": "ebf9f7b3d8ed30e93b7a1d7d849c02e1714d59abc13e51154166190a6b54d952",
+    "sector": "bd7c0e8a6b290bc2c97a6a8d74ab2e4b63134bc2f929460a70f907f723a97077",
+    "delta": "ee8bba9c3b5a321b8c04d0aa2cad995159b3d2019247498761d89a314c550252",
+    "intake": "757c7d5f97d8592859c0a390d660d24204f4d37da449453328426fc50b991de2",
+    "deep": "b799eeef0fb7b5d700c563bbd63209ede4213b67a06b243bc5886074a7dd3927"
+  },
+  "scoringRules": "77eca99ab77637514eefb0e7d3dee9218834229057eff4546d85f549343739dc",
+  "structure": {
+    "server.ts": "d8851d2d1be343ddb7d2504f2c57e01fee13e41be08e2a2dd20864272e5718b4",
+    "src/components/ConsultantChat.tsx": "9e2e248b1b95d4324aac59f2fca44f6857f4f4574d1f68bcf52cd520c6edf302",
+    "src/components/ErrorBoundary.tsx": "96e504a910b96f42545066baa3e918b2f338831d538583c02c1bd48c0e90f895",
+    "src/components/OfferCards.tsx": "936795a50d41b22aa49390e08aa764fa2e07ddcefc0d828278d13a2b4fb657ae",
+    "src/components/report/ReportDetails.tsx": "9ca42b39e1a34c7143c418b9837301f36f708fc1e79b61987dc775d9dc6384b6",
+    "src/components/report/ReportPreview.tsx": "d8ca23413eab34faf9bff701576aaedd884e8082963643b69f1c248fb4677a0f",
+    "src/config/appConfig.ts": "ac3c4da78385b66113e21da9cd57ab514ab6adce512b6a55d8c8eb293567760f",
+    "src/data/_part1.ts": "05234f3bc7b2ac8c5f28eebb855d01c959820eef42a89d27ca8a997398d202bf",
+    "src/data/_part2.ts": "b8e2d56a89a930e9863a7e0d803ca699677f86ac5648259951b538bdd38d4dc7",
+    "src/data/_part3.ts": "755e459f49c54c124ebb99220af35e01d08974861d124d9f25fd65da83b2785c",
+    "src/data/_part4.ts": "2147815fa38806c0d4b24e635f0e9cfb730c717b0d37a4621f4c568f1c232541",
+    "src/data/_part5.ts": "bcab3e41c1fb6df543b4934809b7c29bb6375dc221cf1a2eca908e33c8bc4030",
+    "src/data/activeKnowledgeRules.ts": "468d287cd46717f6b87f7dee46fe1a6786cbe1b6b6b91224019a83b9f1af26be",
+    "src/data/deltaQuestions.ts": "365c7962e21758b01ca4414effc80430f11648cdfd49baffb7abc44acd13cfb6",
+    "src/data/diagnosticHypotheses.ts": "ff3bcd1fdd6d6a7134f0d3fbcecfbb9ea591085f94bbcf049bf13af82d97d282",
+    "src/data/intakeQuestionsData.ts": "6be05c3cfa9ef69484c21044af1e51b99357012ac058815a77637f1703545de8",
+    "src/data/sectorFinancialTaxonomy.ts": "a2a4d84b7d5680030acd9498c938b8517108f18a7cbb6a406d7060ba15501900",
+    "src/data/sectorRegistry.ts": "4ccd8ecb6984142265c1ec0f1d5d12b78dfdc281981618398761067d6673cfd7",
+    "src/data/toastMessages.ts": "839edccdd5d7313271041138eee148538e09136928fc64ccbe1ef07a5bb446f9",
+    "src/data/universalQuestions.ts": "27fbae3362586be23d714bb78f0925496dbb2afce124af207b455241badf9346",
+    "src/pages/AdminDashboard.tsx": "7dd731e9193fb587ac0e4d7712c07ae7e311ed74b127c0b4e09b4078e22b845e",
+    "src/pages/CompanyIntake.tsx": "03767f336b055115cee02f7ca4df9d58e1f26301009b0917f7ff6a53034ff1c6",
+    "src/pages/LeadGate.tsx": "282cdeb61996133f8ee02cc933200d1c57efc9b0af0e3e04f8f1b88f013c8881",
+    "src/pages/Processing.tsx": "192328036a00673ea792b76c2643efc138af0f10706fca2cce91c672a1087ff4",
+    "src/pages/Questionnaire.tsx": "a9787eca862c2ea746f115740052fdcf71e3eb3951b4fccf122a288917feec3c",
+    "src/pages/Report.tsx": "45e5dd91e438d9af9131cde04e82227f9fdf86bb78748cebd79b7c88d2c2cdcd",
+    "src/pages/ReportTransfer.tsx": "675a8b45cca5f2e5c06bbdfab83fde1718648cdeb861008574ef9f43a0a8b123",
+    "src/pages/SectorSelect.tsx": "b837b64f1742ce390cc101ad2a71ec7efa80eaa326f61841f3bbfdf2aa147a26",
+    "src/pages/Welcome.tsx": "d4e51b7fd676f0233806679eb1e1197d4b52e35343be4436f53e3652ea35b64b",
+    "src/pages/consultant/ConsultantPage.jsx": "90f338bda54ff5b904e382470bf571e58400d4aa7bc56d8a60c84a8c48c6e3bc",
+    "src/services/adaptiveDiagnosticEngine.ts": "428b98a9e771e698a9360e280d85de08a6563f767fa001611dddd491c44059b5",
+    "src/services/deterministicScoring.ts": "5aaf465d879a6648dc70adc647c089ca6a97b8aa2e01e5b31ba976cd376b9899",
+    "src/services/diagnose.ts": "f83f909e20cb66dfeb3fe3c74ab2ed11c0bda0124c05cd3fe331b219195f01a4",
+    "src/services/dialect.ts": "c05810daf11b2c73f8ede4650afc8684f5c50ae61d5cc760812e647253c8ceda",
+    "src/services/dualLayerReport.ts": "96818685aa2aedb8cccc70a7b217351c3a370786c73dda9a3bbfc678fe46a617",
+    "src/services/evidenceSwot.ts": "88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4",
+    "src/services/offerRecommendation.ts": "f59d95b9fbfa4e1c73bf0426782fbb668218bcec461ee0335c150f7e1408a3d4",
+    "src/services/reportFallback.ts": "5d176d636fe671ae4bdc9c015bac4fee5e833b533a37c17e72a7399a597c8fec",
+    "src/services/reportGenerator.ts": "e64fba43737310dd557cce60703c8fe4d3b76916a07ba15c4584a3f1d7990a6b"
+  },
+  "intakeValueArrays": "a28acacb08e2edc00d004380bafae3393839507489493c6c008da26d11e3c759",
+  "consultantStats": "b2e830e889805da996159f10bc1c0e41fa3340855ae4f1ee65230dfd2f60058e",
+  "whatsapp": "201066966515",
+  "protectedFiles": {
+    "src/services/transferGate.ts": "a88299cf9364af9a1e59464b9bc7d4a01d97707f8853047d8d0065f6f278e290",
+    "src/services/reportTextDelivery.ts": "23be9296c56327a21eda2294ddfa97986c47f7ed767669f7368468f14dbe5619",
+    "src/services/reportTransferState.ts": "dd44052f7d5805799c33d43dda5128006064551e93404c02290d53c764973ff4",
+    "src/services/reviewContent.ts": "3b9846051a553a7c2e86bfc26d4a1099d864fa235d30932b3cf4bafb3f846907",
+    "src/services/reviewState.ts": "8da9a4baee44deb1301161ee45e56e21121847903c2ffc65021ec36e067d671b",
+    "src/services/chatPolicy.ts": "f6f20f2924d2cea83e727f4715020d97de658c72d68dd0750bafba16a4cb0930",
+    "server/chatHandler.ts": "a1df6929eeed17c21f88364bc3ea3080369a443f068baa936b088be48e3b9546"
+  },
+  "authorizedRevisions": {
+    "10": [
+      "src/services/dialect.ts: add only the 49 literal PAGE12_FINAL templates to shared fusha REVIEW_COPY; every previously approved field and function remains unchanged",
+      "src/services/reviewContent.ts: authorized deterministic six-axis mirror selection, presentation-only framing and fallback replacement; symptom selection, existing accepted-text storage and approved intervention remain intact",
+      "src/pages/ReviewPage.tsx: render two lighter mirror paragraphs without accepting them, and render the fallback destination with the existing approved intervention; no store schema or network changes"
+    ],
+    "11": [
+      "src/config/appConfig.ts: add only owner-supplied FX_RATES_PER_USD and FX_AS_OF; all offers, prices and existing configuration remain byte-identical",
+      "src/pages/Report.tsx: replace only the retired RoiCalculator import and element with CostOfProblem in the same position; recommendation, offers, report, chat and transfer unchanged",
+      "src/copy/platformCopy.ts: retire ten roi.* strings/rules and introduce temporary value.* copy, with the explicit owner corrections; all eighteen other strings, metadata and the privacy lock remain unchanged"
+    ],
+    "12": [
+      "server.ts: owner-authorized per-IP public limits, bounded expiry cleanup and configurable TRUST_PROXY_HOPS; retired-route guards, response copy and all diagnostic handlers unchanged",
+      "server/chatHandler.ts: owner-authorized bounded expiry cleanup for the existing 20-per-IP chat limit; provider policy, request limit, model, payload and response wording unchanged",
+      "src/services/chatPolicy.ts: owner-authorized exact allowlists at client/server context boundaries only; entire buildChatSystemPrompt function and all other policy behavior unchanged"
+    ],
+    "5-A": [
+      "src/services/dialect.ts: approved consequences, hooks and subtitle; retired solution prefix removed",
+      "src/services/reviewContent.ts: authorized hook + solution composition"
+    ],
+    "5-C": [
+      "src/pages/Welcome.tsx: two approved start cards preserve cleanup, session request and route",
+      "src/pages/Report.tsx: approved crisis lead above preview; no scoring or report text changes",
+      "src/store/diagnosticStore.ts: session-only startMode with analysis default and reset",
+      "src/services/persistedStateSanitizer.ts: whitelist the two allowed start modes"
+    ],
+    "5-D": [
+      "src/services/offerRecommendation.ts: optional start mode and approved crisis-critical rule after insufficient data; previous analysis behavior frozen by exhaustive regression",
+      "src/pages/Report.tsx: pass startMode into the existing recommendation and memo dependency list"
+    ],
+    "5-E": [
+      "src/pages/Report.tsx: approved local-state ROI calculator rendered directly below OfferCards; existing report, start-mode and recommendation behavior preserved"
+    ],
+    "5-F": [
+      "src/components/ConsultantChat.tsx: approved deck copy, roomier input/messages and direct-send suggestions",
+      "src/pages/Report.tsx: optional startMode maps to the whitelisted ChatContext.mode",
+      "src/services/chatPolicy.ts: optional mode validation/recommendation and stable approved suggestions; buildChatSystemPrompt remains byte-identical"
+    ],
+    "6-B": [
+      "src/services/offerRecommendation.ts: authorized rule order: insufficient data, real loss, whole-company executive, crisis critical, many fronts, specific issue; original analysis regression preserved"
+    ],
+    "6-D": [
+      "src/services/chatPolicy.ts: documentation comment now covers all BIK_OFFERS; executable functions and system prompt remain byte-identical"
+    ],
+    "7-C": [
+      "src/services/chatPolicy.ts: owner-authorized Mission 7-C inserts exactly eight approved persona lines and one blank separator, corrects the specified phrase and 15; the normalized legacy prompt and all other policy functions remain frozen"
+    ],
+    "7-D": [
+      "src/services/chatPolicy.ts: owner-authorized Mission 7-D extends only the allowed price set to all four appConfig constants; guard filtering, number normalization and all other policy behavior remain unchanged"
+    ],
+    "8-A": [
+      "src/services/dialect.ts: owner-authorized literal replacement of the 63 page-1 pain/axisPain/sectorPain/noPain values only; array shapes, all other review copy and executable structure remain unchanged, so no stored structure or protected-file hash changes"
+    ]
+  }
+}

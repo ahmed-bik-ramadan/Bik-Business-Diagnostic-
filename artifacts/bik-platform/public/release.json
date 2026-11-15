@@ -1,0 +1,8 @@
+{
+  "project": "bik-business-diagnostic",
+  "sourceCommit": "see git history; set at deploy time",
+  "diagnosticEngine": "deterministic-fallback",
+  "storageMode": "session_only",
+  "chat": "openrouter-via-server-when-OPENROUTER_API_KEY-is-set",
+  "generatedAt": "2026-10-19T00:00:00Z"
+}

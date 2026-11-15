@@ -1,0 +1,7 @@
+{
+  "installCommand": "corepack enable && corepack prepare pnpm@11.25.0 --activate && pnpm install --frozen-lockfile",
+  "buildCommand": "cd artifacts/bik-platform && pnpm run build",
+  "outputDirectory": "artifacts/bik-platform/dist",
+  "framework": null,
+  "rewrites": [{ "source": "/((?!assets/|favicon.svg|robots.txt|release.json).*)", "destination": "/index.html" }]
+}

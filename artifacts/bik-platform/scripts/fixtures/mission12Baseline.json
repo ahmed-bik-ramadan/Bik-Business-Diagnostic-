@@ -1,0 +1,709 @@
+{
+  "sourceTag": "bik-v18",
+  "sourceCommit": "392f45808ca1468926c827dbd79fcccaa85824dd",
+  "legitimatePromptHash": "218c1aeb9d8b6bfebbf9f9ee502e09739e204cad778fd253821d1908bf125bc5",
+  "approvedSectorValues": 207,
+  "promptFunctionSHA256": "647b818155a256320fb1722db79527a635c523da240b10362dd16c184e88f427",
+  "u06Presets": [
+    {
+      "value": "lt5",
+      "parsed": {
+        "value": 2.5,
+        "isExact": false,
+        "isGap": false
+      },
+      "financialAxisScore": 75,
+      "evidence": {
+        "sourceQuestionId": "u06",
+        "questionLabel": "هامش صافي الربح من الإيرادات",
+        "dimension": "الصحة المالية",
+        "userAnswerRaw": "lt5",
+        "userAnswerParsed": "أقل من 5%",
+        "signal": "negative",
+        "findingDescription": "هامش صافي ربح حرج ومنخفض جداً (أقل من 5%)"
+      },
+      "financialImpact": {
+        "metrics": {
+          "monthlyRevenue": {
+            "key": "monthlyRevenue",
+            "label": "الإيراد الشهري",
+            "value": 10000,
+            "currency": "EGP",
+            "isCalculated": false,
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "annualRevenue": {
+            "key": "annualRevenue",
+            "label": "الإيراد السنوي التقديري",
+            "value": 120000,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * 12",
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "monthlyNetProfit": {
+            "key": "monthlyNetProfit",
+            "label": "صافي الربح الشهري",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * (netMarginPct / 100)",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "annualNetProfit": {
+            "key": "annualNetProfit",
+            "label": "صافي الربح السنوي",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNetProfit * 12",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "monthlyAcquisitionSpend": {
+            "key": "monthlyAcquisitionSpend",
+            "label": "الإنفاق الشهري على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNewCustomers * cac",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          },
+          "annualAcquisitionSpend": {
+            "key": "annualAcquisitionSpend",
+            "label": "الإنفاق السنوي على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyAcquisitionSpend * 12",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          }
+        },
+        "scenarios": [
+          {
+            "id": "net_margin_improvement",
+            "label": "سيناريو تحسين هامش صافي الربح",
+            "type": "net_margin_improvement",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyRevenue * ((targetMargin - currentMargin) / 100)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)"
+          },
+          {
+            "id": "cac_optimization",
+            "label": "سيناريو خفض تكلفة اكتساب العميل",
+            "type": "cac_optimization",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyNewCustomers * (cac - targetCAC)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)"
+          },
+          {
+            "id": "conversion_lift",
+            "label": "سيناريو رفع معدل التحويل",
+            "type": "conversion_lift",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "(qualifiedLeads * lift) * averageOrderValue",
+            "disclaimer": "غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب"
+          }
+        ],
+        "identifiedGaps": [
+          "هامش صافي الربح (u06)",
+          "عدد العملاء الجدد شهرياً (u32)",
+          "تكلفة اكتساب العميل CAC (u33)"
+        ],
+        "isComputable": false,
+        "uncomputableReason": "الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.",
+        "currency": "EGP"
+      }
+    },
+    {
+      "value": "5_10",
+      "parsed": {
+        "value": 7.5,
+        "isExact": false,
+        "isGap": false
+      },
+      "financialAxisScore": 88,
+      "evidence": {
+        "sourceQuestionId": "u06",
+        "questionLabel": "هامش صافي الربح من الإيرادات",
+        "dimension": "الصحة المالية",
+        "userAnswerRaw": "5_10",
+        "userAnswerParsed": "من 5% إلى 10%",
+        "signal": "neutral",
+        "findingDescription": "هامش صافي ربح متوسط (من 5% إلى 10%)"
+      },
+      "financialImpact": {
+        "metrics": {
+          "monthlyRevenue": {
+            "key": "monthlyRevenue",
+            "label": "الإيراد الشهري",
+            "value": 10000,
+            "currency": "EGP",
+            "isCalculated": false,
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "annualRevenue": {
+            "key": "annualRevenue",
+            "label": "الإيراد السنوي التقديري",
+            "value": 120000,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * 12",
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "monthlyNetProfit": {
+            "key": "monthlyNetProfit",
+            "label": "صافي الربح الشهري",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * (netMarginPct / 100)",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "annualNetProfit": {
+            "key": "annualNetProfit",
+            "label": "صافي الربح السنوي",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNetProfit * 12",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "monthlyAcquisitionSpend": {
+            "key": "monthlyAcquisitionSpend",
+            "label": "الإنفاق الشهري على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNewCustomers * cac",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          },
+          "annualAcquisitionSpend": {
+            "key": "annualAcquisitionSpend",
+            "label": "الإنفاق السنوي على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyAcquisitionSpend * 12",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          }
+        },
+        "scenarios": [
+          {
+            "id": "net_margin_improvement",
+            "label": "سيناريو تحسين هامش صافي الربح",
+            "type": "net_margin_improvement",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyRevenue * ((targetMargin - currentMargin) / 100)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)"
+          },
+          {
+            "id": "cac_optimization",
+            "label": "سيناريو خفض تكلفة اكتساب العميل",
+            "type": "cac_optimization",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyNewCustomers * (cac - targetCAC)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)"
+          },
+          {
+            "id": "conversion_lift",
+            "label": "سيناريو رفع معدل التحويل",
+            "type": "conversion_lift",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "(qualifiedLeads * lift) * averageOrderValue",
+            "disclaimer": "غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب"
+          }
+        ],
+        "identifiedGaps": [
+          "هامش صافي الربح (u06)",
+          "عدد العملاء الجدد شهرياً (u32)",
+          "تكلفة اكتساب العميل CAC (u33)"
+        ],
+        "isComputable": false,
+        "uncomputableReason": "الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.",
+        "currency": "EGP"
+      }
+    },
+    {
+      "value": "10_20",
+      "parsed": {
+        "value": 15,
+        "isExact": false,
+        "isGap": false
+      },
+      "financialAxisScore": 100,
+      "evidence": {
+        "sourceQuestionId": "u06",
+        "questionLabel": "هامش صافي الربح من الإيرادات",
+        "dimension": "الصحة المالية",
+        "userAnswerRaw": "10_20",
+        "userAnswerParsed": "من 10% إلى 20%",
+        "signal": "positive",
+        "findingDescription": "هامش صافي ربح صحي (من 10% إلى 20%)"
+      },
+      "financialImpact": {
+        "metrics": {
+          "monthlyRevenue": {
+            "key": "monthlyRevenue",
+            "label": "الإيراد الشهري",
+            "value": 10000,
+            "currency": "EGP",
+            "isCalculated": false,
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "annualRevenue": {
+            "key": "annualRevenue",
+            "label": "الإيراد السنوي التقديري",
+            "value": 120000,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * 12",
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "monthlyNetProfit": {
+            "key": "monthlyNetProfit",
+            "label": "صافي الربح الشهري",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * (netMarginPct / 100)",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "annualNetProfit": {
+            "key": "annualNetProfit",
+            "label": "صافي الربح السنوي",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNetProfit * 12",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "monthlyAcquisitionSpend": {
+            "key": "monthlyAcquisitionSpend",
+            "label": "الإنفاق الشهري على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNewCustomers * cac",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          },
+          "annualAcquisitionSpend": {
+            "key": "annualAcquisitionSpend",
+            "label": "الإنفاق السنوي على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyAcquisitionSpend * 12",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          }
+        },
+        "scenarios": [
+          {
+            "id": "net_margin_improvement",
+            "label": "سيناريو تحسين هامش صافي الربح",
+            "type": "net_margin_improvement",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyRevenue * ((targetMargin - currentMargin) / 100)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)"
+          },
+          {
+            "id": "cac_optimization",
+            "label": "سيناريو خفض تكلفة اكتساب العميل",
+            "type": "cac_optimization",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyNewCustomers * (cac - targetCAC)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)"
+          },
+          {
+            "id": "conversion_lift",
+            "label": "سيناريو رفع معدل التحويل",
+            "type": "conversion_lift",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "(qualifiedLeads * lift) * averageOrderValue",
+            "disclaimer": "غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب"
+          }
+        ],
+        "identifiedGaps": [
+          "هامش صافي الربح (u06)",
+          "عدد العملاء الجدد شهرياً (u32)",
+          "تكلفة اكتساب العميل CAC (u33)"
+        ],
+        "isComputable": false,
+        "uncomputableReason": "الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.",
+        "currency": "EGP"
+      }
+    },
+    {
+      "value": "gt20",
+      "parsed": {
+        "value": 25,
+        "isExact": false,
+        "isGap": false
+      },
+      "financialAxisScore": 100,
+      "evidence": {
+        "sourceQuestionId": "u06",
+        "questionLabel": "هامش صافي الربح من الإيرادات",
+        "dimension": "الصحة المالية",
+        "userAnswerRaw": "gt20",
+        "userAnswerParsed": "أكثر من 20%",
+        "signal": "positive",
+        "findingDescription": "هامش صافي ربح صحي (أكثر من 20%)"
+      },
+      "financialImpact": {
+        "metrics": {
+          "monthlyRevenue": {
+            "key": "monthlyRevenue",
+            "label": "الإيراد الشهري",
+            "value": 10000,
+            "currency": "EGP",
+            "isCalculated": false,
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "annualRevenue": {
+            "key": "annualRevenue",
+            "label": "الإيراد السنوي التقديري",
+            "value": 120000,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * 12",
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "monthlyNetProfit": {
+            "key": "monthlyNetProfit",
+            "label": "صافي الربح الشهري",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * (netMarginPct / 100)",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "annualNetProfit": {
+            "key": "annualNetProfit",
+            "label": "صافي الربح السنوي",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNetProfit * 12",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "monthlyAcquisitionSpend": {
+            "key": "monthlyAcquisitionSpend",
+            "label": "الإنفاق الشهري على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNewCustomers * cac",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          },
+          "annualAcquisitionSpend": {
+            "key": "annualAcquisitionSpend",
+            "label": "الإنفاق السنوي على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyAcquisitionSpend * 12",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          }
+        },
+        "scenarios": [
+          {
+            "id": "net_margin_improvement",
+            "label": "سيناريو تحسين هامش صافي الربح",
+            "type": "net_margin_improvement",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyRevenue * ((targetMargin - currentMargin) / 100)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)"
+          },
+          {
+            "id": "cac_optimization",
+            "label": "سيناريو خفض تكلفة اكتساب العميل",
+            "type": "cac_optimization",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyNewCustomers * (cac - targetCAC)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)"
+          },
+          {
+            "id": "conversion_lift",
+            "label": "سيناريو رفع معدل التحويل",
+            "type": "conversion_lift",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "(qualifiedLeads * lift) * averageOrderValue",
+            "disclaimer": "غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب"
+          }
+        ],
+        "identifiedGaps": [
+          "هامش صافي الربح (u06)",
+          "عدد العملاء الجدد شهرياً (u32)",
+          "تكلفة اكتساب العميل CAC (u33)"
+        ],
+        "isComputable": false,
+        "uncomputableReason": "الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.",
+        "currency": "EGP"
+      }
+    },
+    {
+      "value": "unknown",
+      "parsed": {
+        "value": null,
+        "isExact": false,
+        "isGap": true
+      },
+      "financialAxisScore": 100,
+      "evidence": {
+        "sourceQuestionId": "u06",
+        "questionLabel": "هامش صافي الربح من الإيرادات",
+        "dimension": "الصحة المالية",
+        "userAnswerRaw": "unknown",
+        "userAnswerParsed": null,
+        "signal": "gap",
+        "findingDescription": "عدم قياس أو توافر بيانات دقيقة حول: هامش صافي الربح من الإيرادات"
+      },
+      "financialImpact": {
+        "metrics": {
+          "monthlyRevenue": {
+            "key": "monthlyRevenue",
+            "label": "الإيراد الشهري",
+            "value": 10000,
+            "currency": "EGP",
+            "isCalculated": false,
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "annualRevenue": {
+            "key": "annualRevenue",
+            "label": "الإيراد السنوي التقديري",
+            "value": 120000,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * 12",
+            "evidenceInputs": [
+              "u31"
+            ]
+          },
+          "monthlyNetProfit": {
+            "key": "monthlyNetProfit",
+            "label": "صافي الربح الشهري",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyRevenue * (netMarginPct / 100)",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "annualNetProfit": {
+            "key": "annualNetProfit",
+            "label": "صافي الربح السنوي",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNetProfit * 12",
+            "evidenceInputs": [
+              "u31",
+              "u06"
+            ]
+          },
+          "monthlyAcquisitionSpend": {
+            "key": "monthlyAcquisitionSpend",
+            "label": "الإنفاق الشهري على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyNewCustomers * cac",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          },
+          "annualAcquisitionSpend": {
+            "key": "annualAcquisitionSpend",
+            "label": "الإنفاق السنوي على اكتساب العملاء",
+            "value": null,
+            "currency": "EGP",
+            "isCalculated": true,
+            "formula": "monthlyAcquisitionSpend * 12",
+            "evidenceInputs": [
+              "u32",
+              "u33"
+            ]
+          }
+        },
+        "scenarios": [
+          {
+            "id": "net_margin_improvement",
+            "label": "سيناريو تحسين هامش صافي الربح",
+            "type": "net_margin_improvement",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyRevenue * ((targetMargin - currentMargin) / 100)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)"
+          },
+          {
+            "id": "cac_optimization",
+            "label": "سيناريو خفض تكلفة اكتساب العميل",
+            "type": "cac_optimization",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "monthlyNewCustomers * (cac - targetCAC)",
+            "disclaimer": "غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)"
+          },
+          {
+            "id": "conversion_lift",
+            "label": "سيناريو رفع معدل التحويل",
+            "type": "conversion_lift",
+            "currentValue": null,
+            "targetValue": null,
+            "projectedMonthlyGain": null,
+            "projectedAnnualGain": null,
+            "formula": "(qualifiedLeads * lift) * averageOrderValue",
+            "disclaimer": "غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.",
+            "isComputable": false,
+            "uncomputableReason": "يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب"
+          }
+        ],
+        "identifiedGaps": [
+          "هامش صافي الربح (u06)",
+          "عدد العملاء الجدد شهرياً (u32)",
+          "تكلفة اكتساب العميل CAC (u33)"
+        ],
+        "isComputable": false,
+        "uncomputableReason": "الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.",
+        "currency": "EGP"
+      }
+    }
+  ]
+}
