@@ -40,11 +40,12 @@ No fear, no pressure, no fake urgency, no guarantees, no invented statistics. Ev
 5. Every estimate carries the label "تقدير استرشادي". Revenue 0 is a valid input: show priorities with the line "لم يُدخل إيراد، فنعرض الأولويات دون تقدير مالي" and no money block.
 
 ## 6. How to work and test
-- Use the scripts in `package.json` (typecheck, test, build). Run them before and after.
+- Verification commands run from the repo root: `pnpm --filter @workspace/bik-platform run typecheck` and `pnpm --filter @workspace/bik-platform run test`. The root `pnpm run typecheck` is known broken (root tsconfig.json and tsconfig.base.json are missing; lib/* are unused template leftovers). Do not fix it inside a mission other than Mission 19.
 - Check visually at 390px width (phone) and at desktop. RTL must not break.
 - Routes must survive direct open (SPA fallback exists in `vercel.json`).
 - Library data: `bik-library-base.json` (pathways, patterns referenced by code B0/B_EVAL/V_INV/G_*/T/J/X/P/R). Show a pathway only if `release_group` is 1 unless the mission says otherwise. Never show money values for a pathway without the value type label.
 - You may read files from the connected GitHub, Vercel and Google Drive when a mission names them.
+- The existing tests are `scripts/verify_*.ts` scripts inside artifacts/bik-platform and several assert UI copy. When a mission changes copy, update the affected verify scripts in the same mission and say which. New tests must follow the same pattern and be added to the `test:additions` script.
 
 ## 7. Report format (end of every mission, Arabic, short)
 1. ما تغيّر (ملف: سطر واحد).
