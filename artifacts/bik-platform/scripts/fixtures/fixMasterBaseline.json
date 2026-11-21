@@ -46,7 +46,7 @@
     "src/services/dialect.ts": "c05810daf11b2c73f8ede4650afc8684f5c50ae61d5cc760812e647253c8ceda",
     "src/services/dualLayerReport.ts": "96818685aa2aedb8cccc70a7b217351c3a370786c73dda9a3bbfc678fe46a617",
     "src/services/evidenceSwot.ts": "88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4",
-    "src/services/offerRecommendation.ts": "f59d95b9fbfa4e1c73bf0426782fbb668218bcec461ee0335c150f7e1408a3d4",
+    "src/services/offerRecommendation.ts": "ec51179656f2aa841d89e45ace37778d9023f7c1fd1c4b4613467339d9d4a5da",
     "src/services/reportFallback.ts": "5d176d636fe671ae4bdc9c015bac4fee5e833b533a37c17e72a7399a597c8fec",
     "src/services/reportGenerator.ts": "e64fba43737310dd557cce60703c8fe4d3b76916a07ba15c4584a3f1d7990a6b"
   },
