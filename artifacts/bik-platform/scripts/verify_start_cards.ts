@@ -11,6 +11,8 @@ const memory = () => {
   const data = new Map<string, string>();
   return {
     data,
+    get length() { return data.size; },
+    key: (index: number) => [...data.keys()][index] ?? null,
     getItem: (key: string) => data.get(key) ?? null,
     setItem: (key: string, value: string) => { data.set(key, value); },
     removeItem: (key: string) => { data.delete(key); }
@@ -18,7 +20,7 @@ const memory = () => {
 };
 const session = memory();
 const local = memory();
-Object.assign(globalThis, { window: {}, sessionStorage: session, localStorage: local });
+Object.assign(globalThis, { window: { sessionStorage: session, localStorage: local }, sessionStorage: session, localStorage: local });
 const requests: Array<{ url: string; init: RequestInit }> = [];
 globalThis.fetch = async (url, init = {}) => {
   requests.push({ url: String(url), init });
@@ -39,13 +41,13 @@ const elements = (node: any): Element[] => Array.isArray(node)
 const text = (node: any): string => Array.isArray(node) ? node.map(text).join('')
   : node && typeof node === 'object' && 'props' in node ? text(node.props.children)
   : typeof node === 'string' || typeof node === 'number' ? String(node) : '';
-let recoveryReady = false;
+let reloads = 0;
 const routes: string[] = [];
 const react = {
   createElement: (type: unknown, props: Record<string, unknown> | null, ...children: unknown[]) => ({ type, props: { ...props, children } }),
   useEffect: () => {},
   useMemo: (build: () => unknown) => build(),
-  useState: (initial: unknown) => [typeof initial === 'function' ? (initial as () => unknown)() : recoveryReady, () => {}]
+  useState: (initial: unknown) => [typeof initial === 'function' ? (initial as () => unknown)() : initial, () => {}]
 };
 const hookedStore = Object.assign(() => store.getState(), store);
 function component(file: string, additions: Record<string, unknown> = {}) {
@@ -66,7 +68,7 @@ function component(file: string, additions: Record<string, unknown> = {}) {
   runInNewContext(compiled, { module, exports: module.exports, require: (id: string) => {
     assert.ok(id in imports, `Unexpected component dependency: ${id}`);
     return imports[id];
-  }, localStorage: local, sessionStorage: session, console });
+  }, localStorage: local, sessionStorage: session, window: { location: { reload: () => { reloads++; } } }, console });
   return module.exports.default as () => Element;
 }
 const Welcome = component('src/pages/Welcome.tsx');
@@ -95,7 +97,18 @@ for (const mode of ['analysis', 'crisis'] as const) {
 assert.equal(requests.length, 2, 'each card invokes the existing session start once');
 assert.ok(requests.every(request => request.url === '/_bik-api/v1/sessions/start' && request.init.method === 'POST' && request.init.body === undefined), 'the existing session-start requests carry no mode or new request body');
 assert.ok([...local.data.values()].every(value => !value.includes('startMode')), 'the new state is not written to localStorage');
-recoveryReady = true;
+session.setItem('local_sessions', 'old report');
+local.setItem('bik-old-session', 'old report');
+session.setItem('bik-sharing-consent:old', 'true');
+local.setItem('other-app', 'keep');
+session.setItem('other-app', 'keep');
+const restart = elements(Welcome()).find(node => node.type === 'button' && text(node) === 'ابدأ من جديد')!;
+restart.props.onClick();
+assert.equal(reloads, 1, 'restart discards component and module memory');
+assert.deepEqual([...session.data], [['other-app', 'keep']]);
+assert.deepEqual([...local.data], [['other-app', 'keep']]);
+assert.equal(store.getState().userName, '');
+assert.equal(store.getState().report, null);
 store.getState().setField('universalAnswers', { u01: 'yes' });
 const resumedTree = Welcome();
 assert.ok(elements(resumedTree).some(node => node.props['data-testid'] === 'resume-session'), 'the existing resume button remains');

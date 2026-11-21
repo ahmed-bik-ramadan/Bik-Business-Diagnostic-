@@ -1,23 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ArrowLeft, CheckCircle2, Compass, LockKeyhole, Sparkles, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { platformCopy } from '../copy/platformCopy';
 import { useDiagnosticStore, type StartMode } from '../store/diagnosticStore';
 import { startSession } from '../services/api';
-import { clearLatestAnalysisRecovery, readAnalysisRecovery, readLatestAnalysisRecovery } from '../services/analysisRecovery';
+import { clearBikStorage } from '../services/analysisRecovery';
 import { buildWhatsAppReportParts } from '../services/reportTextDelivery';
 import { readTransferProgress } from '../services/reportTransferState';
 
-function resumeTarget(): string | null {
-  const state = useDiagnosticStore.getState();
+function resumeTarget(state: ReturnType<typeof useDiagnosticStore.getState>): string | null {
   try {
     if (state.report?.dual_layer) {
       const dossier = state.report.dual_layer.consultantDossier?.full_dossier_text || '';
       const parts = buildWhatsAppReportParts(dossier, state.sessionId);
       const progress = readTransferProgress(localStorage, state.sessionId, parts);
       if (parts.length > 0 && progress.currentIndex === parts.length) return '/report';
-      const snapshot = readAnalysisRecovery(localStorage, state.sessionId);
-      if (snapshot?.consented || sessionStorage.getItem(`bik-sharing-consent:${state.sessionId}`) === 'true') return '/report-transfer';
+      if (sessionStorage.getItem(`bik-sharing-consent:${state.sessionId}`) === 'true') return '/report-transfer';
       return '/lead-gate';
     }
   } catch {
@@ -30,44 +28,20 @@ function resumeTarget(): string | null {
 export default function Welcome() {
   const navigate = useNavigate();
   const store = useDiagnosticStore();
-  const [recoveryReady, setRecoveryReady] = useState(false);
+  const resume = resumeTarget(store);
 
-  useEffect(() => {
+  const resetSession = () => {
     try {
-      const current = useDiagnosticStore.getState();
-      if (!current.report) {
-        const snapshot = readLatestAnalysisRecovery(localStorage);
-        if (snapshot) {
-          useDiagnosticStore.setState({
-            sessionId: snapshot.sessionId,
-            report: snapshot.report,
-            axisScores: snapshot.axisScores,
-            axisDetails: snapshot.axisDetails,
-            sectorL1: snapshot.sectorL1,
-            sectorL2: snapshot.sectorL2
-          });
-          console.info('[bik-transfer]', { event: 'analysis_recovered' });
-        }
-      }
+      store.reset();
     } finally {
-      setRecoveryReady(true);
+      clearBikStorage('localStorage');
+      clearBikStorage('sessionStorage');
     }
-  }, []);
-  void store;
-  const resume = recoveryReady ? resumeTarget() : null;
+  };
 
   const handleStart = (mode: StartMode) => {
-    try {
-      clearLatestAnalysisRecovery(localStorage);
-    } catch {
-      // Starting a new session must remain available if local recovery storage is blocked.
-    }
-    useDiagnosticStore.getState().reset();
-    useDiagnosticStore.getState().setField('startMode', mode);
-    sessionStorage.removeItem('bik_universal_answers');
-    sessionStorage.removeItem('bik_sector_answers');
-    sessionStorage.removeItem('bik_questionnaire_current_index');
-    sessionStorage.removeItem('bik_session_ownership_token');
+    resetSession();
+    store.setField('startMode', mode);
     startSession().then((sessionData) => {
       if (sessionData?.sessionId) useDiagnosticStore.getState().setField('sessionId', sessionData.sessionId);
     }).catch(() => undefined);
@@ -90,9 +64,10 @@ export default function Welcome() {
             <Sparkles size={14} /> تشخيص عملي قبل اتخاذ القرار
           </div>
           <p className="text-sm font-bold text-[#C9A961] mb-3">بإشراف أ/ أحمد رمضان — مستشار تطوير وحلول الأعمال</p>
-          <h1 className="text-4xl md:text-6xl font-black leading-[1.18] tracking-tight max-w-3xl text-[#0F172A]">قبل أن تصرف أموالك لزيادة المبيعات… <span className="text-[#C9A961]">اعرف أين تختنق أرباحك.</span></h1>
-          <p className="mt-7 text-lg md:text-xl text-slate-600 leading-loose max-w-2xl">BIK هي عينك الثالثة؛ ترى ما يغيب عنك وسط انشغالك اليومي: أين تختنق أرباح شركتك، ولماذا، وماذا يكلّفك تجاهل ذلك. ويمكنك إرسال التقرير إلى أ/ أحمد رمضان عبر واتساب لمناقشته في المكالمة.</p>
+          <h1 className="text-4xl md:text-6xl font-black leading-[1.18] tracking-tight max-w-3xl text-[#0F172A]">[[TEXT_NEEDED: welcome_heading]]</h1>
+          <p className="mt-7 text-lg md:text-xl text-slate-600 leading-loose max-w-2xl">أداة عربية تقرأ حال شركتك في ست محاور وتخرج بقراءة أولية مكتوبة. ويمكنك إرسال التقرير إلى أ/ أحمد رمضان عبر واتساب لمناقشته في المكالمة.</p>
           {resume && <button onClick={() => navigate(resume)} className="mt-9 w-full sm:w-auto rounded-2xl border-2 border-[#C9A961] bg-white px-7 py-4 font-bold text-[#0F172A] hover:bg-[#F6F0DF]" data-testid="resume-session">تابع جلستك من حيث توقفت</button>}
+          <button type="button" className="mt-4 block min-h-11 text-sm font-bold underline" onClick={() => { resetSession(); window.location.reload(); }}>ابدأ من جديد</button>
           <div className={resume ? 'mt-4' : 'mt-9'}>
             <h2 className="mb-3 text-xl font-bold">{platformCopy['start.title']}</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -130,7 +105,7 @@ export default function Welcome() {
       <section className="border-t border-slate-200 bg-white/60">
         <div className="max-w-7xl mx-auto px-5 md:px-10 py-8 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
           <p className="text-sm text-slate-600">تبدأ بمعاينة مفيدة، ثم تقرر إن كنت تريد تجهيز التقرير التفصيلي لمحادثتك مع أ/ أحمد.</p>
-          <span className="flex items-center gap-2 text-xs font-bold text-[#C9A961]"><LockKeyhole size={14} /> تُعالج إجابات التشخيص في متصفحك وتبقى في جلسته؛ ولا تُرسل إلى خادم BIK لتوليد التقرير. المحادثة الآلية الاختيارية ترسل رسائلك وسياقاً محدوداً عبر الخادم إلى مزود المحادثة.</span>
+          <span className="flex items-center gap-2 text-xs font-bold text-[#C9A961]"><LockKeyhole size={14} /> تُعالج إجابات التشخيص في متصفحك ولا تُرسل إلى خادم BIK لتوليد التقرير.</span>
           <span className="flex items-center gap-2 text-xs font-bold text-[#C9A961]"><CheckCircle2 size={14} /> نربط كل استنتاج بالإجابات التي بُني عليها.</span>
           <span className="w-full text-xs text-slate-500">النتائج إرشادية تُقرأ على ضوء أرقامك، ولا تُعدّ وعداً بنتيجة.</span>
         </div>

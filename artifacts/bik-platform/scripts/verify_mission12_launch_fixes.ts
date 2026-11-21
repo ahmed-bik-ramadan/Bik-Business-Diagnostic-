@@ -101,8 +101,8 @@ for(const sector of sectorValues){
  prompts.push(buildChatSystemPrompt(server.value!.context));
  check(true,`approved sector stays unchanged on client and server: ${sector}`);
 }
-check(sectorValues.length===reference.approvedSectorValues&&createHash('sha256').update(JSON.stringify(prompts)).digest('hex')===reference.legitimatePromptHash,
- 'all 207 legitimate-sector system prompts exactly match v18');
+check(sectorValues.length===reference.approvedSectorValues&&createHash('sha256').update(JSON.stringify(prompts)).digest('hex')==='e2c1a9bb17cf85b4167a855cb43ffc8daf20806c7d018d5e49c09d58239299e3',
+ 'all 207 legitimate-sector system prompts include the Mission 10 offer wording and match the approved digest');
 for(const label of Object.keys(DIAGNOSTIC_DIMENSIONS))for(const status of ['مستقر','يحتاج تحسين','نقطة حرجة','بيانات غير كافية']){
  const client=buildChatContext({sector:'retail',axisDetails:{[label]:{status}}});
  const server=validateChatRequest({messages:[{role:'user',text:'سؤال'}],context:{sector:'retail',axes:[{label,status}]}});

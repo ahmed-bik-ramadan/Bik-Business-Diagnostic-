@@ -11,7 +11,7 @@ import { buildChatContext } from '../src/services/chatPolicy';
 import { computeDeterministicScore, DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS } from '../src/services/deterministicScoring';
 import { getSectorQuestions } from '../src/data/sectorRegistry';
 import { createTransferProgress, readTransferProgress, writeTransferProgress, transferProgressKey } from '../src/services/reportTransferState';
-import { saveAnalysisRecovery } from '../src/services/analysisRecovery';
+import * as recovery from '../src/services/analysisRecovery';
 import { dialectForCountry, reviewCopy } from '../src/services/dialect';
 import { reviewSessions } from './fixtures/reviewSessions';
 
@@ -172,8 +172,7 @@ class MemoryStorage {
   removeItem(key: string) { this.data.delete(key); }
 }
 const outside = new MemoryStorage();
-saveAnalysisRecovery(outside, { sessionId: 'review', report: customReport, axisScores: null, axisDetails: null, sectorL1: 'retail', sectorL2: '', consented: true });
-check(outside.data.size === 0, 'review-bearing reports are not copied into cross-session recovery storage');
+check(!('saveAnalysisRecovery' in recovery) && !src('src/pages/LeadGate.tsx').includes('analysisRecovery'), 'review-bearing reports have no persistence path through the WhatsApp gate');
 const progress = createTransferProgress('review', parts);
 progress.parts[0] = { ...progress.parts[0], status: 'sent', openedAt: 1, confirmedAt: 2 };
 progress.currentIndex = 1;

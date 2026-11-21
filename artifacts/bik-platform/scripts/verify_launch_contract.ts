@@ -47,6 +47,8 @@ const leadGateSource = fs.readFileSync('src/pages/LeadGate.tsx', 'utf8');
 assert.ok(!leadGateSource.includes('نسخ الرسالة'));
 assert.ok(leadGateSource.includes('لا يؤكد الإرسال أو الاستلام'));
 assert.ok(leadGateSource.includes('أوافق صراحةً'));
+assert.ok(leadGateSource.includes('تُرسَل إجاباتك إلى أحمد عبر واتساب برغبتك، وتبقى في محادثتكما.'));
+assert.ok(leadGateSource.includes('لا تُرسل أرقام حسابات بنكية أو بيانات بطاقات. [سياسة الخصوصية] [الشروط]'));
 const generatorSource = fs.readFileSync('src/services/reportGenerator.ts', 'utf8');
 assert.ok(generatorSource.includes("process.env.ENABLE_GEMINI_REPORTS !== 'true'"));
 const packageSource = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -64,7 +66,7 @@ assert.ok(offerCardsSource.includes('الأنسب لوضعك') && offerCardsSour
 assert.ok(offerCardsSource.includes('amount <= 0'), 'a loss line is built only on a valid declared figure, never invented');
 const reportSourceN = fs.readFileSync('src/pages/Report.tsx', 'utf8');
 assert.ok(reportSourceN.includes('monthlyWaste={monthlyWaste}'), 'the declared monthly figure feeds the offer cards');
-assert.ok(reportSourceN.includes("lossSustainsExecutive: recommendation.rule === 'real_loss_covers_it'"), 'the chat context carries the real-loss flag only, never an amount');
+assert.ok(!reportSourceN.includes('buildChatContext'), 'the report sends no data to chat');
 const previewSource = fs.readFileSync('src/components/report/ReportPreview.tsx', 'utf8');
 assert.ok(previewSource.includes('ما تستعيده بقرار واحد'), 'the decision scale is framed as recovery (gain), not cost alone');
 const policySource = fs.readFileSync('src/services/chatPolicy.ts', 'utf8');
@@ -73,4 +75,4 @@ const recSource = fs.readFileSync('src/services/offerRecommendation.ts', 'utf8')
 assert.ok(recSource.includes('real_loss_covers_it') && recSource.includes("currency !== 'USD'"), 'the real-loss rule never compares a non-USD figure to a USD threshold');
 assert.ok(fs.readFileSync('src/services/financialValueModel.ts', 'utf8').includes('monthlyReducibleWaste: input.mode'), 'the declared monthly waste travels into the value model verbatim');
 
-console.log('LAUNCH CONTRACT: 17 PASSED, 0 FAILED');
+console.log('LAUNCH CONTRACT: PASS');

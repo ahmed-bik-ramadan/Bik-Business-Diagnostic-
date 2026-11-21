@@ -11,7 +11,7 @@ import {
   completedTransferProgress, confirmTransferPart, createTransferProgress, finishTransfer, isTransferDone,
   markTransferPartOpened, readTransferProgress, transferDoneKey, transferProgressKey, writeTransferProgress
 } from '../src/services/reportTransferState';
-import { clearAnalysisRecovery, saveAnalysisRecovery, readAnalysisRecovery, readLatestAnalysisRecovery } from '../src/services/analysisRecovery';
+import { clearAnalysisRecovery, readAnalysisRecovery } from '../src/services/analysisRecovery';
 import { MIN_WAIT_MS, secondsUntilReady } from '../src/services/transferGate';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -66,7 +66,9 @@ check(secondsUntilReady({ index: 0, at: 0 }, 0, 0) === 0 && secondsUntilReady({ 
 {
   const st = new MemoryStorage();
   const sid = 's1';
-  saveAnalysisRecovery(st, { sessionId: sid, report: { dual_layer: { consultantDossier: { full_dossier_text: dossier } } } as any, axisScores: null, axisDetails: null, sectorL1: '', sectorL2: '', consented: true });
+  const legacyKey = 'bik-analysis-session:' + sid;
+  st.setItem(legacyKey, JSON.stringify({ sessionId: sid, report: { dual_layer: {} }, consented: true }));
+  check(readAnalysisRecovery(st, sid) === null, 'a legacy snapshot cannot restore a report or grant consent');
   let progress = createTransferProgress(sid, parts);
   for (let i = 0; i < parts.length; i++) {
     progress = markTransferPartOpened(progress, i, 1000 * (i + 1));
@@ -74,11 +76,11 @@ check(secondsUntilReady({ index: 0, at: 0 }, 0, 0) === 0 && secondsUntilReady({ 
     writeTransferProgress(st, progress);
   }
   check(progress.currentIndex === parts.length, 'all parts confirmed in order');
-  check(st.getItem(transferProgressKey(sid)) !== null && readAnalysisRecovery(st, sid) !== null, 'before cleanup the local copies exist');
+  check(st.getItem(transferProgressKey(sid)) !== null, 'transfer progress exists before completion');
   const done = finishTransfer(st, sid, parts, () => clearAnalysisRecovery(st, sid));
   check(done, 'finishTransfer succeeds');
   check(st.getItem(transferProgressKey(sid)) === null, 'per-part text copies are removed');
-  check(readAnalysisRecovery(st, sid) === null && readLatestAnalysisRecovery(st) === null, 'local report copy and latest pointer are removed');
+  check(st.getItem(legacyKey) === null, 'completion removes a legacy session snapshot');
   const mark = st.getItem(transferDoneKey(sid)) || '';
   check(mark.length > 0 && mark.length < 200 && !mark.includes('القسم') && !mark.includes('المبيعات'), 'completion mark is small and holds no report text');
   check(isTransferDone(st, sid, parts), 'completion is recognised for the same report');

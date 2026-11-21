@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
-import { BIK_OFFERS, BIK_FREE_CALL_MESSAGE, OFFER_GAP_LINE, buildConsultantWhatsAppUrl } from '../config/appConfig';
+import { BIK_OFFERS, BIK_REFUND_POLICY, BIK_FREE_CALL_MESSAGE, OFFER_GAP_LINE, buildConsultantWhatsAppUrl } from '../config/appConfig';
 import type { OfferKey } from '../services/offerRecommendation';
 import type { OfferOutcome } from '../services/offerOutcomes';
 
@@ -22,8 +22,8 @@ const GREEN_RECOMMENDED = { border: 'border-[#146B4F]', badge: 'bg-[#146B4F] tex
 /** سطر الخسارة يُفتتح به كل عرض، مبني على رقم العميل المصرَّح به وحده — لا رقم يُختلق. */
 function lossLine(monthlyWaste: OfferCardsProps['monthlyWaste']): string | null {
   if (!monthlyWaste || !Number.isFinite(monthlyWaste.amount) || monthlyWaste.amount <= 0) return null;
-  const amount = Math.round(monthlyWaste.amount).toLocaleString('ar-EG');
-  return `كل شهر انتظار يترك قرابة ${amount} ${monthlyWaste.currency} بين يديك — على أرقامك المصرَّح بها في ميزان القرار.`;
+  const amount = Math.round(monthlyWaste.amount).toLocaleString('en-US');
+  return `[[TEXT_NEEDED: offer_monthly_estimate]] تقدير استرشادي: ${amount} ${monthlyWaste.currency}`;
 }
 
 /** The only place offers are rendered. Names, prices and scope come only from BIK_OFFERS. */
@@ -37,8 +37,8 @@ export default function OfferCards({ recommended, outcomes, monthlyWaste }: Offe
       <div className="mt-4 rounded-2xl border border-[#C9A961]/50 bg-white p-4">
         <strong className="block text-[#0F172A]">هدية لك: 15 دقيقة مع أ/ أحمد، على حسابنا</strong>
         <p className="mt-1 text-sm leading-7 text-[#26354E]">أقوى تساؤل يقلق شركتك، تناقشه معه وتخرج بتوصية واضحة تقيس عليها كل ما بعدها. وإن لم تكن خدماتنا ما تحتاجه، ستسمع ذلك بنفس الوضوح.</p>
-        <p className="mt-2 text-sm leading-7 text-[#146B4F]">وتقرير التشخيص كله يبقى ملكك إلى الأبد، بلا شرط.</p>
-        <a href={buildConsultantWhatsAppUrl({ customMessage: BIK_FREE_CALL_MESSAGE }).url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#146B4F] px-4 py-2.5 text-sm font-bold text-[#146B4F] hover:bg-[#146B4F] hover:text-white"><MessageCircle size={16} /> احجز دقائقك الـ15 الآن</a>
+        <p className="mt-2 text-sm leading-7 text-[#146B4F]">التقرير يبقى لديك في محادثة واتساب.</p>
+        <a href={buildConsultantWhatsAppUrl({ customMessage: BIK_FREE_CALL_MESSAGE }).url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#146B4F] px-4 py-2.5 text-sm font-bold text-[#146B4F] hover:bg-[#146B4F] hover:text-white"><MessageCircle size={16} /> احجز دقائقك الـ15</a>
       </div>
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {ORDER.map((key) => {
@@ -86,6 +86,7 @@ export default function OfferCards({ recommended, outcomes, monthlyWaste }: Offe
         })}
       </div>
       <p className="mt-5 text-sm leading-7 text-[#26354E]" data-testid="offer-gap-line">{OFFER_GAP_LINE}</p>
+      <p className="mt-3 text-sm leading-7">{BIK_REFUND_POLICY}</p>
       {recommended && <p className="mt-2 text-xs leading-6 text-[#68717A]">التوصية محسوبة آلياً من نتيجة محاور التشخيص، وليست وعداً بنتيجة. الاختيار لك.</p>}
     </section>
   );

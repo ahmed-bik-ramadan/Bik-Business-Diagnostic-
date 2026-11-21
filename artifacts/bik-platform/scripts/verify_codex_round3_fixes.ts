@@ -29,7 +29,7 @@ import { handleChat } from '../server/chatHandler.ts';
     'the done mark satisfies the gate once the transfer is complete'
   );
   assert.ok(
-    /const \[gate, setGate\] = useState\(\(\) => resolveReportGate\(collectGateInputs\(/.test(src),
+    /const \[gate\] = useState\(\(\) => resolveReportGate\(collectGateInputs\(/.test(src),
     'the gate is resolved synchronously in the useState initializer'
   );
   assert.ok(!src.includes('snapshot?.consented'), 'recovery consent never reaches the gate (F3)');

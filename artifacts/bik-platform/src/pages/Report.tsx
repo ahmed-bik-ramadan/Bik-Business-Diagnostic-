@@ -4,13 +4,10 @@ import { ArrowLeft, UserRound } from 'lucide-react';
 import { formatPlatformCopy } from '../copy/platformCopy';
 import { useDiagnosticStore } from '../store/diagnosticStore';
 import { buildWhatsAppReportParts } from '../services/reportTextDelivery';
-import { readLatestAnalysisRecovery } from '../services/analysisRecovery';
 import { readTransferProgress, isTransferDone } from '../services/reportTransferState';
 import { resolveReportGate } from '../services/reportGate';
 
 // مدخلات بوابة التقرير تُقرأ من موافقة هذه الجلسة ومن سجل النقل فقط.
-// سجل الاسترداد في localStorage لا يُسأل عن أي موافقة: استرداده يُعيد التقرير
-// إلى الذاكرة، أما فتح البوابة فقرارها لعلامة الإتمام أو موافقة الجلسة الحية (F3).
 function collectGateInputs(input: { sessionId?: string; report: unknown; dossier: string }) {
   let sessionConsent = false;
   try {
@@ -44,8 +41,6 @@ function collectGateInputs(input: { sessionId?: string; report: unknown; dossier
 import { reviewCopy } from '../services/dialect';
 import { ReportPreview } from '../components/report/ReportPreview';
 import { ReportDetails } from '../components/report/ReportDetails';
-import ConsultantChat from '../components/ConsultantChat';
-import { buildChatContext } from '../services/chatPolicy';
 import OfferCards from '../components/OfferCards';
 import CostOfProblem from '../components/CostOfProblem';
 import { lossSustainsExecutive, recommendOffer } from '../services/offerRecommendation';
@@ -53,7 +48,7 @@ import { buildOfferOutcomes } from '../services/offerOutcomes';
 
 export default function Report() {
   const navigate = useNavigate();
-  const { sessionId, report, axisScores, axisDetails, sectorL1, sectorL2, companyName, startMode } = useDiagnosticStore();
+  const { sessionId, report, axisScores, axisDetails, companyName, startMode } = useDiagnosticStore();
   const firstCriticalAxis = Object.entries(axisDetails || {}).find(([, detail]) => detail?.status === 'نقطة حرجة')?.[0];
   const dossier = report?.dual_layer?.consultantDossier?.full_dossier_text || '';
   // سطر الخسارة في بطاقات العروض: المصرَّح به من أرقام العميل وحده، أو المشتق من أرقامه
@@ -75,44 +70,9 @@ export default function Report() {
     [report, axisDetails, monthlyWaste, startMode]
   );
   const outcomes = useMemo(() => buildOfferOutcomes(axisDetails), [axisDetails]);
-  const chatContext = useMemo(
-    () => buildChatContext({
-      startMode,
-      sector: sectorL2 || sectorL1,
-      overallComputed: report?.dual_layer?.clientReport?.health_score_computed,
-      lossSustainsExecutive: recommendation.rule === 'real_loss_covers_it',
-      axisDetails
-    }),
-    [report, axisDetails, sectorL1, sectorL2, recommendation.rule, startMode]
-  );
-  const partCount = useMemo(() => buildWhatsAppReportParts(dossier, sessionId).length, [dossier, sessionId]);
-
-  // F2 (round-5): قرار البوابة يُحلّ متزامناً في مُهيّئ الحالة، قبل أي تأثير أو عرض.
-  // لا تمرّ شاشة التقرير أمام الزائر قبل أن يُفحص إثبات النهاية أو موافقة الجلسة.
-  const [gate, setGate] = useState(() => resolveReportGate(collectGateInputs({ sessionId, report, dossier })));
+  const [gate] = useState(() => resolveReportGate(collectGateInputs({ sessionId, report, dossier })));
 
   useEffect(() => {
-    if (!report) {
-      const snapshot = readLatestAnalysisRecovery(localStorage);
-      if (snapshot) {
-        useDiagnosticStore.setState({
-          sessionId: snapshot.sessionId,
-          report: snapshot.report,
-          axisScores: snapshot.axisScores,
-          axisDetails: snapshot.axisDetails,
-          sectorL1: snapshot.sectorL1,
-          sectorL2: snapshot.sectorL2
-        });
-        console.info('[bik-transfer]', { event: 'analysis_recovered' });
-        // وصل التقرير عبر الاسترداد: البوابة تُعاد على الجلسة المستعادة نفسها.
-        setGate(resolveReportGate(collectGateInputs({
-          sessionId: snapshot.sessionId,
-          report: snapshot.report,
-          dossier: (snapshot.report as any)?.dual_layer?.consultantDossier?.full_dossier_text || ''
-        })));
-        return;
-      }
-    }
     if (!gate.open && gate.redirect) {
       const target = gate.redirect === 'lead-gate'
         ? '/lead-gate'
@@ -121,7 +81,7 @@ export default function Report() {
           : '/';
       navigate(target, { replace: true });
     }
-  }, [report, sessionId, dossier, partCount, gate, navigate]);
+  }, [gate, navigate]);
 
   if (!gate.open) {
     return <main className="min-h-[100dvh] grid place-items-center bg-[#F4F1E9]" dir="rtl"><p role="status">يجري التحقق من بوابة التقرير…</p></main>;
@@ -139,7 +99,7 @@ export default function Report() {
     <div className="page-enter mx-auto max-w-5xl space-y-5 px-4 py-8 md:px-8 md:py-12">
       <div>
         <p className="text-xs font-bold tracking-[.16em] text-[#8B7135]">تم فتح التقرير بعد إقرارك بكل الأجزاء</p>
-        <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'}: أين تختنق أرباحك، ولماذا، وماذا يكلّفك تجاهل ذلك</h1>
+        <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'} — [[TEXT_NEEDED: report_heading]]</h1>
       </div>
       {!!report.dual_layer.clientReport.review?.length && <section className="rounded-[1.7rem] border border-[#C9A961]/30 bg-[#FBFAF6] p-6 md:p-8" data-testid="review-report-section">
         <h2 className="font-display text-2xl font-bold">{reviewCopy('fusha').sectionTitle}</h2>
@@ -164,7 +124,6 @@ export default function Report() {
         </div>
         <Link to="/consultant" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9A961] px-6 py-4 font-bold text-[#0F172A] hover:bg-[#DCC78D] md:mt-0 md:w-auto md:shrink-0"><UserRound size={18} /> تعرّف على المستشار</Link>
       </section>
-      <ConsultantChat context={chatContext} />
       <p className="text-center text-xs leading-7 text-[#68717A]">التقرير قراءة أولية مبنية على إفصاحات الجلسة. لا يحل محل تدقيق الحسابات أو التحقق الميداني، ولا يضمن نتيجة مستقبلية.</p>
     </div>
   </main>;

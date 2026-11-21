@@ -1,12 +1,13 @@
 /**
  * صفحة المستشار (الإصدار المعتمد من المالك).
- * ملف مستقل لا يعتمد إلا على React. يُولَّد من نصوص المحتوى المعتمدة؛ ولا يحتوي أسماء عملاء ولا شعارات ولا صوراً ولا بريداً إلكترونياً.
+ * تقرأ الصفحة العروض من إعدادات المنصة. يُولَّد من نصوص المحتوى المعتمدة؛ ولا يحتوي أسماء عملاء ولا شعارات ولا صوراً ولا بريداً إلكترونياً.
  * رقم واتساب يُضبط من إعدادات المنصة عبر setConsultantWhatsApp (مصدر الرقم الوحيد: config/appConfig.ts).
  * الخريطة: حدود Natural Earth (ملكية عامة)، وفلسطين بحدود الانتداب 1938 (تقريبية).
  * الاستخدام: <ConsultantPage visitor={{ name, company, sector, country }} />
  * إن لم يُمرَّر visitor تظهر خانتا الاسم والشركة داخل قسم طلب الاستشارة.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { BIK_OFFERS, BIK_REFUND_POLICY } from '../../config/appConfig';
 
 /* ───────────── البيانات ───────────── */
 let WHATSAPP = '201066966515';
@@ -15,47 +16,10 @@ export function setConsultantWhatsApp(number) {
   if (digits) WHATSAPP = digits;
 }
 const FREE_MINUTES = 15;
-const EXPERIENCE = { salesSince: 2003, businessDevelopmentSince: 2017 };
-const OFFER_LIST = [
-  {
-    name: 'أسبوع استشاري مُركَّز', price: '272 دولاراً', badge: 'لحسم قرار',
-    hook: 'أسبوع واحد لتحسم القرار الذي تؤجله.',
-    body: 'كثير من أصحاب الشركات لا يتضرر من قرار خاطئ بقدر ما يتضرر من قرار مؤجَّل. في أسبوع واحد نفحص حالتك مع صاحب الخبرة نفسه، وتخرج بقرار واضح وأولوية مكتوبة، لا بملاحظات عامة.',
-    fit: 'يناسبك إذا كنت متردداً بين قرارين، أو لا تعرف من أين تبدأ.',
-    bullets: [
-      'ثلاث مكالمات مع المستشار، مدة كل منها من 45 إلى 180 دقيقة بحسب التشخيص.',
-      'داخل مصر: جلسات حضورية في مقر الشركة مع متابعة مباشرة من المستشار.',
-      'مخرجات الأسبوع: قرار أو أولوية، وتشخيص للخلل، ومراجعة لعرض القيمة.'
-    ], cta: 'ناقش أسبوعك الاستشاري مع أحمد'
-  },
-  {
-    name: 'المستشار في منصبك — تعاقد شهري', price: '499 دولاراً شهرياً', badge: 'لمتابعة التنفيذ',
-    hook: 'القرار الصحيح لا يكفي؛ يحتاج من يتابع تنفيذه.',
-    body: 'كثير من الخطط تتعثر عند التنفيذ لا عند التخطيط، وليس لأن فريقك مقصّر، بل لأن النظام لا يتضمن من يتابع ويحاسب ويصحّح المسار. هنا يصبح المستشار مرجعاً ثابتاً لشركتك: يتابع التنفيذ، ويراجع الأداء كل شهر.',
-    fit: 'يناسبك إذا كانت لديك خطة، ولا أحد يتابع تنفيذها كما ينبغي.',
-    bullets: [
-      'نطاق وإيقاع عمل مكتوبان حسب حالة كل شركة.',
-      'دون سقف لعدد المكالمات: يتواصل المستشار مع مسؤولي الأقسام المعنية بالتنفيذ، ويشرف عليهم ويتابع عملهم.',
-      'مراجعة شهرية للأداء، لتعرف أين وصلت وما الذي يعطّلك.'
-    ], cta: 'ناقش التعاقد الشهري مع أحمد'
-  },
-  {
-    name: 'التعاقد الاستشاري التنفيذي للمشروع', price: '5000 دولار شهرياً', top: true, badge: 'لتنفيذ مشروعك معك',
-    hook: 'كم تكلفك الأزمة كل شهر وهي مفتوحة؟',
-    body: 'حين تكون المشكلة أكبر من أن تُعالَج بتوصيات، نتولى المشروع معك حتى نتيجته: أزمة في شركتك، أو مشكلة تعطّل نموها، أو صفقة مع شركة أو جهة أخرى نعمل على إبرامها. نكتب قبل البدء الهدف الذي نُحاسَب عليه، ونضع ضمانه في العقد.',
-    fit: 'يناسبك إذا كانت المشكلة تكلّفك كل شهر أكثر مما تدفعه هنا.',
-    bullets: [
-      'أكثر من 550 ساعة عمل في الشهر مخصصة لمشروعك، أي أقل من 10 دولارات للساعة الواحدة.',
-      'الهدف المكتوب: عائد بعشرة أضعاف المبلغ المدفوع في نهاية التعاقد.',
-      'الضمان: إن لم يتحقق الهدف المكتوب، فلك استمرار مجاني، أو رد 86% من المبلغ ولا يُخصم منه إلا المصاريف الإدارية، أو تقليص المبلغ ليتناسب مع ما يعادل 10% من الأرباح.',
-      'الضمان مشروط، وشروطه تُكتب في العقد: اقرأها قبل أن تدفع.'
-    ], cta: 'ناقش التعاقد التنفيذي مع أحمد'
-  }
-];
+const EXPERIENCE = 'في المبيعات منذ 2003 وفي تطوير الأعمال منذ 2017';
 const STATS = [
   { icon: 'briefcase', target: 350, lead: '+', label: 'مشروع ناجح' },
   { icon: 'growth', target: 2000, tail: '+', label: 'استشارة تحويلية' },
-  { icon: 'award', target: 20, lead: '+', label: 'عاماً من الخبرة المتراكمة' },
   { icon: 'globe', target: 'COUNTRIES', label: 'دولة نخدمها بفخر' },
   { icon: 'users', target: 500, lead: '+', label: 'متدرب من أصحاب الشركات ورواد الأعمال' },
   { icon: 'star', target: 96, tail: '%', label: 'رضا العملاء هو غايتنا' }
@@ -795,7 +759,7 @@ const COUNTRY_COUNT = COUNTRIES.length;
 const countryName = (iso) => (COUNTRIES.find((c) => c.iso2 === iso) || {}).name || '';
 const casesOf = (iso) => CASES.filter((c) => c.country === iso);
 
-function buildMessage({ name, company, service, caseTitle, visitor }) {
+function buildMessage({ name, company, service, caseTitle, visitor, minutes = FREE_MINUTES }) {
   const lines = ['السلام عليكم يا أستاذ أحمد،'];
   if (name && company) lines.push('أنا ' + name + '، من شركة ' + company + '.');
   else if (name) lines.push('أنا ' + name + '.');
@@ -805,7 +769,7 @@ function buildMessage({ name, company, service, caseTitle, visitor }) {
   if (v.country) lines.push('الدولة: ' + v.country);
   if (service) lines.push('الخدمة التي أحتاجها: ' + service);
   if (caseTitle) lines.push('قرأت في موقعك حالة: ' + caseTitle);
-  lines.push('أرغب في الجلسة الأولى المجانية (' + FREE_MINUTES + ' دقيقة).');
+  lines.push('أرغب في الجلسة الأولى المجانية (' + minutes + ' دقيقة).');
   return lines.join('\n');
 }
 const waUrl = (text) => 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(text);
@@ -1100,7 +1064,7 @@ export default function ConsultantPage({ visitor }) {
   const returnFocus = useRef(null);
   const openCase = (item, trigger) => { returnFocus.current = trigger; setOpen(item); };
   const closeCase = useMemo(() => () => { setOpen(null); if (returnFocus.current && returnFocus.current.focus) returnFocus.current.focus(); }, []);
-  const baseMsg = (what) => waUrl(buildMessage({ name: (visitor && visitor.name) || contact.name, company: (visitor && visitor.company) || contact.company, service: what, visitor }));
+  const baseMsg = (what, minutes = FREE_MINUTES) => waUrl(buildMessage({ name: (visitor && visitor.name) || contact.name, company: (visitor && visitor.company) || contact.company, service: what, visitor, minutes }));
 
   return (
     <div className="bkc" dir="rtl" lang="ar">
@@ -1120,10 +1084,9 @@ export default function ConsultantPage({ visitor }) {
             <p className="bkc-intro">
               <span>المرشد لا ينتظر أن تسأله: يمشي الطريق قبلك، ويحمل عنك عبء القرار حين تتوقف الخيارات.</span>
               <span>هنا لا يُشترى تقرير ولا توصية، بل تجربة: مرجع ثابت يدرس البدائل، يقارن الأرقام، ويقترح الخيار الجريء المنطقي ثم يقف مسؤولاً أمامه.</span>
-              <span>في المبيعات منذ {EXPERIENCE.salesSince}، وفي تطوير الأعمال منذ {EXPERIENCE.businessDevelopmentSince}، وحالات في {COUNTRY_COUNT} دولة تعلمتُ أن الشركات لا تعتل عند ضعف الجهد، بل عند غياب من يقرر.</span>
             </p>
             <a className="bkc-cta" href={baseMsg('')} target="_blank" rel="noopener noreferrer">ابدأ بمكالمتك المجانية (15 دقيقة)</a>
-            <div className="bkc-how"><strong>كيف تبدأ؟ </strong>تشخيص BIK يجمع سياق نشاطك ويكشف أين تختنق أرباحك؛ ثم يقرأ المستشار تقرير شركتك قبل المكالمة، فتكون مكالمتكم كلها لقرارك لا للتعارف.</div>
+            <div className="bkc-how"><strong>كيف تبدأ؟ </strong>[[TEXT_NEEDED: consultant_intro]]</div>
           </div>
         </div>
       </section>
@@ -1134,7 +1097,7 @@ export default function ConsultantPage({ visitor }) {
             <StatCard key={s.label} icon={s.icon} target={s.target === 'COUNTRIES' ? COUNTRY_COUNT : s.target} lead={s.lead} tail={s.tail} label={s.label} active={statsSeen} />
           ))}
         </div>
-        <p className="bkc-stats-note">في المبيعات والتسويق منذ {EXPERIENCE.salesSince}، وفي تطوير الأعمال منذ {EXPERIENCE.businessDevelopmentSince}.</p>
+        <p className="bkc-stats-note">{EXPERIENCE}</p>
       </section>
 
       <section className="bkc-sec bkc-dark">
@@ -1169,19 +1132,17 @@ export default function ConsultantPage({ visitor }) {
           <p className="bkc-sub-g">ثلاثة مستويات: حسم القرار، ثم متابعة التنفيذ، ثم تنفيذ المشروع معك.</p>
           <div className="bkc-free"><strong>جلسة أولى مجانية · {FREE_MINUTES} دقيقة</strong><span>تطرح فيها سؤالاً عن أزمتك، وأناقش معك حلاً أولياً. تحدد بعدها إن كنت تحتاج أحد العروض الثلاثة.</span></div>
           <div className="bkc-offers">
-            {OFFER_LIST.map((o) => (
-              <div key={o.name} className={'bkc-offer' + (o.top ? ' top' : '')}>
-                {o.badge ? <span className="bkc-offer-b">{o.badge}</span> : null}
-                <h3>{o.name}</h3>
-                <div className="bkc-price">{o.price}</div>
-                <p className="bkc-offer-lead">{o.hook}</p>
-                <p className="bkc-offer-body">{o.body}</p>
-                <p className="bkc-offer-fit">{o.fit}</p>
-                <ul>{o.bullets.map((b) => <li key={b}>{b}</li>)}</ul>
-                <a className="bkc-cta sm" href={baseMsg('عرض: ' + o.name)} target="_blank" rel="noopener noreferrer">{o.cta}</a>
+            {Object.entries(BIK_OFFERS).map(([key, offer]) => (
+              <div key={key} className={'bkc-offer' + (key === 'executiveProject' ? ' top' : '')}>
+                <h3>{offer.name}</h3>
+                <div className="bkc-price">{offer.price}</div>
+                <p className="bkc-offer-body">{offer.scope}</p>
+                <ul>{offer.includes.map(line => <li key={line}>{line}</li>)}</ul>
+                <a className="bkc-cta sm" href={baseMsg('عرض: ' + offer.name, offer.freeCallMinutes)} target="_blank" rel="noopener noreferrer">ناقش هذا العرض مع أ/ أحمد</a>
               </div>
             ))}
           </div>
+          <p>{BIK_REFUND_POLICY}</p>
         </div>
       </section>
 

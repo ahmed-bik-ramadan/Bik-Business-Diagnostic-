@@ -333,7 +333,7 @@ function sources() {
   const handler = fs.readFileSync(path.join(ROOT, 'server/chatHandler.ts'), 'utf8');
   check(server.includes('"/api/v1/chat"') && server.includes('handleChat('), 'server exposes /api/v1/chat through handleChat');
   check(handler.includes('process.env') === false && handler.includes('deps.env.OPENROUTER_API_KEY'), 'handler reads the key only from injected env (OPENROUTER_API_KEY)');
-  check(report.includes('<ConsultantChat context={chatContext}') && report.includes('buildChatContext('), 'Report passes the whitelisted chat context');
+  check(!report.includes('ConsultantChat') && !report.includes('buildChatContext'), 'the public report does not mount chat or prepare a chat context');
   check(chat.includes('shouldOfferContact(messages)') && chat.includes('data-testid="chat-contact-cta"'), 'chat shows the contact button from the 3rd reply');
   check(chat.includes("CHAT_ENDPOINT = '/_bik-api/v1/chat'") && server.includes('req.url = `/api${req.url.slice("/_bik-api".length)}`') && !chat.includes('companyName') && !chat.includes('userName') && !/phone/i.test(chat), 'chat component handles no name, company or phone');
   check(chat.includes("platformCopy['chat.badge']") && platformCopy['chat.badge'] === 'مساعد آلي يقرأ نتيجتك', 'chat renders the approved automated-assistant badge');

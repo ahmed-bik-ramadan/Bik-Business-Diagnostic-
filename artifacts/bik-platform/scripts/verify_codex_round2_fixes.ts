@@ -93,17 +93,13 @@ import { handleChat } from '../server/chatHandler.ts';
   assert.ok(!/isComputable[\s\S]{0,200}return null/.test(block), 'monthlyWaste no longer requires isComputable');
   const offers = fs.readFileSync('src/components/OfferCards.tsx', 'utf8');
   assert.ok(offers.includes('monthlyWaste'), 'the offer loss line consumes the monthlyWaste prop');
-  assert.ok(offers.includes('كل شهر انتظار يترك'), 'the client-loss opening line is present');
+  assert.ok(offers.includes('تقدير استرشادي') && offers.includes('monthlyWaste.amount'), 'the monthly amount is labelled as an estimate');
 }
 
 // ---- م6: the consultant page uses the full offer names, unchanged ----
 {
   const src = fs.readFileSync('src/pages/consultant/ConsultantPage.jsx', 'utf8');
-  assert.ok(src.includes("name: 'التعاقد الاستشاري التنفيذي للمشروع'"), 'full executive-project name');
-  assert.ok(src.includes("name: 'المستشار في منصبك — تعاقد شهري'"), 'full monthly-retainer name');
-  assert.ok(src.includes("name: 'أسبوع استشاري مُركَّز'"), 'focused-week name');
-  assert.ok(!src.includes("name: 'تعاقد استشاري شهري'"), 'short monthly name removed');
-  assert.ok(!src.includes("name: 'تعاقد استشاري تنفيذي'"), 'short executive name removed');
+  assert.ok(src.includes('Object.entries(BIK_OFFERS)') && src.includes('{offer.name}'), 'consultant renders offer names from the shared catalog');
   const config = fs.readFileSync('src/config/appConfig.ts', 'utf8');
   for (const full of ['التعاقد الاستشاري التنفيذي للمشروع', 'المستشار في منصبك — تعاقد شهري', 'أسبوع استشاري مُركَّز']) {
     assert.ok(config.includes(full), `consultant page matches appConfig: ${full}`);

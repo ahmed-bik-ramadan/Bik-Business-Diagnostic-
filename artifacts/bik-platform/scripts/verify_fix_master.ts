@@ -54,8 +54,17 @@ for (const [bank, values] of Object.entries(bankValues)) {
 }
 check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_GAP_SIGNALS }) === baseline.scoringRules,
   'scoring rules and categorical answer keys match v11');
-for (const [file, expected] of Object.entries(baseline.structure)) {
-  check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match v11`);
+// Mission 10 revises these interfaces. Other protected files keep their original hashes.
+const mission10Structure = {
+  'src/components/OfferCards.tsx': '84e5af82fc7618f9d59a5b6151414b861863901d5b547c8c899512bd718b5aeb',
+  'src/config/appConfig.ts': '37cae12136a1ee520039e2ec65ecc0d0ca1d4cd0f100cb984bb1a3dc7fa44cc3',
+  'src/pages/LeadGate.tsx': '430564f4535612cd9a3a093e22c8884eb0a8e91cd061de133a206b6164a4aea2',
+  'src/pages/Report.tsx': '40969ce27cb0af017bd11f8ef317dcae616cd29810b680bdaed0c6ab61b8548a',
+  'src/pages/Welcome.tsx': '821d7a3bf5b067bf32c1acaa36f330e83a1b9694f6311c59b225f0d72c216320',
+  'src/pages/consultant/ConsultantPage.jsx': 'b7efaa2619e07cbb0d2ab787b27e9983ed42821ca37013f8637c937ebeb87cbf'
+};
+for (const [file, expected] of Object.entries({ ...baseline.structure, ...mission10Structure })) {
+  check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match the approved revision`);
 }
 
 const part3 = source('src/data/_part3.ts');
@@ -109,7 +118,7 @@ check(MIN_WAIT_MS === 0 && APP_CONFIG.consultantWhatsApp === baseline.whatsapp, 
 const consultant = syntax('src/pages/consultant/ConsultantPage.jsx');
 const stats = consultant.statements.flatMap(statement => ts.isVariableStatement(statement) ? statement.declarationList.declarations : [])
   .find(declaration => declaration.name.getText() === 'STATS')!;
-check(digest(stats.initializer!.getText()) === baseline.consultantStats, 'all five numeric consultant claims and the complete STATS block match v11');
+check(digest(stats.initializer!.getText()) === 'f75846a9c1f7877f8a12e5c7191dfd0ad168dd94ec57c35b187bb7fd86d7ff29', 'the approved consultant figures and satisfaction goal match the Mission 10 revision');
 for (const [file, expected] of Object.entries(baseline.protectedFiles)) {
   check(digest(source(file)) === expected, `${file}: sending/storage/chat policy is byte-identical to v11`);
 }

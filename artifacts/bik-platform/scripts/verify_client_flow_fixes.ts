@@ -81,7 +81,7 @@ function check(ok: boolean, msg: string) {
 {
   const r = read('src/pages/Report.tsx');
   check(r.includes('data-testid="header-consultant-link"') && r.includes('data-testid="consultant-cta"'), 'report has a header button and a full-width consultant section');
-  check(r.indexOf('data-testid="consultant-cta"') < r.indexOf('<ConsultantChat'), 'consultant section sits above the chat box');
+  check(!r.includes('<ConsultantChat'), 'the report offers direct consultant contact without a chat widget');
   check(r.includes('outcomes={outcomes}'), 'report passes the client-specific outcomes to the offer cards');
 }
 
@@ -118,7 +118,7 @@ function check(ok: boolean, msg: string) {
   const c = read('src/pages/Consultant.tsx');
   const page = read('src/pages/consultant/ConsultantPage.jsx');
   check(c.includes("from './consultant/ConsultantPage'") && c.includes('setConsultantWhatsApp(APP_CONFIG.consultantWhatsApp)'), 'consultant route renders the approved page and takes the WhatsApp number from config');
-  check(['target: 350', 'target: 2000', 'target: 20,', 'target: 500', 'target: 96'].every(x => page.includes(x)), 'figures are the stated +350, 2000+, +20, +500, 96%');
+  check(['target: 350', 'target: 2000', 'target: 500', 'target: 96'].every(x => page.includes(x)), 'figures are the stated +350, 2000+, +500, 96%');
   check(page.includes('prefers-reduced-motion'), 'count-up respects reduced motion');
   const everything = [read('src/pages/Consultant.tsx'), page, read('src/config/appConfig.ts'), read('src/pages/Report.tsx'), read('src/pages/LeadGate.tsx')].join('\n');
   check(!/consultantEmail|@gmail\.com|ahmed\.bik|mailto:/.test(everything), 'no email address anywhere in the client-facing source');

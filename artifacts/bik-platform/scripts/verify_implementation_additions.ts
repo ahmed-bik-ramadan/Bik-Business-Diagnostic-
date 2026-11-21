@@ -22,7 +22,7 @@ assert.equal(db.includes('saveLocalDb'), false);
 assert.equal(tracking.includes('void eventName'), true);
 assert.equal(tracking.includes('fetch('), false);
 assert.equal(report.includes('<ReportDetails'), true);
-assert.equal(report.includes('<ConsultantChat'), true);
+assert.equal(report.includes('<ConsultantChat'), false);
 assert.equal(reportDetails.includes('DIAGNOSTIC_DIMENSIONS'), true);
 assert.equal(reportDetails.includes("key: 'strengths'"), true);
 assert.equal(reportDetails.includes("key: 'weaknesses'"), true);
