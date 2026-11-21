@@ -63,6 +63,7 @@ import { handleChat } from '../server/chatHandler.ts';
   const covered = (key: string) => {
     if (key.startsWith('bik-sharing-consent:')) return true;
     if (key.startsWith('bik-transfer-acks:')) return true; // legacy, removed on submit
+    if (key === 'probeKey') return transfer.includes('window.sessionStorage.removeItem(probeKey)');
     if (key.startsWith('__bik_probe')) return true; // probes, self-cleaning
     return removed.includes(key);
   };
@@ -73,7 +74,7 @@ import { handleChat } from '../server/chatHandler.ts';
 // ---- 2. The LeadGate re-consent gate precedes any consent write ----
 {
   const src = fs.readFileSync('src/pages/LeadGate.tsx', 'utf8');
-  const gate = src.indexOf('isTransferDone(localStorage');
+  const gate = src.indexOf('isTransferDone(sessionStorage');
   const write = src.indexOf("sessionStorage.setItem(`bik-sharing-consent:${sessionId}`");
   assert.ok(gate > 0 && write > gate, 'the transfer-done gate runs before the consent write');
   assert.ok(src.includes("navigate('/report', { replace: true });"), 'a done transfer goes to the report, not back through the gate');

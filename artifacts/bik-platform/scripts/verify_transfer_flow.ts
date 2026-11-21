@@ -11,7 +11,6 @@ import {
   completedTransferProgress, confirmTransferPart, createTransferProgress, finishTransfer, isTransferDone,
   markTransferPartOpened, readTransferProgress, transferDoneKey, transferProgressKey, writeTransferProgress
 } from '../src/services/reportTransferState';
-import { clearAnalysisRecovery, readAnalysisRecovery } from '../src/services/analysisRecovery';
 import { MIN_WAIT_MS, secondsUntilReady } from '../src/services/transferGate';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -56,9 +55,9 @@ check(page.includes('window.open(target.url, \'_blank\')') && !/window\.open\([^
 check(page.includes('if (!opened)') && page.includes('setPopupBlocked(true)'), 'a blocked window raises the popup-blocked state instead of copying');
 check(page.includes('data-testid="popup-blocked"') && page.includes('اسمح بالنوافذ المنبثقة') && page.includes('popup-blocked-retry'), 'blocked popup shows its own guidance panel with enabling steps and a retry button');
 check(page.includes('setPopupBlocked(false)'), 'a successful open clears the popup-blocked panel');
-check(page.includes('__bik_probe') && page.includes('data-testid="storage-blocked"'), 'blocked localStorage gets its own plain blocking message, not a generic notice');
+check(page.includes('__bik_probe') && page.includes('data-testid="storage-blocked"'), 'blocked sessionStorage gets its own plain blocking message, not a generic notice');
 check(page.includes('secondsUntilReady(waitMark, currentIndex, now)') && page.includes('secondsLeft === 0'), 'confirm button respects the (zero) wait gate');
-check(page.includes('finishTransfer(localStorage'), 'completion triggers cleanup');
+check(page.includes('finishTransfer(sessionStorage'), 'completion triggers cleanup');
 check(MIN_WAIT_MS === 0, 'wait is zero: the wait gate is removed');
 check(secondsUntilReady({ index: 0, at: 0 }, 0, 0) === 0 && secondsUntilReady({ index: 0, at: 0 }, 0, 2999) === 0 && secondsUntilReady({ index: 0, at: 0 }, 0, 3000) === 0, 'gate: ready immediately at 0 ms, at 2.999 s and at 3 s');
 
@@ -66,9 +65,6 @@ check(secondsUntilReady({ index: 0, at: 0 }, 0, 0) === 0 && secondsUntilReady({ 
 {
   const st = new MemoryStorage();
   const sid = 's1';
-  const legacyKey = 'bik-analysis-session:' + sid;
-  st.setItem(legacyKey, JSON.stringify({ sessionId: sid, report: { dual_layer: {} }, consented: true }));
-  check(readAnalysisRecovery(st, sid) === null, 'a legacy snapshot cannot restore a report or grant consent');
   let progress = createTransferProgress(sid, parts);
   for (let i = 0; i < parts.length; i++) {
     progress = markTransferPartOpened(progress, i, 1000 * (i + 1));
@@ -77,10 +73,12 @@ check(secondsUntilReady({ index: 0, at: 0 }, 0, 0) === 0 && secondsUntilReady({ 
   }
   check(progress.currentIndex === parts.length, 'all parts confirmed in order');
   check(st.getItem(transferProgressKey(sid)) !== null, 'transfer progress exists before completion');
-  const done = finishTransfer(st, sid, parts, () => clearAnalysisRecovery(st, sid));
+  const saved = JSON.parse(st.getItem(transferProgressKey(sid))!);
+  check(saved.version === 2 && saved.parts.every((part: object) => !('body' in part) && !('message' in part)), 'even a report without review prose persists only acknowledgement metadata');
+  const done = finishTransfer(st, sid, parts, () => {});
   check(done, 'finishTransfer succeeds');
   check(st.getItem(transferProgressKey(sid)) === null, 'per-part text copies are removed');
-  check(st.getItem(legacyKey) === null, 'completion removes a legacy session snapshot');
+
   const mark = st.getItem(transferDoneKey(sid)) || '';
   check(mark.length > 0 && mark.length < 200 && !mark.includes('القسم') && !mark.includes('المبيعات'), 'completion mark is small and holds no report text');
   check(isTransferDone(st, sid, parts), 'completion is recognised for the same report');

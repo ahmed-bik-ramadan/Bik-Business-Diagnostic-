@@ -124,11 +124,11 @@ function memoryStorage(): TransferStorage & { data: Map<string, string> } {
 // ---- Case 9: storage failures get their own panels instead of a silent redirect ----
 {
   const source = fs.readFileSync('src/pages/ReportTransfer.tsx', 'utf8');
-  const probeIndex = source.indexOf("window.localStorage.getItem('__bik_probe')");
+  const probeIndex = source.indexOf("window.sessionStorage.getItem('__bik_probe')");
   const writeProbeIndex = source.indexOf('__bik_probe_w:');
   const reportIndex = source.indexOf("if (!report) {");
   assert.ok(probeIndex > 0 && writeProbeIndex > 0 && reportIndex > writeProbeIndex, 'the storage read and write probes run before the report-null redirect');
-  assert.ok(source.includes("window.localStorage.removeItem(probeKey)"), 'the write probe is cleaned up after itself');
+  assert.ok(source.includes("window.sessionStorage.removeItem(probeKey)"), 'the write probe is cleaned up after itself');
   assert.ok(source.includes('data-testid="storage-write-blocked"'), 'a write-blocked browser gets its own named panel');
   assert.ok(source.includes('يرفض الحفظ'), 'the write-blocked panel names the write failure specifically');
   assert.ok(source.includes('data-testid="storage-blocked"'), 'a read-blocked browser keeps its named panel');

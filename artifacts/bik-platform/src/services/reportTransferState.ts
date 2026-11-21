@@ -61,14 +61,14 @@ export function completedTransferProgress(sessionId: string, parts: WhatsAppRepo
 
 /**
  * Called once the last part is confirmed. Leaves only a small completion mark (no report text) and removes
- * the local copies of the report text: the per-part copies and the recovery snapshot.
+ * the tab’s saved progress, then invokes the session cleanup callback.
  * Returns false (and removes nothing) if the mark could not be written.
  */
 export function finishTransfer(
   storage: TransferStorage,
   sessionId: string,
   parts: WhatsAppReportPart[],
-  clearRecovery: () => void,
+  clearSession: () => void,
   at = Date.now()
 ): boolean {
   try {
@@ -77,7 +77,7 @@ export function finishTransfer(
     return false;
   }
   try { storage.removeItem?.(transferProgressKey(sessionId)); } catch { /* the done mark already wins on read */ }
-  try { clearRecovery(); } catch { /* best effort */ }
+  try { clearSession(); } catch { /* best effort */ }
   return true;
 }
 
@@ -161,12 +161,13 @@ export function readTransferProgress(
 }
 
 export function writeTransferProgress(storage: TransferStorage, progress: ReportTransferProgress): void {
-  // For reviewed reports, persist timestamps/statuses and a text fingerprint only.
-  // The source text is already in sessionStorage and is supplied again when restoring.
-  const saved = progress.parts.some(part => part.body.includes('مراجعتك معنا'))
-    ? { ...progress, version: 2, fingerprint: partsFingerprint(progress.parts),
-        parts: progress.parts.map(({ status, openedAt, confirmedAt }) => ({ status, openedAt, confirmedAt })) }
-    : progress;
+  const saved = {
+    version: 2,
+    sessionId: progress.sessionId,
+    updatedAt: progress.updatedAt,
+    fingerprint: partsFingerprint(progress.parts),
+    parts: progress.parts.map(({ status, openedAt, confirmedAt }) => ({ status, openedAt, confirmedAt }))
+  };
   storage.setItem(transferProgressKey(progress.sessionId), JSON.stringify(saved));
 }
 
@@ -174,7 +175,7 @@ export function writeTransferProgress(storage: TransferStorage, progress: Report
  * F8 (round-5): the seven session-key wipes, in one shared place instead of scattered
  * removeItem lines. Called at completion AND at restore: whenever the transfer is found
  * already complete, any copy of the report, the answers or the sharing consent left in
- * sessionStorage is destroyed on sight — the transfer record and done-mark in localStorage
+ * sessionStorage is destroyed on sight — the transfer record and done-mark in the tab
  * hold no report text and are not touched.
  */
 export function wipeTransferSessionArtifacts(sessionId: string): void {

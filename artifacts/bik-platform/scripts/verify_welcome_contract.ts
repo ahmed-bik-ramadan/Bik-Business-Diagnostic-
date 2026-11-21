@@ -4,8 +4,8 @@ import { APP_CONFIG } from '../src/config/appConfig';
 
 const welcome = fs.readFileSync('src/pages/Welcome.tsx', 'utf8');
 assert.equal(welcome.includes('بإشراف أ/ أحمد رمضان — مستشار تطوير وحلول الأعمال'), true, 'consultant identity is visible');
-assert.ok(welcome.includes('[[TEXT_NEEDED: welcome_heading]]'), 'the pressure headline awaits approved wording');
-assert.ok(welcome.includes('أداة عربية تقرأ حال شركتك في ست محاور'), 'the introduction describes what the diagnostic reads');
+assert.ok(welcome.includes('قبل أن تصرف أموالك لزيادة المبيعات… <span className="text-[#C9A961]">اعرف أين تختنق أرباحك.</span>'), 'opening headline has the approved gold span');
+assert.ok(welcome.includes('BIK هي عينك الثالثة؛ ترى ما يغيب عنك وسط انشغالك اليومي: أين تختنق أرباح شركتك، ولماذا، وماذا يكلّفك تجاهل ذلك. ويمكنك إرسال التقرير إلى أ/ أحمد رمضان عبر واتساب لمناقشته في المكالمة.'), 'the full original opening paragraph is present');
 // Mission 5-C intentionally replaces the single CTA with the two approved start cards.
 assert.equal(welcome.includes('data-testid="start-analysis"') && welcome.includes('data-testid="start-crisis"'), true, 'both approved start cards are present');
 assert.equal(welcome.includes("platformCopy['start.analysis.title']") && welcome.includes("platformCopy['start.crisis.title']"), true, 'approved card labels come from the copy deck');

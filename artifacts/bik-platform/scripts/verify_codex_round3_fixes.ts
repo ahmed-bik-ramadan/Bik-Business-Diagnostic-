@@ -25,7 +25,7 @@ import { handleChat } from '../server/chatHandler.ts';
   const src = fs.readFileSync('src/pages/Report.tsx', 'utf8');
   assert.ok(src.includes('isTransferDone'), 'Report imports the transfer-done check');
   assert.ok(
-    /doneMarkVerified = allPartsSent && isTransferDone\(localStorage, input\.sessionId, parts\);/.test(src),
+    /doneMarkVerified = allPartsSent && isTransferDone\(sessionStorage, input\.sessionId, parts\);/.test(src),
     'the done mark satisfies the gate once the transfer is complete'
   );
   assert.ok(
@@ -52,10 +52,10 @@ import { handleChat } from '../server/chatHandler.ts';
   const src = fs.readFileSync('src/pages/LeadGate.tsx', 'utf8');
   assert.ok(src.includes('isTransferDone'), 'LeadGate imports the transfer-done check');
   assert.ok(
-    /isTransferDone\(localStorage[\s\S]{0,200}navigate\('\/report', \{ replace: true \}\)/.test(src),
+    /isTransferDone\(sessionStorage[\s\S]{0,200}navigate\('\/report', \{ replace: true \}\)/.test(src),
     'a completed transfer is redirected to the report instead of re-consenting'
   );
-  const gate = src.indexOf('isTransferDone(localStorage');
+  const gate = src.indexOf('isTransferDone(sessionStorage');
   const consentWrite = src.indexOf("sessionStorage.setItem(`bik-sharing-consent:");
   assert.ok(gate >= 0 && consentWrite > gate, 'the done-mark check runs before any consent write');
 }

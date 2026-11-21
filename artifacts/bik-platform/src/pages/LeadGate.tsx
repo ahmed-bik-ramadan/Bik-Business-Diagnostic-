@@ -54,7 +54,7 @@ export default function LeadGate() {
     // بعد اكتمال الإرسال لا تُعاد الموافقة ولا تُكتب أي نسخ جديدة: علامة الاكتمال هي إثبات
     // النهاية، والتحليل الكامل يُفتح منها مباشرة، فلا تعود أي نسخة إلى التخزين بعد المحو.
     try {
-      if (isTransferDone(localStorage, sessionId, buildWhatsAppReportParts(report.dual_layer?.consultantDossier?.full_dossier_text || '', sessionId))) {
+      if (isTransferDone(sessionStorage, sessionId, buildWhatsAppReportParts(report.dual_layer?.consultantDossier?.full_dossier_text || '', sessionId))) {
         navigate('/report', { replace: true });
         return;
       }
@@ -124,7 +124,7 @@ export default function LeadGate() {
         <div className="max-w-2xl">
           <p className="text-xs font-bold tracking-[.16em] text-[#8B7135]">معاينة قبل القرار</p>
           <h1 className="mt-3 font-display text-3xl font-bold leading-tight md:text-4xl">تشخيصك جاهز. بقيت خطوة واحدة لفتحه</h1>
-          <p className="mt-3 leading-8 text-[#68717A]">[[TEXT_NEEDED: gate_intro]] كلفة الوضع الحالي بحسب أرقامك. التقرير يبقى لديك في محادثة واتساب.</p>
+          <p className="mt-3 leading-8 text-[#68717A]">ما رأيته حتى الآن هو غرفة الانتظار، والتقرير الكامل ينتظر خلف الباب: الأصل الجذري للمشكلة، وكلفة الوضع الحالي بحسب أرقامك، وأول خطوة تستحق أن تُدار. وهو تقرير لا يُستعار: يبقى لديك في محادثة واتساب، ترجع إليه كلما تحركت شركتك. وفي مكالمتكما، يقرأه أ/ أحمد قبل المكالمة، فيمضي وقتك كله في شركتك لا في التعارف.</p>
         </div>
         <LockedPreview
           questionCount={(questionHistory || []).filter(entry => entry.status === 'answered' || entry.status === 'skipped').length}
@@ -135,7 +135,7 @@ export default function LeadGate() {
             <ShieldCheck className="mt-1 shrink-0 text-[#92763D]" size={23} />
             <div>
               <h2 className="font-display text-2xl font-bold">خطوتك الأخيرة: بيانات تفتح الباب</h2>
-              <p className="mt-2 text-sm leading-7 text-[#68717A]">لا نخزّن إجاباتك على خوادمنا ولا في أي قاعدة بيانات.</p>
+              <p className="mt-2 text-sm leading-7 text-[#68717A]">هذه البيانات تبقى في متصفحك ولا يستقبلها خادم BIK؛ وتُضاف إلى رسالة واتساب التي ترسلها أنت إلى أ/ أحمد.</p>
             </div>
           </div>
           <div className="mt-5 rounded-2xl border border-[#C9A961]/40 bg-[#F6F0DF] p-4">
@@ -166,14 +166,14 @@ export default function LeadGate() {
             </label>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#C9A961]/40 bg-[#F6F0DF] p-4 text-sm leading-7">
               <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-1 h-4 w-4 accent-[#0F172A]" />
-              <span>أوافق صراحةً على تجهيز التقرير وإتاحة فتح أجزائه في واتساب كي أشاركها بنفسي مع المستشار. أفهم أن فتح واتساب لا يرسل الرسالة تلقائياً، وأن BIK لا يؤكد الإرسال أو الاستلام.<span className="mt-1 block">تُرسَل إجاباتك إلى أحمد عبر واتساب برغبتك، وتبقى في محادثتكما. لا تُرسل أرقام حسابات بنكية أو بيانات بطاقات. [سياسة الخصوصية] [الشروط]</span></span>
+              <span>أوافق صراحةً على تجهيز التقرير وإتاحة فتح أجزائه في واتساب كي أشاركها بنفسي مع المستشار. أفهم أن فتح واتساب لا يرسل الرسالة تلقائياً، وأن BIK لا يؤكد الإرسال أو الاستلام.</span>
             </label>
             {error && <p role="alert" className="text-sm font-semibold text-[#8A3F32]">{error}</p>}
               <button type="submit" disabled={!consent} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F172A] px-5 py-4 font-bold text-white transition hover:bg-[#26354E] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto">
               {hasExistingConsent ? 'متابعة الجزء الذي توقفت عنده' : 'متابعة إلى تجهيز التقرير'} <ArrowLeft size={18} />
             </button>
           </form>
-          <p className="mt-5 flex items-center gap-2 border-t border-[#0F172A]/10 pt-4 text-xs leading-6 text-[#68717A]"><LockKeyhole size={14} /> الإجابات والتقرير محفوظان في تخزين الجلسة لهذا التبويب. [[TEXT_NEEDED: transfer_storage_notice]]</p>
+          <p className="mt-5 flex items-center gap-2 border-t border-[#0F172A]/10 pt-4 text-xs leading-6 text-[#68717A]"><LockKeyhole size={14} /> تبقى إجاباتك في متصفحك أثناء الجلسة وتُمحى بإغلاق الصفحة، وما تُرسله يبقى في محادثة واتساب بينك وبين أحمد. لا تُرسل أرقام حسابات بنكية أو بيانات بطاقات.</p>
         </section>
       </div>
     </main>

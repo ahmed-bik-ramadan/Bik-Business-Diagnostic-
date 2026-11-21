@@ -54,16 +54,18 @@ for (const [bank, values] of Object.entries(bankValues)) {
 }
 check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_GAP_SIGNALS }) === baseline.scoringRules,
   'scoring rules and categorical answer keys match v11');
-// Mission 10 revises these interfaces. Other protected files keep their original hashes.
-const mission10Structure = {
+// Missions 10 and 10B revise the following interfaces and storage calls.
+const revisedStructure = {
   'src/components/OfferCards.tsx': '84e5af82fc7618f9d59a5b6151414b861863901d5b547c8c899512bd718b5aeb',
-  'src/config/appConfig.ts': '37cae12136a1ee520039e2ec65ecc0d0ca1d4cd0f100cb984bb1a3dc7fa44cc3',
-  'src/pages/LeadGate.tsx': '430564f4535612cd9a3a093e22c8884eb0a8e91cd061de133a206b6164a4aea2',
-  'src/pages/Report.tsx': '40969ce27cb0af017bd11f8ef317dcae616cd29810b680bdaed0c6ab61b8548a',
-  'src/pages/Welcome.tsx': '821d7a3bf5b067bf32c1acaa36f330e83a1b9694f6311c59b225f0d72c216320',
+  'src/config/appConfig.ts': '864fcac3b1dd0e56e51ce049195734177cfe0f0f62879e6084f48f3217faa5b9',
+  'src/pages/LeadGate.tsx': '85f5ad18180e218317a4fadbdf48b542bf58376fcadac0edb081652b2e3a24c2',
+  'src/pages/Questionnaire.tsx': 'ed5e2569d01c10563e1bf8c56c9039c1dffa95d2a25a31a938f25e558d868ae9',
+  'src/pages/Report.tsx': 'a5ec10b0702e8524be711fddc1cb906ebf1b631ac630b80e7e167e0a89b6da2a',
+  'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
+  'src/pages/Welcome.tsx': '0b54278393c8324b0476f61c812f31e99342fe4ec78f07362f25cf379cbcd5cd',
   'src/pages/consultant/ConsultantPage.jsx': 'b7efaa2619e07cbb0d2ab787b27e9983ed42821ca37013f8637c937ebeb87cbf'
 };
-for (const [file, expected] of Object.entries({ ...baseline.structure, ...mission10Structure })) {
+for (const [file, expected] of Object.entries({ ...baseline.structure, ...revisedStructure })) {
   check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match the approved revision`);
 }
 
@@ -119,8 +121,9 @@ const consultant = syntax('src/pages/consultant/ConsultantPage.jsx');
 const stats = consultant.statements.flatMap(statement => ts.isVariableStatement(statement) ? statement.declarationList.declarations : [])
   .find(declaration => declaration.name.getText() === 'STATS')!;
 check(digest(stats.initializer!.getText()) === 'f75846a9c1f7877f8a12e5c7191dfd0ad168dd94ec57c35b187bb7fd86d7ff29', 'the approved consultant figures and satisfaction goal match the Mission 10 revision');
-for (const [file, expected] of Object.entries(baseline.protectedFiles)) {
-  check(digest(source(file)) === expected, `${file}: sending/storage/chat policy is byte-identical to v11`);
+const protectedFiles = { ...baseline.protectedFiles, 'src/services/reportTransferState.ts': '4d48851bde32a4eaea65c5b814213e64c7c971b387da35b2f9a7ed64d5cb6e41' };
+for (const [file, expected] of Object.entries(protectedFiles)) {
+  check(digest(source(file)) === expected, `${file}: sending/storage/chat policy matches its approved revision`);
 }
 for (const sector of ['healthcare', 'personal_care', 'professional', 'financial', 'energy']) {
   for (const question of getSectorQuestions(sector)) {

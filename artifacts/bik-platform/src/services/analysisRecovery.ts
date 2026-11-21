@@ -13,15 +13,3 @@ export function clearBikStorage(kind: 'localStorage' | 'sessionStorage'): void {
     // Some browser settings deny access even to the storage getter.
   }
 }
-
-// Welcome and the transfer/report routes load this module once per document.
-clearBikStorage('localStorage');
-
-// ReportTransfer still calls these legacy hooks. Never read a snapshot or trust its consent.
-export function readAnalysisRecovery(_storage: unknown, _sessionId: string): { consented: boolean } | null {
-  return null;
-}
-
-export function clearAnalysisRecovery(storage: Pick<Storage, 'removeItem'>, sessionId: string): void {
-  storage.removeItem('bik-analysis-session:' + sessionId);
-}

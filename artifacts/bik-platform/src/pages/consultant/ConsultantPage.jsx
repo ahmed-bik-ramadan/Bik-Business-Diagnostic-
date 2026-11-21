@@ -1086,7 +1086,7 @@ export default function ConsultantPage({ visitor }) {
               <span>هنا لا يُشترى تقرير ولا توصية، بل تجربة: مرجع ثابت يدرس البدائل، يقارن الأرقام، ويقترح الخيار الجريء المنطقي ثم يقف مسؤولاً أمامه.</span>
             </p>
             <a className="bkc-cta" href={baseMsg('')} target="_blank" rel="noopener noreferrer">ابدأ بمكالمتك المجانية (15 دقيقة)</a>
-            <div className="bkc-how"><strong>كيف تبدأ؟ </strong>[[TEXT_NEEDED: consultant_intro]]</div>
+            <div className="bkc-how"><strong>كيف تبدأ؟ </strong>تشخيص BIK يجمع سياق نشاطك ويكشف أين تختنق أرباحك؛ ثم يقرأ المستشار تقرير شركتك قبل المكالمة، فتكون مكالمتكم كلها لقرارك لا للتعارف.</div>
           </div>
         </div>
       </section>

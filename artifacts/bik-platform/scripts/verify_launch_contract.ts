@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { buildConsultantWhatsAppUrl } from '../src/config/appConfig.ts';
+import { buildConsultantWhatsAppUrl, OFFER_GAP_LINE, BIK_OFFERS } from '../src/config/appConfig.ts';
 import { buildDualLayerReport } from '../src/services/dualLayerReport.ts';
 
 const coverageResult = buildDualLayerReport({
@@ -43,12 +43,13 @@ assert.ok(!whatsapp.url.includes('u01'));
 
 const reportSource = fs.readFileSync('src/pages/Report.tsx', 'utf8');
 assert.ok(!reportSource.includes('a.download ='));
+assert.ok(reportSource.includes("'تشخيص شركتك'}: أين تختنق أرباحك، ولماذا، وماذا يكلّفك تجاهل ذلك"));
 const leadGateSource = fs.readFileSync('src/pages/LeadGate.tsx', 'utf8');
 assert.ok(!leadGateSource.includes('نسخ الرسالة'));
 assert.ok(leadGateSource.includes('لا يؤكد الإرسال أو الاستلام'));
 assert.ok(leadGateSource.includes('أوافق صراحةً'));
-assert.ok(leadGateSource.includes('تُرسَل إجاباتك إلى أحمد عبر واتساب برغبتك، وتبقى في محادثتكما.'));
-assert.ok(leadGateSource.includes('لا تُرسل أرقام حسابات بنكية أو بيانات بطاقات. [سياسة الخصوصية] [الشروط]'));
+assert.ok(leadGateSource.includes('ما رأيته حتى الآن هو غرفة الانتظار، والتقرير الكامل ينتظر خلف الباب: الأصل الجذري للمشكلة، وكلفة الوضع الحالي بحسب أرقامك، وأول خطوة تستحق أن تُدار. وهو تقرير لا يُستعار: يبقى لديك في محادثة واتساب، ترجع إليه كلما تحركت شركتك. وفي مكالمتكما، يقرأه أ/ أحمد قبل المكالمة، فيمضي وقتك كله في شركتك لا في التعارف.'));
+assert.ok(leadGateSource.includes('تبقى إجاباتك في متصفحك أثناء الجلسة وتُمحى بإغلاق الصفحة، وما تُرسله يبقى في محادثة واتساب بينك وبين أحمد. لا تُرسل أرقام حسابات بنكية أو بيانات بطاقات.'));
 const generatorSource = fs.readFileSync('src/services/reportGenerator.ts', 'utf8');
 assert.ok(generatorSource.includes("process.env.ENABLE_GEMINI_REPORTS !== 'true'"));
 const packageSource = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -60,6 +61,9 @@ assert.ok(serverSource.includes("req.method === 'POST' && req.path === '/api/v1/
 
 // Neuromarketing contract: gain framing, partitioned pricing, grounded loss lines, green recommended card.
 const offerCardsSource = fs.readFileSync('src/components/OfferCards.tsx', 'utf8');
+assert.equal(OFFER_GAP_LINE, 'الفارق بين هذه البطاقات ليس فرق سعر فقط: إنه حجم القرار الذي تريد أن يقود عنك. المشكلة تستمر بكلفتها الشهرية حتى تُعالج.');
+assert.equal(BIK_OFFERS.focusedWeek.scope, 'أسبوع واحد يُحسم فيه قرار واحد كنت تؤجله: نتحقق من الأدلة معاً، ثم ننتهي بقرار محسوم لا بملاحظات معلقة.');
+assert.ok(offerCardsSource.includes('المشكلة تستمر بكلفتها الشهرية حتى تُعالج: قرابة ${amount} ${monthlyWaste.currency} على أرقامك المصرّح بها، تقدير استرشادي.'));
 assert.ok(offerCardsSource.includes('OFFER_GAP_LINE') && offerCardsSource.includes('data-testid="offer-gap-line"'), 'offers section carries the single linking line between the three cards');
 assert.ok(offerCardsSource.includes('146B4F'), 'the recommended offer card carries the luxury green');
 assert.ok(offerCardsSource.includes('الأنسب لوضعك') && offerCardsSource.includes('هدية لك'), 'recommendation badge and the free call speak to the situation (curation + gift framing)');

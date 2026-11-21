@@ -4,7 +4,6 @@ import { ArrowRight, ArrowUpRight, Check, LockKeyhole } from 'lucide-react';
 import { useDiagnosticStore } from '../store/diagnosticStore';
 import { buildWhatsAppReportParts } from '../services/reportTextDelivery';
 import { buildConsultantWhatsAppUrl } from '../config/appConfig';
-import { clearAnalysisRecovery, readAnalysisRecovery } from '../services/analysisRecovery';
 import { secondsUntilReady } from '../services/transferGate';
 import {
   confirmTransferPart,
@@ -42,10 +41,10 @@ export default function ReportTransfer() {
   // window for wa.me whose navigation then fails silently, so without this check the page
   // would record a "sent" part that never left the device. The open is refused honestly.
   const [offlineBlocked, setOfflineBlocked] = useState(false);
-  // True when this browser blocks localStorage entirely: without it neither progress nor the
+  // True when this browser blocks sessionStorage entirely: without it neither progress nor the
   // report copy can be read, so the page must say so plainly instead of showing a generic notice.
   const [storageBlocked, setStorageBlocked] = useState(false);
-  // True when localStorage is readable but refuses writes (quota or permissions policy):
+  // True when sessionStorage is readable but refuses writes (quota or permissions policy):
   // progress cannot be saved, so the page names this state instead of a generic failure.
   const [storageWriteBlocked, setStorageWriteBlocked] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -86,16 +85,16 @@ export default function ReportTransfer() {
     let storageUsable = true;
     let storageWritable = true;
     try {
-      window.localStorage.getItem('__bik_probe');
+      window.sessionStorage.getItem('__bik_probe');
     } catch {
-      // localStorage access itself throws here (browser setting or permissions policy).
+      // sessionStorage access itself throws here (browser setting or permissions policy).
       storageUsable = false;
     }
     if (storageUsable) {
       try {
         const probeKey = `__bik_probe_w:${sessionId}`;
-        window.localStorage.setItem(probeKey, '1');
-        window.localStorage.removeItem(probeKey);
+        window.sessionStorage.setItem(probeKey, '1');
+        window.sessionStorage.removeItem(probeKey);
       } catch {
         // Readable but not writable: quota exhausted or a write-only block.
         storageWritable = false;
@@ -105,8 +104,8 @@ export default function ReportTransfer() {
       setStorageBlocked(!storageUsable);
       setStorageWriteBlocked(!storageWritable);
       setError(storageUsable
-        ? 'التخزين المحلي في متصفحك لا يقبل الحفظ، ولا يمكن حفظ تقدم الإرسال على هذا الجهاز. فعّل التخزين المحلي أو أفرغ مساحة المتصفح لهذا الموقع ثم أعد تحميل الصفحة.'
-        : 'التخزين المحلي في متصفحك معطّل، ولا يمكن استعادة تقريرك أو حفظ تقدم الإرسال من هذا الجهاز. فعّل التخزين المحلي لهذا الموقع من إعدادات المتصفح ثم أعد تحميل الصفحة.');
+        ? 'تخزين الجلسة في متصفحك لا يقبل الحفظ، ولا يمكن حفظ تقدم الإرسال على هذا الجهاز. فعّل تخزين الجلسة أو أفرغ مساحة المتصفح لهذا الموقع ثم أعد تحميل الصفحة.'
+        : 'تخزين الجلسة في متصفحك معطّل، ولا يمكن استعادة تقريرك أو حفظ تقدم الإرسال من هذا الجهاز. فعّل تخزين الجلسة لهذا الموقع من إعدادات المتصفح ثم أعد تحميل الصفحة.');
       return;
     }
     if (!report) {
@@ -117,12 +116,7 @@ export default function ReportTransfer() {
     try {
       hasConsent = sessionStorage.getItem(`bik-sharing-consent:${sessionId}`) === 'true';
     } catch {
-      // The local recovery record below can still restore an explicitly-consented session.
-    }
-    try {
-      hasConsent = hasConsent || readAnalysisRecovery(localStorage, sessionId)?.consented === true;
-    } catch {
-      // The error state below handles unavailable local storage.
+      // Consent is valid only in the current tab.
     }
     if (!hasConsent) {
       navigate('/lead-gate', { replace: true });
@@ -130,11 +124,11 @@ export default function ReportTransfer() {
     }
     try {
       if (partsResult.error) throw new Error('part-build');
-      const restored = readTransferProgress(localStorage, sessionId, parts);
+      const restored = readTransferProgress(sessionStorage, sessionId, parts);
       // F8 (round-5): إن وُجد الإرسال مكتملالاً عند الاسترجاع فتُمحى نسخ الجلسة على
-      // الفور؛ سجلّ الإتمام في localStorage بلا نص تقرير ولا يحتاج هذه النسخ.
+      // الفور؛ سجلّ الإتمام في sessionStorage بلا نص تقرير ولا يحتاج هذه النسخ.
       if (restored.currentIndex >= parts.length) wipeTransferSessionArtifacts(sessionId);
-      if (restored.currentIndex < parts.length) writeTransferProgress(localStorage, restored);
+      if (restored.currentIndex < parts.length) writeTransferProgress(sessionStorage, restored);
       setProgress(restored);
       setSelectedIndex(restored.currentIndex);
       confirmedInThisView.current.clear();
@@ -168,7 +162,7 @@ export default function ReportTransfer() {
   useEffect(() => {
     const refresh = (source: string) => {
       try {
-        const restored = readTransferProgress(localStorage, sessionId, parts);
+        const restored = readTransferProgress(sessionStorage, sessionId, parts);
         setProgress(restored);
         setSelectedIndex(restored.currentIndex);
         console.info('[bik-transfer]', {
@@ -192,7 +186,7 @@ export default function ReportTransfer() {
     };
     const onPageShow = () => refresh('pageshow');
     const onStorage = (event: StorageEvent) => {
-      if (event.key === transferKey) refresh('storage');
+      if (event.storageArea === sessionStorage && event.key === transferKey) refresh('storage');
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pageshow', onPageShow);
@@ -208,7 +202,7 @@ export default function ReportTransfer() {
     if (!progress) return null;
     try {
       const next = markTransferPartOpened(progress, index);
-      writeTransferProgress(localStorage, next);
+      writeTransferProgress(sessionStorage, next);
       setProgress(next);
       setSelectedIndex(index);
       setError('');
@@ -276,17 +270,14 @@ export default function ReportTransfer() {
     try {
       const result = confirmTransferPart(progress, selectedIndex);
       if (result.changed) {
-        writeTransferProgress(localStorage, result.progress);
+        if (result.progress.currentIndex === parts.length) {
+          const completed = finishTransfer(sessionStorage, sessionId, parts, () => wipeTransferSessionArtifacts(sessionId));
+          if (!completed) throw new Error('completion-write');
+        } else {
+          writeTransferProgress(sessionStorage, result.progress);
+        }
         setProgress(result.progress);
         setSelectedIndex(result.progress.currentIndex < parts.length ? result.progress.currentIndex : selectedIndex);
-        if (result.progress.currentIndex === parts.length) {
-          finishTransfer(localStorage, sessionId, parts, () => clearAnalysisRecovery(localStorage, sessionId));
-          // محو النسخ المحلية كاملة عند الاكتمال: إلى جانب سجلّ الاسترداد في localStorage
-          // تُمحى أيضاً نسخة الجلسة في sessionStorage (التقرير والإجابات وموافقة المشاركة
-          // وسجلّ الجلسات المحلي أيضاً) عبر الدالة المشتركة. النسخة الحيّة في الذاكرة
-          // تكفي هذه الشاشة، وأي تحميل لاحق يبدأ من جديد بلا بيانات محلية.
-          wipeTransferSessionArtifacts(sessionId);
-        }
         setNotice(result.progress.currentIndex === parts.length
           ? 'اكتمل تأكيد جميع الأجزاء. أصبح التحليل الكامل متاحاً.'
           : `تم تأكيد الجزء ${selectedIndex + 1}. انتقل الآن إلى الجزء ${result.progress.currentIndex + 1}.`);
@@ -401,7 +392,7 @@ export default function ReportTransfer() {
             {notice && <p className="mt-4 text-sm leading-7 text-[#526B7B]" role="status">{notice}</p>}
             {error && <p className="mt-4 text-sm leading-7 text-[#8A3F32]" role="alert">{error}</p>}
           </div>
-        </section> : storageBlocked ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert" data-testid="storage-blocked">التخزين المحلي (localStorage) معطّل في هذا المتصفح، وتعذّر استعادة تقريرك أو حفظ تقدم الإرسال بسببه. فعّل التخزين المحلي لهذا الموقع من إعدادات المتصفح ثم أعد تحميل الصفحة لإكمال الإرسال.</div> : storageWriteBlocked ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert" data-testid="storage-write-blocked">التخزين المحلي في متصفحك يرفض الحفظ (مساحة ممتلئة أو إعداد يمنع الكتابة)، فلا يمكن حفظ تقدم الإرسال على هذا الجهاز. أفرغ مساحة المتصفح لهذا الموقع أو فعّل التخزين المحلي ثم أعد تحميل الصفحة.</div> : error ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert">{error}</div> : <div className="mt-8 rounded-2xl border border-[#C9A961]/40 bg-[#F6F0DF] p-5" role="status">لا يوجد نص تقرير متاح لهذه الجلسة. ارجع إلى الخطوة السابقة أو أعد إنشاء التحليل.</div>}
+        </section> : storageBlocked ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert" data-testid="storage-blocked">تخزين الجلسة (sessionStorage) معطّل في هذا المتصفح، وتعذّر استعادة تقريرك أو حفظ تقدم الإرسال بسببه. فعّل تخزين الجلسة لهذا الموقع من إعدادات المتصفح ثم أعد تحميل الصفحة لإكمال الإرسال.</div> : storageWriteBlocked ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert" data-testid="storage-write-blocked">تخزين الجلسة في متصفحك يرفض الحفظ (مساحة ممتلئة أو إعداد يمنع الكتابة)، فلا يمكن حفظ تقدم الإرسال على هذا الجهاز. أفرغ مساحة المتصفح لهذا الموقع أو فعّل تخزين الجلسة ثم أعد تحميل الصفحة.</div> : error ? <div className="mt-8 rounded-2xl border border-[#8A3F32]/40 bg-[#F9F1EE] p-5 text-sm leading-7 text-[#8A3F32]" role="alert">{error}</div> : <div className="mt-8 rounded-2xl border border-[#C9A961]/40 bg-[#F6F0DF] p-5" role="status">لا يوجد نص تقرير متاح لهذه الجلسة. ارجع إلى الخطوة السابقة أو أعد إنشاء التحليل.</div>}
 
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-[#0F172A]/10 bg-white/60 p-4 text-xs leading-6 text-[#68717A]">
           <LockKeyhole size={16} className="mt-1 shrink-0 text-[#92763D]" />

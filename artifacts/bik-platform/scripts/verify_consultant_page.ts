@@ -33,6 +33,7 @@ for (const offer of Object.values(BIK_OFFERS)) {
   check(request?.includes('(' + offer.freeCallMinutes + ' دقيقة)') === true, 'WhatsApp uses the introductory call length for ' + offer.name);
   check([offer.name, offer.price, offer.scope, ...offer.includes].every(line => text.includes(line)), 'consultant card renders the configured offer: ' + offer.name);
 }
+check(text.includes('تشخيص BIK يجمع سياق نشاطك ويكشف أين تختنق أرباحك؛ ثم يقرأ المستشار تقرير شركتك قبل المكالمة، فتكون مكالمتكم كلها لقرارك لا للتعارف.'), 'the original introduction explains how to begin');
 check(text.includes('في المبيعات منذ 2003 وفي تطوير الأعمال منذ 2017'), 'experience is given by the two approved dates');
 check(text.indexOf('أكثر من 550 ساعة عمل تنفيذي خلال الشهر') >= 0 && text.indexOf('هدف عائد عشرة أضعاف الأتعاب') > text.indexOf('أكثر من 550 ساعة عمل تنفيذي خلال الشهر'), 'executive hours precede the measured return target');
 check(text.includes('دقيقة') && text.includes('15'), 'free first session length shown (15 minutes)');

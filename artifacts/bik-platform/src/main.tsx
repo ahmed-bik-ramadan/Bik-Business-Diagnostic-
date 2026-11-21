@@ -18,6 +18,9 @@ import '@fontsource/noto-naskh-arabic/latin-500.css';
 import '@fontsource/noto-naskh-arabic/arabic-700.css';
 import '@fontsource/noto-naskh-arabic/latin-700.css';
 import './index.css';
+import { clearBikStorage } from './services/analysisRecovery';
+
+clearBikStorage('localStorage');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

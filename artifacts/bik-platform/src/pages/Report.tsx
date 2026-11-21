@@ -21,11 +21,11 @@ function collectGateInputs(input: { sessionId?: string; report: unknown; dossier
   let doneMarkVerified = false;
   try {
     const parts = buildWhatsAppReportParts(input.dossier, input.sessionId);
-    const progress = readTransferProgress(localStorage, input.sessionId, parts);
+    const progress = readTransferProgress(sessionStorage, input.sessionId, parts);
     allPartsSent = parts.length > 0
       && progress.currentIndex === parts.length
       && progress.parts.every(part => part.status === 'sent');
-    doneMarkVerified = allPartsSent && isTransferDone(localStorage, input.sessionId, parts);
+    doneMarkVerified = allPartsSent && isTransferDone(sessionStorage, input.sessionId, parts);
   } catch {
     allPartsSent = false;
     doneMarkVerified = false;
@@ -99,7 +99,7 @@ export default function Report() {
     <div className="page-enter mx-auto max-w-5xl space-y-5 px-4 py-8 md:px-8 md:py-12">
       <div>
         <p className="text-xs font-bold tracking-[.16em] text-[#8B7135]">تم فتح التقرير بعد إقرارك بكل الأجزاء</p>
-        <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'} — [[TEXT_NEEDED: report_heading]]</h1>
+        <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'}: أين تختنق أرباحك، ولماذا، وماذا يكلّفك تجاهل ذلك</h1>
       </div>
       {!!report.dual_layer.clientReport.review?.length && <section className="rounded-[1.7rem] border border-[#C9A961]/30 bg-[#FBFAF6] p-6 md:p-8" data-testid="review-report-section">
         <h2 className="font-display text-2xl font-bold">{reviewCopy('fusha').sectionTitle}</h2>

@@ -36,10 +36,10 @@ const Questionnaire: React.FC = () => {
   } = useDiagnosticStore();
 
   const [toast, setToast] = useState<{ text: string, id: number } | null>(null);
-  const [country, setCountryState] = useState<string>(() => readStoredCountry(localStorage));
+  const [country, setCountryState] = useState<string>(() => readStoredCountry(sessionStorage));
   const dialect = dialectForCountry(country);
   const copy = questionnaireCopy(dialect);
-  const selectCountry = (next: string) => { setCountryState(next); writeStoredCountry(localStorage, next); };
+  const selectCountry = (next: string) => { setCountryState(next); writeStoredCountry(sessionStorage, next); };
   const [currentValue, setCurrentValue] = useState<any>(null);
   const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [adaptiveStep, setAdaptiveStep] = useState<NextQuestionResult | null>(null);
