@@ -15,7 +15,7 @@
  *    (several fronts at once need execution follow-up).
  *  - Otherwise -> focused week (a specific problem or decision).
  */
-import { EXECUTIVE_LOSS_THRESHOLD_USD } from '../config/appConfig';
+import { EXECUTIVE_LOSS_THRESHOLD_USD, FX_RATES_PER_USD } from '../config/appConfig';
 import { formatPlatformCopy } from '../copy/platformCopy';
 
 export type OfferKey = 'executiveProject' | 'focusedWeek' | 'monthlyRetainer';
@@ -39,9 +39,11 @@ export const CRISIS_CRITICAL_AXES_FOR_RETAINER = 2;
  */
 export function lossSustainsExecutive(monthlyWaste: { amount: number; currency: string } | null | undefined): boolean {
   if (!monthlyWaste || !Number.isFinite(monthlyWaste.amount)) return false;
-  // The threshold is set in USD, so the rule applies only to a USD-declared loss: comparing any
-  // other currency to a USD figure without a rate would be a fabrication, and none is invented here.
-  if (monthlyWaste.currency !== 'USD') return false;
+  if (monthlyWaste.currency !== 'USD') {
+    const rate = FX_RATES_PER_USD[monthlyWaste.currency as keyof typeof FX_RATES_PER_USD];
+    if (!Number.isFinite(rate) || rate <= 0) return false;
+    return monthlyWaste.amount / rate >= EXECUTIVE_LOSS_THRESHOLD_USD;
+  }
   return monthlyWaste.amount >= EXECUTIVE_LOSS_THRESHOLD_USD;
 }
 

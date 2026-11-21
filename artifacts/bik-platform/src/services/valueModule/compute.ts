@@ -1,5 +1,5 @@
 export type ValuePath = 'L' | 'R' | 'P' | 'W';
-export type ScenarioShare = 0.25 | 0.5 | 0.75;
+export const VALUE_ESTIMATE_LABEL = 'تقدير استرشادي';
 export interface ValueInputs {
   unitNet?: unknown;
   margin?: unknown;
@@ -12,7 +12,7 @@ export interface ValueInputs {
   monthlyRevenue?: unknown;
 }
 export type ValueField = keyof ValueInputs;
-export interface PathResult { path: ValuePath; amount: number | null; status: 'calculated' | 'missing' | 'needMargin' }
+export interface PathResult { path: ValuePath; amount: number | null; status: 'calculated' | 'missing' | 'needMargin' | 'noRevenue' }
 
 /** No signs, exponents, fabricated defaults, or coercion of an empty field to zero. */
 export function parseValueNumber(input: unknown): number | null {
@@ -26,11 +26,17 @@ export function parseValueNumber(input: unknown): number | null {
 }
 
 /** Health scores and sector averages are deliberately absent from this input. */
-export function computeCostOfProblem(input: Readonly<ValueInputs>, paths: readonly ValuePath[], share: ScenarioShare = 0.5) {
+export function computeCostOfProblem(input: Readonly<ValueInputs>, paths: readonly ValuePath[]) {
   const value = (field: ValueField) => parseValueNumber(input[field]);
+  const revenue = value('monthlyRevenue');
+  const noRevenue = revenue === 0;
+  const units = value('monthlyUnits');
+  const unitNet = value('unitNet');
+  const inconsistentSales = revenue !== null && units !== null && unitNet !== null && units * unitNet > 2 * revenue;
   const margin = value('margin');
-  const validMargin = margin !== null && margin >= 1 && margin <= 100;
+  const validMargin = margin !== null && margin <= 100;
   const calculate = (path: ValuePath): PathResult => {
+    if (noRevenue) return { path, amount: null, status: 'noRevenue' };
     if ((path === 'L' || path === 'R') && !validMargin) return { path, amount: null, status: 'needMargin' };
     const fields: Record<ValuePath, ValueField[]> = {
       L: ['lostUnits', 'unitNet'], R: ['dormantCount', 'returnsPerYear', 'unitNet'],
@@ -39,17 +45,22 @@ export function computeCostOfProblem(input: Readonly<ValueInputs>, paths: readon
     if (fields[path].some(field => value(field) === null)) return { path, amount: null, status: 'missing' };
     const amount = path === 'L' ? value('lostUnits')! * value('unitNet')! * margin! / 100
       : path === 'R' ? value('dormantCount')! * value('returnsPerYear')! / 12 * value('unitNet')! * margin! / 100
-      : path === 'P' ? value('monthlyUnits')! * value('unitNet')! * value('underPct')! / 100
+      : path === 'P' ? value('monthlyUnits')! * value('unitNet')! * Math.min(value('underPct')!, 100) / 100
       : value('monthlyWaste')!;
     return Number.isFinite(amount) && amount >= 0 ? { path, amount, status: 'calculated' } : { path, amount: null, status: 'missing' };
   };
   const results = [...new Set(paths)].slice(0, 3).map(calculate);
-  const calculated = results.filter(result => result.amount !== null);
-  const rawTotal = calculated.length ? calculated.reduce((sum, result) => sum + result.amount!, 0) : null;
-  const revenue = value('monthlyRevenue');
+  const lost = results.find(row => row.path === 'L')?.amount;
+  const dormant = results.find(row => row.path === 'R')?.amount;
+  let overlapExcluded: 'L' | 'R' | null = null;
+  if (lost != null && dormant != null) {
+    // On a tie retain lost units, regardless of selection order.
+    overlapExcluded = lost < dormant ? 'L' : 'R';
+  }
+  const included = results.flatMap(row => row.path !== overlapExcluded && row.amount !== null ? [row.amount] : []);
+  const rawTotal = included.length ? included.reduce((sum, amount) => sum + amount, 0) : null;
   const capped = rawTotal !== null && revenue !== null && rawTotal > revenue;
-  const total = rawTotal === null ? null : capped ? revenue : rawTotal;
-  const scenarioShare = ([0.25, 0.5, 0.75] as const).includes(share) ? share : 0.5;
+  const total = capped ? revenue : rawTotal;
   return { paths: results, rawTotal, total, capped, yearly: total === null ? null : total * 12,
-    scenarioShare, scenarioGain: total === null ? null : total * scenarioShare };
+    noRevenue, overlapExcluded, inconsistentSales };
 }

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { EXECUTIVE_LOSS_THRESHOLD_USD, FX_RATES_PER_USD } from '../src/config/appConfig';
+import { lossSustainsExecutive } from '../src/services/offerRecommendation';
 import { calculateDeclaredValueModel } from '../src/services/financialValueModel';
 
 const exact = calculateDeclaredValueModel({
@@ -40,8 +42,21 @@ assert.deepEqual([incremental.grossImpactLow, incremental.grossImpactHigh], [150
 assert.equal(incremental.assumptions.some(item => item.includes('ربح مساهمة لا إيراد خام')), true);
 assert.equal(incremental.netBenefitLow, 1400);
 
+let currencyChecks = 0;
+for (const [currency, rate] of Object.entries(FX_RATES_PER_USD)) {
+  const threshold = EXECUTIVE_LOSS_THRESHOLD_USD * rate;
+  for (const [amount, expected] of [[threshold - 0.01, false], [threshold, true], [threshold + 0.01, true]] as const) {
+    assert.equal(lossSustainsExecutive({amount, currency}), expected, `${currency}: threshold at the published rate`);
+    currencyChecks++;
+  }
+}
+for (const loss of [null, undefined, {amount: 1e9, currency: 'EUR'}, {amount: 1e9, currency: ''},
+  {amount: 1e9, currency: 'constructor'}, {amount: NaN, currency: 'USD'}, {amount: Infinity, currency: 'EGP'}]) {
+  assert.equal(lossSustainsExecutive(loss), false, 'an absent loss or rate cannot support the executive recommendation');
+  currencyChecks++;
+}
 console.log(JSON.stringify({
-  suite: 'value_model', passed: 14,
+  suite: 'value_model', passed: 14 + currencyChecks,
   exactCase: { gross: [exact.grossImpactLow, exact.grossImpactHigh], week: [exact.focusedWeekNetBenefitLow, exact.focusedWeekNetBenefitHigh], month: [exact.monthlyRetainerNetBenefitLow, exact.monthlyRetainerNetBenefitHigh], noImprovement: [exact.focusedWeekNoImprovementNetBenefit, exact.monthlyRetainerNoImprovementNetBenefit] },
   incomplete: { computable: incomplete.isComputable, gaps: incomplete.gaps },
   currency: { computable: unknownCurrency.isComputable, currency: unknownCurrency.currency },

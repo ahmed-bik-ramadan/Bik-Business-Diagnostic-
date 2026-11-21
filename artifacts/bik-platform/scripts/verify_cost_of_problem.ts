@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
 import {build} from 'esbuild';
-import {computeCostOfProblem,parseValueNumber,type ValueField,type ValueInputs} from '../src/services/valueModule/compute';
+import {computeCostOfProblem,parseValueNumber,VALUE_ESTIMATE_LABEL,type ValueField,type ValueInputs} from '../src/services/valueModule/compute';
 import {SECTOR_POOLS,sectorPool,selectValuePaths} from '../src/services/valueModule/sectorPools';
 import {answerCurrency,currencyName,displayValueInput,formatValueAmount,formatValueNumber,fxFreshness,VALUE_CURRENCIES} from '../src/services/valueModule/currency';
 import {valuePrefills,valueIdentity,VALUE_FIELDS} from '../src/services/valueModule/prefill';
@@ -24,27 +24,77 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const clinical={unitNet:30,margin:70,lostUnits:40,dormantCount:600,returnsPerYear:2,monthlyUnits:300,underPct:10};
 const calculated=computeCostOfProblem(clinical,['L','R','P']);
 assert.deepEqual(calculated.paths.map(r=>r.amount),[840,2100,900]);
-check(calculated.total===3840&&calculated.scenarioGain===1920&&calculated.yearly===46080,'clinic example is exactly 840 + 2100 + 900 = 3840; half is 1920');
-check(computeCostOfProblem(clinical,['L','R','P'],.25).scenarioGain===960&&computeCostOfProblem(clinical,['L','R','P'],.75).scenarioGain===2880,'quarter and most scenarios are visitor-selected fractions, without recovery assumptions');
-check(computeCostOfProblem({...clinical,margin:1},['P']).total===900,'price gap is full price contribution and never multiplied by margin');
-check(computeCostOfProblem({...clinical,monthlyWaste:115},['L','R','W']).total===3055,'waste is the declared expense itself, with only the three displayed paths added');
-check(computeCostOfProblem({...clinical,monthlyWaste:5000},['L','R','P']).total===3840,'a hidden waste path cannot enter the total');
-check(computeCostOfProblem({},['L','R','P']).total===null,'empty inputs are uncalculated, never invented zero amounts');
-const noMargin=computeCostOfProblem({...clinical,margin:''},['L','R','P']);
-check(noMargin.paths[0].status==='needMargin'&&noMargin.paths[1].status==='needMargin'&&noMargin.total===900,'missing margin excludes L and R while preserving a valid P');
-for(const margin of [0,-1,101,NaN,Infinity])check(computeCostOfProblem({...clinical,margin},['L','R']).total===null,`invalid contribution margin is not used: ${margin}`);
-for(const field of ['unitNet','lostUnits','dormantCount','returnsPerYear','monthlyUnits','underPct'] as const){
- const result=computeCostOfProblem({...clinical,[field]:''},['L','R','P']);
- check(result.paths.some(r=>r.amount===null)&&result.total!==3840,`${field}: no default replaces an empty field`);
+check(calculated.total === 3000 && calculated.yearly === 36000 && calculated.overlapExcluded === 'L',
+  'the clinic shows all three values and counts only the larger of lost units and dormant customers');
+assert.deepEqual(Object.keys(calculated).sort(),
+  ['capped', 'inconsistentSales', 'noRevenue', 'overlapExcluded', 'paths', 'rawTotal', 'total', 'yearly']);
+const largerLost = computeCostOfProblem({...clinical, lostUnits: 200}, ['R','L','P']);
+check(largerLost.overlapExcluded === 'R' && largerLost.total === 5100, 'larger lost-unit effect wins in either order');
+for (const paths of [['L','R'], ['R','L']] as const) {
+  const tie = computeCostOfProblem({...clinical, lostUnits: 100}, paths);
+  check(tie.total === 2100 && tie.overlapExcluded === 'R', 'tied paths count once with a stable excluded row');
 }
-const capped=computeCostOfProblem({...clinical,monthlyRevenue:3000},['L','R','P']);
-check(capped.rawTotal===3840&&capped.total===3000&&capped.capped&&capped.scenarioGain===1500,'declared revenue caps the total before the scenario and yearly calculation');
-check(computeCostOfProblem({...clinical,monthlyRevenue:0},['L','R','P']).total===0,'a declared zero revenue is a real cap');
+const single = computeCostOfProblem(clinical, ['L','L']);
+check(single.paths.length === 1 && single.total === 840 && single.overlapExcluded === null, 'lost units count once');
+check(computeCostOfProblem({...clinical,margin:1},['P']).total===900,'price gap is full price contribution and never multiplied by margin');
+check(computeCostOfProblem({...clinical,monthlyWaste:115},['L','R','W']).total===2215,'declared waste adds once to the larger overlapping effect');
+check(computeCostOfProblem({...clinical,monthlyWaste:5000},['L','R','P']).total===3000,'a hidden waste path cannot enter the total');
+check(computeCostOfProblem({},['L','R','P']).total===null,'empty inputs are uncalculated, never invented zero amounts');
+for (const margin of ['', -1, 101, NaN, Infinity]) {
+  const result = computeCostOfProblem({...clinical, margin}, ['L','R','P']);
+  check(result.paths.slice(0, 2).every(row => row.status === 'needMargin' && row.amount === null) &&
+    result.total === 900 && result.overlapExcluded === null, `invalid or missing margin excludes only L and R: ${margin}`);
+}
+for (const margin of [0, 0.5, 100]) {
+  const result = computeCostOfProblem({...clinical, margin}, ['L','R']);
+  assert.deepEqual(result.paths.map(row => row.amount), [12 * margin, 30 * margin]);
+  check(result.total === 30 * margin && result.paths.every(row => row.status === 'calculated'), `valid margin: ${margin}`);
+}
+for (const [field, expected] of Object.entries({unitNet: null, lostUnits: 3000, dormantCount: 1740,
+  returnsPerYear: 1740, monthlyUnits: 2100, underPct: 2100})) {
+  const result = computeCostOfProblem({...clinical, [field]: ''}, ['L','R','P']);
+  check(result.paths.some(row => row.status === 'missing') && result.total === expected, `${field}: only complete paths count`);
+}
+const capped = computeCostOfProblem({...clinical, monthlyRevenue: 2500}, ['L','R','P']);
+check(capped.rawTotal === 3000 && capped.total === 2500 && capped.capped && capped.yearly === 30000,
+  'positive revenue caps the guarded sum before annualization');
+for (const monthlyRevenue of [0, '٠٫٠', '0.00']) {
+  for (const paths of [['L','R','P'], ['W']] as const) {
+    const result = computeCostOfProblem({...clinical, monthlyWaste: 120, monthlyRevenue}, paths);
+    check(result.noRevenue && result.rawTotal === null && result.total === null && result.yearly === null &&
+      result.paths.every(row => row.amount === null) && !result.capped && result.overlapExcluded === null,
+      'declared zero suppresses all monetary estimates');
+  }
+}
+for (const monthlyRevenue of ['', null, undefined]) {
+  const result = computeCostOfProblem({...clinical, monthlyRevenue}, ['L','R','P']);
+  check(!result.noRevenue && !result.capped && result.total === 3000 && !result.inconsistentSales,
+    'absent revenue leaves the total uncapped');
+}
+for (const [monthlyRevenue, expected] of [[4499, true], [4500, false], [4501, false]] as const) {
+  const result = computeCostOfProblem({...clinical, monthlyRevenue}, ['P']);
+  check(result.inconsistentSales === expected && result.total === 900, 'warning uses a strict two-times boundary without blocking');
+}
+for (const field of ['monthlyUnits','unitNet'] as const) {
+  check(!computeCostOfProblem({...clinical, monthlyRevenue: 1, [field]: ''}, ['L']).inconsistentSales,
+    'missing factors cannot trigger a sales warning');
+}
+const unsupported = {discountSavings: 700, stockReleased: 800, receivablesCollected: 900,
+  ownerHoursSaved: 100, ownerHourlyRate: 300, weeklyHoursAvailable: 40};
+for (const paths of [['L','R','P'], ['L','R','W']] as const) {
+  const inputs = {...clinical, monthlyWaste: 115};
+  assert.deepEqual(computeCostOfProblem({...inputs, ...unsupported}, paths), computeCostOfProblem(inputs, paths));
+  check(computeCostOfProblem({...unsupported, monthlyRevenue: ''}, paths).total === null,
+    'discount, stock, receivables and owner time cannot create a monetary result on their own');
+}
 const zeros=computeCostOfProblem({unitNet:0,margin:70,lostUnits:0,dormantCount:0,returnsPerYear:0,monthlyUnits:0,underPct:0},['L','R','P']);
 check(zeros.total===0&&!zeros.capped&&zeros.paths.every(r=>r.status==='calculated'),'explicit zero inputs produce calculated zeros');
 const large=computeCostOfProblem({unitNet:999999999999,margin:100,lostUnits:999999999999,dormantCount:999999999999,returnsPerYear:12,monthlyUnits:999999999999,underPct:100},['L','R','P']);
 check(large.total!==null&&Number.isFinite(large.total)&&large.total>1e24,'twelve-digit values remain finite without an arbitrary sector cap');
-check(computeCostOfProblem({...clinical,underPct:150},['P']).total===13500,'no extra ceiling is silently applied to a declared price gap');
+for (const underPct of [0, 12.5, 100, 150]) {
+  check(computeCostOfProblem({...clinical, underPct}, ['P']).total === 90 * Math.min(underPct, 100),
+    `price gap is capped at the full value of units sold: ${underPct}`);
+}
 const frozen=Object.freeze({...clinical});assert.deepEqual(computeCostOfProblem(frozen,['L','R','P']),calculated);
 check(JSON.stringify(frozen)===JSON.stringify(clinical),'the calculator is deterministic and never mutates its input');
 check(JSON.stringify(computeCostOfProblem({...clinical,axisScore:0} as ValueInputs,['L','R','P']))
@@ -113,6 +163,11 @@ for(const field of ['margin','lostUnits','dormantCount','returnsPerYear','monthl
 check(Object.keys(valuePrefills({...store,universalAnswers:{},sectorAnswers:{ad03:70,ted01:50000,hd02:300,cod02:4}},'EGP').fields).length===0,
  'hourly cost, recurring-only revenue, booked appointments and active project counts are not silently relabelled');
 
+for (const [sectorL1, inventoryId] of [['retail','rd01'], ['import','imd01']]) {
+  const prefills = valuePrefills({sectorL1, universalAnswers: {u17: '20_40'}, sectorAnswers: {[inventoryId]: 100000}}, 'USD');
+  assert.deepEqual(prefills.fields, {}, 'declared inventory or owner time does not prefill any cost path');
+}
+
 const newCopy=Object.entries(platformCopy).filter(([key])=>key.startsWith('value.'));
 for(const [key,value]of newCopy){assert.ok(value.trim(),key);assert.doesNotMatch(value,/ROI|عائد|يغطي|لا يغطي|ضمان|سنحقق|ستربح|نسبة تسرب/iu,key);assert.doesNotMatch(value,/[0-9]|\p{Extended_Pictographic}/u,key);}
 check(newCopy.length===101,'all 101 functional value strings are centralized, nonempty, without forbidden words, Western digits or emoji; there are no exceptions');
@@ -152,15 +207,44 @@ try{
  check(text(tree).includes('كلفة مشكلة شركة الوصل للتجارة')&&text(find(tree,'value-context'))===valueIdentity(store).context,'the real title and context render the full stored identity');
  const edit=(key:ValueField,value:string)=>{find(tree,'value-field-'+key).props.onChange({target:{value}});tree=app.render();};
  for(const [key,value]of Object.entries(clinical))edit(key as ValueField,String(value));
- check(text(find(tree,'value-total'))==='٣٬٨٤٠ جنيهاً'&&text(find(tree,'value-gain'))==='١٬٩٢٠ جنيهاً','real field handlers calculate the exact clinical example immediately');
+ const estimate = (formatted: string) => `${formatted} (${VALUE_ESTIMATE_LABEL})`;
+ assert.equal(VALUE_ESTIMATE_LABEL, 'تقدير استرشادي');
+ check(text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'), 'input handlers render the guarded monthly total');
+ for (const [id, formatted] of Object.entries({'value-result-L':'٨٤٠ جنيهاً', 'value-result-R':'٢٬١٠٠ جنيهاً',
+   'value-result-P':'٩٠٠ جنيهاً', 'value-yearly':'٣٦٬٠٠٠ جنيهاً'})) {
+   check(text(find(tree, id)).includes(estimate(formatted)), `${id}: the amount carries the common estimate label`);
+ }
+ check(text(find(tree,'value-offer-focusedWeek')).includes(estimate('٢٧٢ دولاراً') + ' (نحو ١٤٬٤١٦ جنيهاً)') &&
+   text(find(tree,'value-fx-note')).includes(VALUE_ESTIMATE_LABEL), 'the comparison labels the price pair and exchange rate');
+ const excludedRow = nodes(tree).find(node => node.type === 'div' && node.props.children?.[0]?.props?.['data-testid'] === 'value-result-L');
+ check(text(excludedRow).includes('لا يُجمع الأثران لأنهما يتقاطعان'), 'the overlap explanation appears under the excluded amount');
+ check(!nodes(tree).some(node => node.type === 'button' || node.props['data-testid'] === 'value-gain'),
+   'the calculator renders neither preset recovery buttons nor a gain');
+ edit('margin','0');
+ check(find(tree,'value-field-margin').props['aria-invalid'] === false && text(find(tree,'value-total')) === estimate('٩٠٠ جنيهاً'),
+   'zero margin is accepted by both UI and calculator');
+ edit('margin','70');
+ edit('monthlyRevenue','4499');
+ check(text(tree).includes('الأرقام المدخلة لا تتسق؛ راجعها') && text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'),
+   'the exact warning appears alongside a usable result');
+ edit('monthlyRevenue','4500');
+ check(!text(tree).includes('الأرقام المدخلة لا تتسق؛ راجعها'), 'the warning clears at the boundary');
+ edit('monthlyRevenue','0');
+ check(text(tree).includes('لم يُدخل إيراد، فنعرض الأولويات دون تقدير مالي') &&
+   !nodes(tree).some(node => node.type === 'output' || ['value-totals','value-offers','value-fx-note'].includes(node.props['data-testid'])),
+   'zero revenue shows the priorities notice without path amounts, totals, fees or FX');
+ edit('monthlyRevenue','');
+ check(!text(tree).includes('لم يُدخل إيراد') && text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'),
+   'clearing the zero restores estimates immediately');
+ edit('monthlyRevenue','100000');
  app.setStore({...store,sectorAnswers:{...store.sectorAnswers,hd01:40}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value==='٤٠'&&text(find(tree,'value-total'))==='٥٬١٢٠ جنيهاً','changing the source answer then rendering updates the input and result, including a formerly edited prefill');
+ check(find(tree,'value-field-unitNet').props.value==='٤٠'&&text(find(tree,'value-total'))===estimate('٤٬٠٠٠ جنيهاً'),'changing the source answer then rendering updates the input and result, including a formerly edited prefill');
  check(Boolean(find(tree,'value-prefilled-unitNet')),'a newly read source answer carries its prefill marker');
- edit('unitNet','50');check(text(find(tree,'value-total'))==='٦٬٤٠٠ جنيهاً'&&app.store().sectorAnswers.hd01===40,'local editing changes the result without changing the store answer');
+ edit('unitNet','50');check(text(find(tree,'value-total'))===estimate('٥٬٠٠٠ جنيهاً')&&app.store().sectorAnswers.hd01===40,'local editing changes the result without changing the store answer');
  const preCurrency=JSON.stringify(app.store());find(tree,'value-currency').props.onChange({target:{value:'SAR'}});tree=app.render();
  check(find(tree,'value-field-unitNet').props.value===''&&find(tree,'value-field-monthlyRevenue').props.value===''&&find(tree,'value-field-lostUnits').props.value==='٤٠','changing currency clears financial fields and preserves counts without conversion');
  edit('unitNet','20');edit('monthlyRevenue','100000');
- check(text(find(tree,'value-total'))==='٢٬٥٦٠ ريالاً','new-currency inputs use their declared values without converting visitor numbers');
+ check(text(find(tree,'value-total'))===estimate('٢٬٠٠٠ ريالاً'),'new-currency inputs use their declared values without converting visitor numbers');
  find(tree,'value-currency').props.onChange({target:{value:'EGP'}});tree=app.render();
  check(find(tree,'value-field-unitNet').props.value==='٤٠'&&find(tree,'value-field-monthlyRevenue').props.value==='١٠٠٬٠٠٠','returning to the answer currency refills current answers rather than restoring another-currency drafts');
  check(JSON.stringify(app.store())===preCurrency,'all currency operations leave the store unchanged');
