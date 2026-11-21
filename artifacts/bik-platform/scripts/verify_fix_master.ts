@@ -56,6 +56,9 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  // Mission 11C replaces the three financial projections with unit sensitivities.
+  'src/services/deterministicScoring.ts': 'c1d862892d0d06402ebbf8ac638133b45c66884d8b318d12e5568080b1f60397',
+  'src/services/reportFallback.ts': '3bf57c6f9432f06f39d5d96f5beec795018f62299f9e464b310f8dd65e79bf7a',
   'src/components/OfferCards.tsx': '84e5af82fc7618f9d59a5b6151414b861863901d5b547c8c899512bd718b5aeb',
   'src/config/appConfig.ts': '864fcac3b1dd0e56e51ce049195734177cfe0f0f62879e6084f48f3217faa5b9',
   'src/pages/LeadGate.tsx': '85f5ad18180e218317a4fadbdf48b542bf58376fcadac0edb081652b2e3a24c2',

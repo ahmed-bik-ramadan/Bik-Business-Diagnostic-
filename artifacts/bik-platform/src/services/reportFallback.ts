@@ -7,7 +7,7 @@
 // 3. Fully grounded in deterministic score, actual answers, and verified financial calculations.
 
 import { DiagnosticReport } from '../types';
-import { DetailedScoreResult, FindingEvidence } from './deterministicScoring';
+import { calculateFinancialSensitivities, DetailedScoreResult, FinancialSensitivities, FindingEvidence, toFiniteNumber } from './deterministicScoring';
 import { evaluateDiagnosticState, calculateDiagnosticCoverage } from './adaptiveDiagnosticEngine';
 import { universalQuestions } from '../data/universalQuestions';
 import { getEnrichedQuestion } from '../data/questionClassification';
@@ -44,8 +44,26 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
     questionLabel: safeText(e.questionLabel, 'مؤشر تشغيلي'),
     findingDescription: safeText(e.findingDescription, 'مؤشر يحتاج استكمال بيانات')
   });
+  const rawAnswers = input.answers || {};
+  const intakeAnswers = rawAnswers.intakeAnswers || rawAnswers;
+  const universalAnswers = rawAnswers.universalAnswers || rawAnswers;
+  const sectorAnswers = rawAnswers.sectorAnswers || rawAnswers;
+  const deltaAnswers = rawAnswers.deltaAnswers || {};
+  const impact = rawScoreResult.financialImpact;
+  const revenue = impact.metrics.monthlyRevenue?.value;
+  const hasRevenue = revenue != null && Number.isFinite(revenue) && revenue > 0;
+  // Retail visitor count and basket value arrive with sector answers after universal scoring.
+  const sensitivities = calculateFinancialSensitivities(revenue, impact.metrics.monthlyAcquisitionSpend?.value,
+    toFiniteNumber(sectorAnswers.rd02 ?? intakeAnswers.monthlyVisitors),
+    toFiniteNumber(sectorAnswers.rd03 ?? universalAnswers.u34 ?? intakeAnswers.aov));
+  if (sensitivities.margin !== undefined && sensitivities.conversion === undefined && impact.sensitivities?.conversion !== undefined) {
+    sensitivities.conversion = impact.sensitivities.conversion;
+  }
+  // Older score payloads can still contain projected gains. Only forward the unit sensitivities.
+  const finImpact = { ...impact, isComputable: hasRevenue && impact.isComputable, scenarios: [], sensitivities };
   const scoreResult = {
     ...rawScoreResult,
+    financialImpact: finImpact,
     topWeaknesses: (rawScoreResult.topWeaknesses ?? []).map(normalizeEvidence),
     topStrengths: (rawScoreResult.topStrengths ?? []).map(normalizeEvidence)
   };
@@ -134,28 +152,28 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
     estimated_cost: string;
   }> = [];
 
-  // Determine estimated cost phrasing based on computable financial data
-  const finImpact = scoreResult.financialImpact;
-  const currency = finImpact.currency || 'SAR';
+  const currency = finImpact.currency;
+  const sensitivityNames = { margin: 'الهامش', acquisition: 'تكلفة الاكتساب', conversion: 'التحويل' } as const;
+  const sensitivityLines: Partial<Record<keyof FinancialSensitivities, string>> = {};
+  for (const key of Object.keys(sensitivityNames) as (keyof FinancialSensitivities)[]) {
+    const value = sensitivities[key];
+    if (value === undefined) continue;
+    const formatted = value.toLocaleString('en-US', { maximumSignificantDigits: 15 });
+    const amount = currency === 'USD' ? `$${formatted}` : [formatted, currency].filter(Boolean).join(' ');
+    sensitivityLines[key] = `كل نقطة مئوية من ${sensitivityNames[key]} تساوي بحسب أرقامك: ${amount} شهرياً (تقدير استرشادي)`;
+  }
 
   if (scoreResult.topWeaknesses.length > 0) {
     scoreResult.topWeaknesses.slice(0, 3).forEach((w, idx) => {
       let costPhrase = 'غير محدد لعدم توافر البيانات المالية الكافية';
-      if (finImpact.isComputable && finImpact.metrics.monthlyNetProfit?.value !== null) {
-        // If financial calculations exist, provide calculated reference
-        if (w.sourceQuestionId === 'u06' || w.sourceQuestionId === 'u05') {
-          const scenarioGain = finImpact.scenarios.find((s) => s.id === 'net_margin_improvement')?.projectedMonthlyGain;
-          costPhrase = scenarioGain
-            ? `في سيناريو افتراضي برفع هامش صافي الربح 5 نقاط مئوية: نحو ${scenarioGain.toLocaleString()} ${currency} شهرياً (محاكاة حسابية، وليست وعداً بنتيجة)`
-            : 'يتطلب تدقيقاً مالياً لحساب الأثر الدقيق';
-        } else if (w.sourceQuestionId === 'u33' || w.sourceQuestionId === 'u10') {
-          const cacSavings = finImpact.scenarios.find((s) => s.id === 'cac_optimization')?.projectedMonthlyGain;
-          costPhrase = cacSavings
-            ? `في سيناريو افتراضي بخفض تكلفة اكتساب العميل 15%: نحو ${cacSavings.toLocaleString()} ${currency} شهرياً (محاكاة حسابية، وليست وعداً بنتيجة)`
-            : 'يتطلب تدقيقاً مالياً لحساب الأثر الدقيق';
-        } else {
-          costPhrase = 'أثر تشغيلي متراكم يؤثر على إنتاجية الفريق وخدمة العملاء';
-        }
+      if (w.sourceQuestionId === 'u06' || w.sourceQuestionId === 'u05') {
+        costPhrase = sensitivityLines.margin ?? '';
+      } else if (w.sourceQuestionId === 'u33' || w.sourceQuestionId === 'u10') {
+        costPhrase = sensitivityLines.acquisition ?? '';
+      } else if (w.sourceQuestionId === 'rt01') {
+        costPhrase = sensitivityLines.conversion ?? '';
+      } else if (finImpact.isComputable) {
+        costPhrase = 'أثر تشغيلي متراكم يؤثر على إنتاجية الفريق وخدمة العملاء';
       }
 
       blind_spots.push({
@@ -315,16 +333,14 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
     }));
 
   const financial_calculations: Array<{ metric: string; label: string; value: number | null; unit?: string; interpretation: string }> = [];
-  if (finImpact && finImpact.metrics) {
-    if (finImpact.metrics.monthlyRevenue?.value !== null && finImpact.metrics.monthlyRevenue?.value !== undefined) {
-      financial_calculations.push({
-        metric: 'monthlyRevenue',
-        label: 'الإيراد الشهري',
-        value: finImpact.metrics.monthlyRevenue.value,
-        unit: finImpact.currency,
-        interpretation: 'متوسط الإيراد الشهري المباشر المسجل للشركة.'
-      });
-    }
+  if (hasRevenue) {
+    financial_calculations.push({
+      metric: 'monthlyRevenue',
+      label: 'الإيراد الشهري',
+      value: revenue,
+      unit: finImpact.currency,
+      interpretation: 'متوسط الإيراد الشهري المباشر المسجل للشركة.'
+    });
     if (finImpact.metrics.netProfitMargin?.value !== null && finImpact.metrics.netProfitMargin?.value !== undefined) {
       financial_calculations.push({
         metric: 'netMargin',
@@ -525,7 +541,10 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
   top_priorities.push({
     rank: 1,
     title: topWeakness ? `معالجة ${topWeakness.questionLabel} ووقف الهدر` : 'معالجة نقطة الاختناق التشغيلية الأبرز',
-    why_it_matters: 'تعد النقطة الأكثر تأثيراً سلبياً على مؤشر كفاءة الشركة واستنزاف مواردها في التقييم الحالي.',
+    why_it_matters: [
+      'تعد النقطة الأكثر تأثيراً سلبياً على مؤشر كفاءة الشركة واستنزاف مواردها في التقييم الحالي.',
+      ...Object.values(sensitivityLines)
+    ].join('\n'),
     evidence: `مستند إلى نتائج تقييم بُعد «${lowestDimension}»`,
     expected_objective: 'إيقاف تسرب الموارد الفوري وتثبيت آلية التنفيذ دون الحاجة لتدخل استثنائي دائم من الإدارة.',
     first_action: 'عقد جلسة حصر فوري للإجراءات المتعلقة بهذه النقطة وتحديد مسؤول مباشر عن الالتزام بالمعايير.',
@@ -615,11 +634,6 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
   // BIK_OFFERS (see src/services/offerRecommendation.ts and src/components/OfferCards.tsx).
 
   // Build dual-layer architecture
-  const rawAnswers = input.answers || {};
-  const intakeAnswers = (rawAnswers as any).intakeAnswers || rawAnswers;
-  const universalAnswers = (rawAnswers as any).universalAnswers || rawAnswers;
-  const sectorAnswers = (rawAnswers as any).sectorAnswers || rawAnswers;
-  const deltaAnswers = (rawAnswers as any).deltaAnswers || {};
   const questionHistory = input.questionHistory || (rawAnswers as any).questionHistory;
 
   const dual_layer = buildDualLayerReport({
@@ -657,6 +671,8 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
       behavioral_insight
     }
   });
+
+  if (!hasRevenue) dual_layer.clientReport.financial_impact = null;
 
   return {
     review: dual_layer.clientReport.review,

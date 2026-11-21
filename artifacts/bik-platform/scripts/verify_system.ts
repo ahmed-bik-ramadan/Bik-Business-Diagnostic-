@@ -167,7 +167,7 @@ async function runAllAudits() {
   assert(impactValid.metrics.annualRevenue.value === monthlyRevenue * 12, 'Annual revenue is exactly monthly * 12');
   assert(impactValid.currency === 'EGP', 'Currency properly extracted');
   assert(impactValid.metrics.monthlyNetProfit.value === 15000, 'Monthly net profit matches 15,000');
-  assert(impactValid.scenarios.length >= 2, 'Scenarios computed deterministically');
+  assert(impactValid.scenarios.length === 0 && impactValid.sensitivities?.margin === 1000, 'Revenue determines the value of one margin point');
 
   // --------------------------------------------------------------------------
   // 5. FIRST-RUN ADMIN SETUP & AUTH SECURITY AUDIT

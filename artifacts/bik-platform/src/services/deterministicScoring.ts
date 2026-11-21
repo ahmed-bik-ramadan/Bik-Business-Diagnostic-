@@ -40,7 +40,7 @@ export interface FinancialInputs {
   averageOrderValue: number | null;
   currency: string;
   netMarginPct: number | null;
-  totalQualifiedLeads?: number | null;
+  monthlyVisitors?: number | null;
   valueModel?: {
     mode: ValueModelMode;
     monthlyReducibleWaste?: number | null;
@@ -77,7 +77,14 @@ export interface FinancialScenario {
   uncomputableReason?: string;
 }
 
+export interface FinancialSensitivities {
+  margin?: number;
+  acquisition?: number;
+  conversion?: number;
+}
+
 export interface FinancialImpactResult {
+  sensitivities?: FinancialSensitivities;
   metrics: Record<string, FinancialMetric>;
   scenarios: FinancialScenario[];
   identifiedGaps: string[];
@@ -377,7 +384,7 @@ export function extractFinancialInputs(
   const cac = toFiniteNumber(rawCAC);
 
   // u34: Average Order Value (AOV)
-  const rawAOV = universalAnswers.u34 !== undefined ? universalAnswers.u34 : intakeAnswers?.aov;
+  const rawAOV = universalAnswers.rd03 ?? universalAnswers.u34 ?? intakeAnswers?.aov;
   const averageOrderValue = toFiniteNumber(rawAOV);
 
   // u35: Currency
@@ -389,9 +396,7 @@ export function extractFinancialInputs(
   // Legacy bands can inform qualitative scoring, but cannot establish exact profit.
   const netMarginPct = marginParsed.isExact ? marginParsed.value : null;
 
-  // Optional qualified leads (if provided explicitly in intake or questions)
-  const rawLeads = universalAnswers.qualified_leads !== undefined ? universalAnswers.qualified_leads : intakeAnswers?.qualifiedLeads;
-  const totalQualifiedLeads = toFiniteNumber(rawLeads);
+  const monthlyVisitors = toFiniteNumber(universalAnswers.rd02 ?? intakeAnswers?.monthlyVisitors);
 
   const valueSource = (intakeAnswers?.valueModel || universalAnswers.valueModel || {}) as Record<string, any>;
   const valueModel = {
@@ -412,9 +417,28 @@ export function extractFinancialInputs(
     averageOrderValue: averageOrderValue !== null && averageOrderValue >= 0 ? averageOrderValue : null,
     currency,
     netMarginPct: netMarginPct !== null && netMarginPct <= 100 ? netMarginPct : null,
-    totalQualifiedLeads: totalQualifiedLeads !== null && totalQualifiedLeads >= 0 ? totalQualifiedLeads : null,
+    monthlyVisitors: monthlyVisitors !== null && monthlyVisitors >= 0 ? monthlyVisitors : null,
     valueModel
   };
+}
+
+// A unit sensitivity describes the value of a one-point change at the declared volume.
+export function calculateFinancialSensitivities(
+  revenue: number | null | undefined,
+  acquisitionSpend: number | null | undefined,
+  visitors: number | null | undefined,
+  orderValue: number | null | undefined
+): FinancialSensitivities {
+  if (revenue == null || !Number.isFinite(revenue) || revenue <= 0) return {};
+  const result: FinancialSensitivities = { margin: revenue / 100 };
+  if (acquisitionSpend != null && Number.isFinite(acquisitionSpend) && acquisitionSpend >= 0) {
+    result.acquisition = acquisitionSpend / 100;
+  }
+  if (visitors != null && visitors >= 0 && orderValue != null && orderValue >= 0) {
+    const amount = (visitors / 100) * orderValue;
+    if (Number.isFinite(amount)) result.conversion = amount;
+  }
+  return result;
 }
 
 /**
@@ -423,7 +447,7 @@ export function extractFinancialInputs(
  * 0 hallucinated benchmarks, 0 random ROI.
  */
 export function calculateFinancialImpact(inputs: FinancialInputs): FinancialImpactResult {
-  const { monthlyRevenue, monthlyNewCustomers, cac, averageOrderValue, currency, netMarginPct, totalQualifiedLeads } = inputs;
+  const { monthlyRevenue, monthlyNewCustomers, cac, averageOrderValue, currency, netMarginPct, monthlyVisitors } = inputs;
   const identifiedGaps: string[] = [];
 
   if (monthlyRevenue === null) identifiedGaps.push('الإيراد الشهري (u31)');
@@ -507,109 +531,8 @@ export function calculateFinancialImpact(inputs: FinancialInputs): FinancialImpa
     evidenceInputs: ['u32', 'u33']
   };
 
-  // ---------------- Financial Scenarios ----------------
-  const scenarios: FinancialScenario[] = [];
-
-  // Scenario 1: Net Margin Improvement (+5% percentage points margin expansion scenario)
-  if (monthlyRevenue !== null && netMarginPct !== null) {
-    const targetMargin = Math.min(100, Math.round((netMarginPct + 5) * 10) / 10);
-    const incrementalMonthly = Math.round(monthlyRevenue * ((targetMargin - netMarginPct) / 100));
-    scenarios.push({
-      id: 'net_margin_improvement',
-      label: 'سيناريو تحسين هامش صافي الربح (بمقدار 5 نقاط مئوية)',
-      type: 'net_margin_improvement',
-      currentValue: netMarginPct,
-      targetValue: targetMargin,
-      projectedMonthlyGain: incrementalMonthly,
-      projectedAnnualGain: incrementalMonthly * 12,
-      formula: 'monthlyRevenue * ((targetMargin - currentMargin) / 100)',
-      disclaimer: 'قيمة شهرية إضافية في سيناريو هامش مستهدف (بمقدار 5 نقاط مئوية)، وهي محاكاة حسابية وليست وعداً بنتيجة مستقبلية.',
-      isComputable: true
-    });
-  } else {
-    scenarios.push({
-      id: 'net_margin_improvement',
-      label: 'سيناريو تحسين هامش صافي الربح',
-      type: 'net_margin_improvement',
-      currentValue: netMarginPct,
-      targetValue: null,
-      projectedMonthlyGain: null,
-      projectedAnnualGain: null,
-      formula: 'monthlyRevenue * ((targetMargin - currentMargin) / 100)',
-      disclaimer: 'غير قابل للحساب بدقة لعدم توافر الإيراد الشهري وهامش الربح.',
-      isComputable: false,
-      uncomputableReason: 'يتطلب الإيراد الشهري (u31) وهامش صافي الربح (u06)'
-    });
-  }
-
-  // Scenario 2: CAC Optimization (15% reduction in acquisition cost)
-  if (monthlyNewCustomers !== null && cac !== null && cac > 0) {
-    const targetCAC = Math.round(cac * 0.85 * 100) / 100;
-    const monthlySavings = Math.round(monthlyNewCustomers * (cac - targetCAC));
-    scenarios.push({
-      id: 'cac_optimization',
-      label: 'سيناريو خفض تكلفة اكتساب العميل بنسبة 15%',
-      type: 'cac_optimization',
-      currentValue: cac,
-      targetValue: targetCAC,
-      projectedMonthlyGain: monthlySavings,
-      projectedAnnualGain: monthlySavings * 12,
-      formula: 'monthlyNewCustomers * (cac - targetCAC)',
-      disclaimer: 'وفر شهري متوقع في سيناريو خفض تكلفة اكتساب العميل بنسبة 15%، محسوب بناءً على حجم العملاء الحالي.',
-      isComputable: true
-    });
-  } else {
-    scenarios.push({
-      id: 'cac_optimization',
-      label: 'سيناريو خفض تكلفة اكتساب العميل',
-      type: 'cac_optimization',
-      currentValue: cac,
-      targetValue: null,
-      projectedMonthlyGain: null,
-      projectedAnnualGain: null,
-      formula: 'monthlyNewCustomers * (cac - targetCAC)',
-      disclaimer: 'غير قابل للحساب بدقة لعدم توافر عدد العملاء الجدد أو تكلفة اكتساب العميل الحالية.',
-      isComputable: false,
-      uncomputableReason: 'يتطلب عدد العملاء الجدد (u32) وتكلفة اكتساب العميل (u33)'
-    });
-  }
-
-  // Scenario 3: Conversion Lift (Requires explicit qualified leads data)
-  if (totalQualifiedLeads !== null && totalQualifiedLeads > 0 && monthlyNewCustomers !== null && averageOrderValue !== null) {
-    const currentConversion = (monthlyNewCustomers / totalQualifiedLeads) * 100;
-    const targetConversion = Math.min(100, Math.round((currentConversion + 2) * 10) / 10);
-    const liftPoints = Math.max(0, targetConversion - currentConversion);
-    const additionalCustomers = Math.round(totalQualifiedLeads * (liftPoints / 100));
-    const monthlyLift = additionalCustomers * averageOrderValue;
-    scenarios.push({
-      id: 'conversion_lift',
-      label: 'سيناريو رفع معدل التحويل (بمقدار نقطتين مئويتين)',
-      type: 'conversion_lift',
-      currentValue: Math.round(currentConversion * 10) / 10,
-      targetValue: Math.round(targetConversion * 10) / 10,
-      projectedMonthlyGain: monthlyLift,
-      projectedAnnualGain: monthlyLift * 12,
-      formula: '(qualifiedLeads * ((targetConversion - currentConversion) / 100)) * averageOrderValue',
-      disclaimer: 'سيناريو حسابي مبني على حجم العملاء المحتملين المؤهلين ومتوسط قيمة الطلب.',
-      isComputable: true
-    });
-  } else {
-    scenarios.push({
-      id: 'conversion_lift',
-      label: 'سيناريو رفع معدل التحويل',
-      type: 'conversion_lift',
-      currentValue: null,
-      targetValue: null,
-      projectedMonthlyGain: null,
-      projectedAnnualGain: null,
-      formula: '(qualifiedLeads * lift) * averageOrderValue',
-      disclaimer: 'غير قابل للحساب لعدم توافر عدد العملاء المحتملين المؤهلين بدقة.',
-      isComputable: false,
-      uncomputableReason: 'يتطلب بيانات موثقة عن عدد العملاء المحتملين ومتوسط قيمة الطلب'
-    });
-  }
-
-  const isComputable = monthlyRevenue !== null && netMarginPct !== null;
+  const sensitivities = calculateFinancialSensitivities(monthlyRevenue, monthlyAcquisitionSpend, monthlyVisitors, averageOrderValue);
+  const isComputable = monthlyRevenue !== null && monthlyRevenue > 0 && netMarginPct !== null;
   const uncomputableReason = !isComputable
     ? 'الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة لعدم اكتمال مدخلات الإيراد أو هامش الربح.'
     : undefined;
@@ -626,7 +549,8 @@ export function calculateFinancialImpact(inputs: FinancialInputs): FinancialImpa
 
   return {
     metrics,
-    scenarios,
+    scenarios: [],
+    sensitivities,
     identifiedGaps,
     isComputable,
     uncomputableReason,

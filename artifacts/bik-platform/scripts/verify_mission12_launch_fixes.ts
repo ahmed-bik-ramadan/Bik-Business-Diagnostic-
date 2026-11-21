@@ -38,7 +38,9 @@ for(const option of q.options!){
  assert.deepEqual(parseNetMargin(option.value),baseline.parsed);
  assert.equal(score.axisDetails['الصحة المالية'].score,baseline.financialAxisScore);
  assert.deepEqual(score.axisDetails['الصحة المالية'].evidence.find(e=>e.sourceQuestionId==='u06'),baseline.evidence);
- assert.deepEqual(JSON.parse(JSON.stringify(computeDeterministicScore({...peers,u06:option.value,u31:10000,u35:'EGP'}).financialImpact)),baseline.financialImpact);
+ assert.deepEqual(JSON.parse(JSON.stringify(computeDeterministicScore({...peers,u06:option.value,u31:10000,u35:'EGP'}).financialImpact)),{
+   ...baseline.financialImpact, scenarios: [], sensitivities: { margin: 100 }
+ });
  check(true,`u06 ${option.value}: unchanged v18 signal, score, gap status and financial semantics`);
 }
 for(const value of [0,12.7,100])check(validateQuestionAnswer(q as any,value).valid,`u06 exact numeric input remains accepted: ${value}`);

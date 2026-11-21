@@ -1,10 +1,17 @@
 // scripts/verify_phase1_diagnostics.ts
 // Verification script for Phase 1 Diagnostic Logic, Polarity, Hypotheses & Financial Calculations
 
+import strict from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ReportPreview } from '../src/components/report/ReportPreview';
+import { createFallbackReport } from '../src/services/reportFallback';
 import { evaluateDiagnosticState, extractEvidenceFromAnswer } from '../src/services/adaptiveDiagnosticEngine';
 import { getSectorTaxonomy } from '../src/data/sectorRegistry';
 import { STRATEGIC_HYPOTHESES } from '../src/data/diagnosticHypotheses';
 import {
+  computeDeterministicScore,
   parseNetMargin,
   calculateFinancialImpact,
   extractFinancialInputs,
@@ -156,13 +163,67 @@ async function runPhase1Audits() {
   assert(finImpact.metrics.annualNetProfit?.value === 180000, 'Annual net profit is exactly 180,000');
   assert(finImpact.metrics.annualRevenue?.value === 1200000, 'Annual revenue is exactly 1,200,000');
 
-  // Verify margin improvement scenario (+5% points)
-  const marginScenario = finImpact.scenarios.find(s => s.type === 'net_margin_improvement');
-  assert(marginScenario !== undefined, 'Net margin improvement scenario generated');
-  assert(marginScenario?.currentValue === 15, 'Scenario base margin is 15%');
-  assert(marginScenario?.targetValue === 20, 'Scenario target margin is 20% (+5%)');
-  assert(marginScenario?.projectedMonthlyGain === 5000, 'Scenario monthly gain is exactly 5,000 (100k * 5%)');
-  assert(marginScenario?.projectedAnnualGain === 60000, 'Scenario annual gain is exactly 60,000 (5,000 * 12)');
+  strict.deepEqual(finImpact.sensitivities, { margin: 1000 });
+  strict.deepEqual(finImpact.scenarios, []);
+  const declared = { u31: 12345, u32: 4, u33: 25, u34: 40, u35: 'EGP' };
+  const retail = { rd02: '٢٥', rd03: 50, rt01: 'lt10' };
+  const impactFor = (changes: Record<string, unknown>) =>
+    calculateFinancialImpact(extractFinancialInputs({ ...declared, ...retail, ...changes }));
+  strict.deepEqual(impactFor({}).sensitivities, { margin: 123.45, acquisition: 1, conversion: 12.5 });
+  strict.deepEqual(impactFor({u33: '', rd02: undefined, qualified_leads: 200}).sensitivities, { margin: 123.45 });
+  strict.deepEqual(impactFor({u32: null, rd03: '', u34: ''}).sensitivities, { margin: 123.45 });
+  strict.deepEqual(impactFor({u32: 0, rd02: 0}).sensitivities, { margin: 123.45, acquisition: 0, conversion: 0 });
+  strict.deepEqual(impactFor({u31: 0}).sensitivities, {});
+  strict.deepEqual(impactFor({u31: ''}).sensitivities, {});
+
+  const marginText = 'كل نقطة مئوية من الهامش تساوي بحسب أرقامك: 123.45 EGP شهرياً (تقدير استرشادي)';
+  const acquisitionText = 'كل نقطة مئوية من تكلفة الاكتساب تساوي بحسب أرقامك: 1 EGP شهرياً (تقدير استرشادي)';
+  const conversionText = 'كل نقطة مئوية من التحويل تساوي بحسب أرقامك: 12.5 EGP شهرياً (تقدير استرشادي)';
+  function fallback(changes: Record<string, unknown> = {}, sector: Record<string, unknown> = retail) {
+    const answers = { ...declared, ...changes };
+    // The public flow scores universal answers first and supplies the sector answers to the report.
+    return createFallbackReport({ scoreResult: computeDeterministicScore(answers), companyData: { sectorL1: 'retail' },
+      answers: { ...answers, ...sector } });
+  }
+  const preview = (report: ReturnType<typeof fallback>) =>
+    renderToStaticMarkup(createElement(ReportPreview, {clientReport: report.dual_layer!.clientReport}));
+  const report = fallback();
+  const html = preview(report);
+  for (const line of [marginText, acquisitionText, conversionText]) strict.ok(html.includes(line), line);
+  strict.deepEqual(report.dual_layer!.consultantDossier.financial_calculations.relevant_scenarios, []);
+  strict.deepEqual(report.financial_impact?.sensitivities, { margin: 123.45, acquisition: 1, conversion: 12.5 });
+  const scored = computeDeterministicScore({...declared, u05: 'declined'});
+  const evidence = scored.topWeaknesses[0];
+  strict.ok(evidence, 'the test report exercises the blind-spot path');
+  const withLegacyScenario = {
+    ...scored,
+    topWeaknesses: ['u05', 'u33', 'rt01'].map(sourceQuestionId => ({...evidence, sourceQuestionId})),
+    financialImpact: {...scored.financialImpact, scenarios: [{
+      id: 'net_margin_improvement', type: 'net_margin_improvement' as const, label: 'legacy',
+      currentValue: 1, targetValue: 6, projectedMonthlyGain: 999999, projectedAnnualGain: null,
+      disclaimer: '', formula: '', isComputable: true
+    }]}
+  };
+  const restored = createFallbackReport({scoreResult: withLegacyScenario, answers: {...declared, ...retail}});
+  strict.deepEqual(restored.blind_spots.slice(0, 3).map(spot => spot.estimated_cost), [marginText, acquisitionText, conversionText]);
+  strict.deepEqual(restored.dual_layer!.consultantDossier.financial_calculations.relevant_scenarios, []);
+  strict.doesNotMatch(JSON.stringify(restored), /999999/);
+  const partial = preview(fallback({ u33: '', u34: '' }, { rd02: '25' }));
+  strict.ok(partial.includes(marginText));
+  strict.doesNotMatch(partial, /كل نقطة مئوية من (تكلفة الاكتساب|التحويل)/u);
+  strict.ok(preview(fallback({u35: ''})).includes(marginText.replace(' EGP', '')), 'missing currency introduces no guessed unit');
+  for (const revenue of [0, '٠', '', null, undefined]) {
+    const missing = fallback({u31: revenue, u06: 15});
+    strict.deepEqual(missing.financial_impact?.sensitivities, {});
+    strict.deepEqual(missing.diagnostic_findings?.financial_calculations, []);
+    strict.equal(missing.dual_layer!.clientReport.financial_impact, null);
+    strict.ok(preview(missing).includes(report.top_priorities![0].title));
+    strict.doesNotMatch(preview(missing), /كل نقطة مئوية|12\.5 EGP|preview-blind-spots/u);
+  }
+  const source = ['deterministicScoring', 'reportFallback'].map(file =>
+    readFileSync(new URL(`../src/services/${file}.ts`, import.meta.url), 'utf8')).join('\n');
+  strict.doesNotMatch(source, /netMarginPct\s*\+\s*5|cac\s*\*\s*0?\.85|currentConversion\s*\+\s*2|خفض تكلفة اكتساب العميل (?:بنسبة )?15%|بمقدار 5 نقاط|بمقدار نقطتين/u);
+  assert(true, 'One-point sensitivities use declared inputs, omit missing estimates and render the exact approved lines');
 
   // Missing revenue case: 0 hallucination
   const emptyFinInputs = extractFinancialInputs({}, {});
