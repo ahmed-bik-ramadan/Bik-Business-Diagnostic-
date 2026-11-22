@@ -432,7 +432,7 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
       confidence: 'عالي',
       status: 'Validated',
       business_consequence: finImpact.isComputable && finImpact.metrics.monthlyNetProfit?.value !== null
-        ? `يؤثر سلباً على كفاءة تحقيق الأرباح المقدرة شهرياً (${finImpact.metrics.monthlyNetProfit?.value?.toLocaleString()} ${currency}) ويرفع تكلفة التشغيل الفعلي.`
+        ? `يؤثر سلباً على كفاءة تحقيق الأرباح المقدرة شهرياً (${finImpact.metrics.monthlyNetProfit?.value?.toLocaleString('en-US')} ${currency}) ويرفع تكلفة التشغيل الفعلي.`
         : 'يؤدي إلى استنزاف طاقة الفريق الإداري وتقليص سرعة الاستجابة لطلبات السوق دون تحقيق وفورات حجم.',
       trust_category: 'OBSERVED'
     });

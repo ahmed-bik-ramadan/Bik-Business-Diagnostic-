@@ -23,12 +23,12 @@ function verifyCopyDeck(copy: Record<string, string>, rules: Record<string, Cons
     assert.ok(value.length <= constraint.maxLength, `${key}: ${value.length} characters fit ${constraint.maxLength}`);
     assert.ok(!/ا\/\s/u.test(value), `${key}: owner address has hamza`);
     assert.ok(!value.includes('...'), `${key}: ellipsis uses the approved character`);
-    if (!key.startsWith('value.')) assert.ok(!/[٠-٩۰-۹]/u.test(value), `${key}: legacy copy has no non-Western digits`);
+    assert.ok(!/[٠-٩۰-۹]/u.test(value), `${key}: copy has no non-Western digits`);
     assert.ok(!/\p{Extended_Pictographic}|\p{Regional_Indicator}|\uFE0F|\u20E3/u.test(value), `${key}: no emoji`);
     assert.ok(!/قيد الصياغة|ضمان|نضمن|حتماً|بالتأكيد|مضمون/u.test(value), `${key}: no drafting marker or promise of results`);
     if (key.startsWith('value.')) assert.ok(!/ROI|عائد|يغطي|لا يغطي|ضمان|سنحقق|ستربح|نسبة تسرب/iu.test(value), `${key}: no prohibited cost-module wording`);
-    // Value copy may contain the owner-supplied Arabic-Indic hundred; no Western literals.
-    const untemplated = value.replace(/\{\w+\}/g, '');
+    // The margin question is defined per hundred units.
+    const untemplated = (key === 'value.marginLabel' ? value.replace(/^من كل 100 /u, '') : value).replace(/\{\w+\}/g, '');
     assert.ok(!/[0-9]/.test(untemplated), `${key}: no invented literal numbers`);
     if (constraint.locked) assert.equal(value, constraint.text, `${key}: locked privacy is verbatim`);
   }

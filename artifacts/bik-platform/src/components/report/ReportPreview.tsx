@@ -69,7 +69,7 @@ export function ReportPreview({ clientReport: report }: Props) {
       </>}
       {declaredRows.length > 0 && <div className="mt-4 space-y-2 rounded-xl border border-[#146B4F]/25 bg-[#F1F3EC] p-4" data-testid="preview-blind-spots">
         <p className="text-xs font-bold text-[#146B4F]">من أرقامك المصرَّح بها في التشخيص العميق: ما يتركه كل شهر بين يديك</p>
-        {declaredRows.map(spot => <p key={spot.name} className="text-sm leading-7 text-[#44584C]">{spot.name}: قرابة {spot.monthly_amount.toLocaleString('ar-EG')} {report.financial_impact?.currency} شهرياً</p>)}
+        {declaredRows.map(spot => <p key={spot.name} className="text-sm leading-7 text-[#44584C]">{spot.name}: قرابة {spot.monthly_amount.toLocaleString('en-US')} {report.financial_impact?.currency} شهرياً</p>)}
         <p className="text-xs leading-6 text-[#70664F]">أرقام مشتقة من إجاباتك أنت بمعادلات محاسبية معلنة، ليست وعداً ولا تدقيقاً.</p>
       </div>}
     </section>

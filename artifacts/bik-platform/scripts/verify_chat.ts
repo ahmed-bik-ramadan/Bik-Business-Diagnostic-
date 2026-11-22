@@ -158,10 +158,10 @@ const userMsg = (text: string) => ({ role: 'user', text });
   check(prompt.includes('المكالمة المجانية 15 دقيقة') && !prompt.includes('المكالمة المجانية ١٥ دقيقة')
     && approvedPersona.every(line => !/[٠-٩۰-۹]/u.test(line)),
     '7-C: the authorized persona and free-call line use Western digits; configured offer figures are preserved');
-  // F9 (round-5): the diagnostic flow quotes the currency-free figure; the USD wording stays on /consultant.
-  check(prompt.includes(BIK_OFFERS.focusedWeek.name) && prompt.includes(BIK_OFFERS.focusedWeek.priceFigure), 'prompt has offer 1 name and currency-free figure from BIK_OFFERS');
-  check(prompt.includes(BIK_OFFERS.monthlyRetainer.name) && prompt.includes(BIK_OFFERS.monthlyRetainer.priceFigure), 'prompt has offer 2 name and currency-free figure from BIK_OFFERS');
-  check(prompt.includes(BIK_OFFERS.executiveProject.name) && prompt.includes(BIK_OFFERS.executiveProject.priceFigure), 'prompt has offer 3 name and currency-free figure from BIK_OFFERS');
+  // F9 (round-5): the diagnostic flow quotes the configured USD price; the USD wording stays on /consultant.
+  check(prompt.includes(BIK_OFFERS.focusedWeek.name) && prompt.includes(BIK_OFFERS.focusedWeek.price), 'prompt has offer 1 name and configured USD price from BIK_OFFERS');
+  check(prompt.includes(BIK_OFFERS.monthlyRetainer.name) && prompt.includes(BIK_OFFERS.monthlyRetainer.price), 'prompt has offer 2 name and configured USD price from BIK_OFFERS');
+  check(prompt.includes(BIK_OFFERS.executiveProject.name) && prompt.includes(BIK_OFFERS.executiveProject.price), 'prompt has offer 3 name and configured USD price from BIK_OFFERS');
   check(prompt.includes(`حسب قاعدة النظام: ${BIK_OFFERS.executiveProject.name}`), 'prompt names the offer recommended by the coded rule (3 of 3 scored axes need work -> executive project)');
   const thin = buildChatSystemPrompt({ sector: 'تجزئة', overallComputed: false, axes: [{ label: 'الصحة المالية', status: 'بيانات غير كافية' }] });
   check(thin.includes(`حسب قاعدة النظام: ${BIK_OFFERS.focusedWeek.name}`), 'thin data recommends the focused week');
@@ -174,9 +174,10 @@ const userMsg = (text: string) => ({ role: 'user', text });
 {
   check(guardAssistantReply('الأنسب لك أسبوع استشاري مركز بسعر 272 دولاراً.') .includes('272'), 'approved price 272 passes');
   check(guardAssistantReply('التعاقد الشهري 499 دولاراً شهرياً').includes('499'), 'approved price 499 passes');
-  check(guardAssistantReply('السعر ٢٧٢ دولار').includes('٢٧٢'), 'Arabic-Indic approved price passes');
+  check(guardAssistantReply('السعر ٢٧٢ دولار') === 'السعر 272 دولار', 'an approved price typed with Arabic-Indic digits displays with Latin digits');
   for (const text of ['5000 دولار', '٥٠٠٠ دولاراً', 'أقل من 17 دولاراً في اليوم', 'أقل من ١٧ دولاراً في اليوم', '272 دولاراً', '499 دولاراً']) {
-    check(guardAssistantReply(text) === text, `7-D: configured price passes unchanged: ${text}`);
+    const expected = text.replace(/[٠-٩]/gu, digit => String(digit.charCodeAt(0) - 0x0660));
+    check(guardAssistantReply(text) === expected, `7-D: configured price passes with Latin digits: ${text}`);
   }
   for (const text of ['6000 دولار', '4999 دولاراً', '16 دولاراً', '٦٠٠٠ دولاراً', '٤٩٩٩ دولاراً', '١٦ دولاراً', '5000 دولار و16 دولاراً', 'خصم 17%', 'خصم ١٧٪', '5000 دولار https://example.com', '499 دولار a@b.com']) {
     check(guardAssistantReply(text) === CHAT_FALLBACK_REPLY, `7-D: unsupported price, percentage or contact is replaced: ${text}`);
@@ -340,13 +341,17 @@ function sources() {
   check(chat.includes("platformCopy['chat.privacy']") && platformCopy['chat.privacy'] === 'تُرسل المحادثة إلى خادم BIK ثم مزودها: سجل الرسائل والقطاع وحالة المحاور ونوع بدايتك (تحليل أو أزمة) وإشارات محدودة عن النتيجة والتوصية. لا تُرفق إجابات التشخيص أو بيانات الهوية المحفوظة؛ ويُنقّح نص الرسائل آلياً، لذا تجنّب كتابة بيانات شخصية.', 'chat renders the exact locked privacy paragraph');
   const policy = fs.readFileSync(path.join(ROOT, 'src/services/chatPolicy.ts'), 'utf8');
   const systemSource = policy.slice(policy.indexOf('export function buildChatSystemPrompt'), policy.indexOf('/**\n * Output guard.'));
+  const originalPriceReference = "    // F9 (round-5): في سياق التشخيص يُذكر الرقم مجرداً بلا كلمة عملة؛ العملة الكاملة مسرحها صفحة المستشار.\n"
+    + '    return `- ${offer.name}: ${offer.priceFigure}${perDay}. ${offer.scope}`;';
+  const beforePriceFormat = systemSource.replace(/^    return `- \$\{offer\.name\}: .*perDay.*$/m, originalPriceReference);
+  check(beforePriceFormat !== systemSource, 'the price reference changes only for Mission 12B');
   // Owner authorization: Mission 7-C adds the eight approved persona lines, changes
   // the specified visitor-words phrase, and changes only the call duration to 15.
-  check(createHash('sha256').update(systemSource).digest('hex') === '647b818155a256320fb1722db79527a635c523da240b10362dd16c184e88f427',
+  check(createHash('sha256').update(beforePriceFormat).digest('hex') === '647b818155a256320fb1722db79527a635c523da240b10362dd16c184e88f427',
     '7-C: buildChatSystemPrompt source matches the expressly authorized persona revision');
   const personaSource = approvedPersona.map(line => `    '${line}',\n`).join('') + "    '',\n";
   check(systemSource.includes(personaSource), '7-C: source contains exactly the approved persona insertion');
-  const legacySystemSource = systemSource.replace(personaSource, '')
+  const legacySystemSource = beforePriceFormat.replace(personaSource, '')
     .replace('المكالمة المجانية 15 دقيقة', 'المكالمة المجانية ١٥ دقيقة');
   check(createHash('sha256').update(legacySystemSource).digest('hex') === 'b765090a126b8c6301251fadb3bedb2156b4796d412aaff208145d2fa6eecc20',
     '7-C: removing only the authorized insertion and digit correction restores the byte-identical legacy prompt');

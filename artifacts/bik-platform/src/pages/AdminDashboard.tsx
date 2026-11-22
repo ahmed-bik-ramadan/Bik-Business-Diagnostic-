@@ -599,7 +599,7 @@ const AdminDashboard: React.FC = () => {
                           </select>
                         </td>
                         <td className="p-3.5 text-slate-400 text-[11px]">
-                          {new Date(l.created_at).toLocaleDateString('ar-EG')}
+                          {new Date(l.created_at).toLocaleDateString('en-US')}
                         </td>
                         <td className="p-3.5">
                           <div className="flex items-center justify-center gap-2">
@@ -664,7 +664,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-400">تاريخ التسجيل:</span>{' '}
-                <span className="text-white">{new Date(selectedLead.created_at).toLocaleString('ar-EG')}</span>
+                <span className="text-white">{new Date(selectedLead.created_at).toLocaleString('en-US')}</span>
               </div>
             </div>
 
@@ -729,7 +729,7 @@ const AdminDashboard: React.FC = () => {
                     <div key={n.id} className="bg-slate-800/40 border border-slate-800 p-3 rounded-xl text-xs">
                       <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
                         <span className="font-semibold text-slate-300">{n.author_name || 'مسؤول'}</span>
-                        <span>{new Date(n.created_at).toLocaleString('ar-EG')}</span>
+                        <span>{new Date(n.created_at).toLocaleString('en-US')}</span>
                       </div>
                       <p className="text-slate-200">{n.note_text}</p>
                     </div>
@@ -748,7 +748,7 @@ const AdminDashboard: React.FC = () => {
                   {selectedLead.status_history.map((h: any) => (
                     <div key={h.id} className="flex items-center justify-between">
                       <span>تغيير إلى "{h.new_status}" بواسطة {h.changed_by_name || 'مسؤول'}</span>
-                      <span>{new Date(h.changed_at).toLocaleString('ar-EG')}</span>
+                      <span>{new Date(h.changed_at).toLocaleString('en-US')}</span>
                     </div>
                   ))}
                 </div>

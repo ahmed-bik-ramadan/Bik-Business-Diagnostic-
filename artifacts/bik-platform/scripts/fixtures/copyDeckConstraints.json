@@ -153,7 +153,7 @@
     ],
     "maxLength": 100,
     "locked": false,
-    "text": "من كل ١٠٠ {currency} تحصّلها، كم يبقى لك بعد تكلفة تقديمها؟"
+    "text": "من كل 100 {currency} تحصّلها، كم يبقى لك بعد تكلفة تقديمها؟"
   },
   "value.prefilled": {
     "variables": [],
@@ -220,7 +220,7 @@
     ],
     "maxLength": 100,
     "locked": false,
-    "text": "{offer}: {price} {unit}. يعادل {pct}٪ من كلفة مشكلتك الشهرية."
+    "text": "{offer}: {price}{unit}. يعادل {pct}٪ من كلفة مشكلتك الشهرية."
   },
   "value.offerAbove": {
     "variables": [
@@ -230,7 +230,7 @@
     ],
     "maxLength": 100,
     "locked": false,
-    "text": "{offer}: {price} {unit}. أكبر من كلفة مشكلتك الشهرية المحسوبة."
+    "text": "{offer}: {price}{unit}. أكبر من كلفة مشكلتك الشهرية المحسوبة."
   },
   "value.fxNote": {
     "variables": [
@@ -302,7 +302,7 @@
     ],
     "maxLength": 100,
     "locked": false,
-    "text": "{offer}: {price} {unit}. أدخل أرقام المواضع للمقارنة."
+    "text": "{offer}: {price}{unit}. أدخل أرقام المواضع للمقارنة."
   },
   "value.convertedUnit": {
     "variables": [

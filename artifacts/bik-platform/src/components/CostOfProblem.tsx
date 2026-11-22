@@ -5,7 +5,7 @@ import { FX_AS_OF, FX_RATES_PER_USD } from '../config/appConfig';
 import { caseStudies } from '../data/caseStudies';
 import { computeCostOfProblem, parseValueNumber, VALUE_ESTIMATE_LABEL, type ValueField } from '../services/valueModule/compute';
 import { sectorPool, selectValuePaths } from '../services/valueModule/sectorPools';
-import { answerCurrency, currencyName, displayValueInput, formatValueAmount, formatValueNumber, indianDigits, VALUE_CURRENCIES, type ValueCurrency } from '../services/valueModule/currency';
+import { answerCurrency, currencyName, displayValueInput, formatValueAmount, formatValueNumber, VALUE_CURRENCIES, type ValueCurrency } from '../services/valueModule/currency';
 import { FINANCIAL_FIELDS, resolveValueFields, valueIdentity, valuePrefills, type ValueDrafts } from '../services/valueModule/prefill';
 import { VALUE_OFFERS, valueOfferRows } from '../services/valueModule/offers';
 
@@ -104,7 +104,7 @@ export default function CostOfProblem() {
         {valueOfferRows(result.total, currency, comparisonOffers).map(row => <p key={row.key} data-testid={`value-offer-${row.key}`}>{row.text}</p>)}
       </div>
       <p className="mt-2 text-xs leading-5 text-[#68717A]" data-testid="value-fx-note">{formatPlatformCopy('value.fxNote', {
-        rate: formatValueNumber(FX_RATES_PER_USD[currency], 4), currency: `${currencyName(currency)} (${VALUE_ESTIMATE_LABEL})`, date: indianDigits(FX_AS_OF)
+        rate: formatValueNumber(FX_RATES_PER_USD[currency], 4), currency: `${currencyName(currency)} (${VALUE_ESTIMATE_LABEL})`, date: FX_AS_OF
       })}</p>
     </>}
     {examples.map((example, index) => <div key={index} className="mt-3 rounded-xl bg-[#F6F0DF] p-3 text-sm leading-6" data-testid="value-case-study">

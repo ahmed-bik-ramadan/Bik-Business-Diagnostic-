@@ -83,7 +83,7 @@ export function buildEvidenceBasedSwot(
     (scoreResult.financialImpact.metrics.monthlyNetProfit?.value || 0) > 0 &&
     !strengths.some(s => s.classification === 'CALCULATED')
   ) {
-    const profit = scoreResult.financialImpact.metrics.monthlyNetProfit.value?.toLocaleString('ar-EG');
+    const profit = scoreResult.financialImpact.metrics.monthlyNetProfit.value?.toLocaleString('en-US');
     strengths.push({
       text: `تحقيق صافي ربح تشغيلي إيجابي بمعدل تقديري (${profit} ${scoreResult.financialImpact.currency} شهرياً)`,
       classification: 'CALCULATED',

@@ -56,6 +56,9 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  'src/pages/AdminDashboard.tsx': '7dd731e9193fb587ac0e4d7712c07ae7e311ed74b127c0b4e09b4078e22b845e',
+  'src/services/evidenceSwot.ts': '88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4',
+  'src/services/reportGenerator.ts': '6377cdcc08004128737a289ec227bc0ded44984ad1e433ab5508dcf014132038',
   'src/pages/Processing.tsx': '6f8a6259d8bc5b450d6f46e0ded14b3b6dd8fd2a156743dc5d1dddc448667a27',
   // Mission 11D updates the sector formulas and their report consumers.
   'src/components/report/ReportPreview.tsx': '63514c2b2dee23928ecc7955491a0d60d95f413abb1d0639d8aca65bf9e59fd6',
@@ -63,15 +66,15 @@ const revisedStructure = {
   'src/services/dualLayerReport.ts': '8654531d2c789db5d4de320bd52de81638a9e1d37241615adf93abb68490b956',
   // Mission 11C replaces the three financial projections with unit sensitivities.
   'src/services/deterministicScoring.ts': 'c1d862892d0d06402ebbf8ac638133b45c66884d8b318d12e5568080b1f60397',
-  'src/services/reportFallback.ts': 'd32debedbeb296216a9c1c95e7071810b4a456c8de7c9fc628b83e248a5538d4',
-  'src/components/OfferCards.tsx': '84e5af82fc7618f9d59a5b6151414b861863901d5b547c8c899512bd718b5aeb',
-  'src/config/appConfig.ts': '864fcac3b1dd0e56e51ce049195734177cfe0f0f62879e6084f48f3217faa5b9',
+  'src/services/reportFallback.ts': '54eb6ce6226664e15d6c2bb8dfadde16d7ed481e25a95625148fd293879f01e9',
+  'src/components/OfferCards.tsx': '972573e63414f6569a40c75d5c3b2be3d8950fc72c7a27e1eb1f1872368864d1',
+  'src/config/appConfig.ts': '95cb5e78fd885887bfe9aefad82825fd7fb5bdb2010b15a9da11cf869c4d7f3f',
   'src/pages/LeadGate.tsx': '85f5ad18180e218317a4fadbdf48b542bf58376fcadac0edb081652b2e3a24c2',
   'src/pages/Questionnaire.tsx': 'ed5e2569d01c10563e1bf8c56c9039c1dffa95d2a25a31a938f25e558d868ae9',
   'src/pages/Report.tsx': 'fc0969259d94cc1cd228ac0a44e89bed3b805ffc14587b5cd53666fc753a1676',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': '0b54278393c8324b0476f61c812f31e99342fe4ec78f07362f25cf379cbcd5cd',
-  'src/pages/consultant/ConsultantPage.jsx': 'b7efaa2619e07cbb0d2ab787b27e9983ed42821ca37013f8637c937ebeb87cbf'
+  'src/pages/consultant/ConsultantPage.jsx': '168e6fdba9654ac069939306eb35247887444cfe63a9d81aada7d2d7e1c385f8',
 };
 for (const [file, expected] of Object.entries({ ...baseline.structure, ...revisedStructure })) {
   check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match the approved revision`);
@@ -123,13 +126,14 @@ check((source('src/pages/CompanyIntake.tsx').match(/\[optionIndex\]/g) || []).le
 
 assert.deepEqual(Object.keys(BIK_OFFERS), ['executiveProject', 'monthlyRetainer', 'focusedWeek']);
 assert.deepEqual([EXECUTIVE_PROJECT_USD, MONTHLY_RETAINER_USD, FOCUSED_WEEK_USD], [5000, 499, 272]);
-check(true, 'offer order remains 5000 then 499 then 272');
+assert.deepEqual(Object.values(BIK_OFFERS).map(offer => offer.price), ['$5000', '$499', '$272']);
+check(true, 'offer amounts, order and dollar-sign labels match the release');
 check(MIN_WAIT_MS === 0 && APP_CONFIG.consultantWhatsApp === baseline.whatsapp, 'zero wait and consultant WhatsApp destination are unchanged');
 const consultant = syntax('src/pages/consultant/ConsultantPage.jsx');
 const stats = consultant.statements.flatMap(statement => ts.isVariableStatement(statement) ? statement.declarationList.declarations : [])
   .find(declaration => declaration.name.getText() === 'STATS')!;
 check(digest(stats.initializer!.getText()) === 'f75846a9c1f7877f8a12e5c7191dfd0ad168dd94ec57c35b187bb7fd86d7ff29', 'the approved consultant figures and satisfaction goal match the Mission 10 revision');
-const protectedFiles = { ...baseline.protectedFiles, 'src/services/reportTransferState.ts': '4d48851bde32a4eaea65c5b814213e64c7c971b387da35b2f9a7ed64d5cb6e41' };
+const protectedFiles = { ...baseline.protectedFiles, 'src/services/chatPolicy.ts': 'aded94b7ae478febe94b6ed7e88ec8ade077f54be4bc6241262db9a8042cd0c3', 'src/services/reportTransferState.ts': '4d48851bde32a4eaea65c5b814213e64c7c971b387da35b2f9a7ed64d5cb6e41' };
 for (const [file, expected] of Object.entries(protectedFiles)) {
   check(digest(source(file)) === expected, `${file}: sending/storage/chat policy matches its approved revision`);
 }

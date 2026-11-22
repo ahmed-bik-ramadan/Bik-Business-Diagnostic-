@@ -271,23 +271,17 @@ const section = (name: string, run: () => void | Promise<void>) =>
   });
 }
 
-// ---- F9: the diagnostic flow shows figures without a currency word ----
+// ---- F9: config supplies the same exact USD prices to every page ----
 {
   await section('F9', async () => {
     const { BIK_OFFERS } = await import('../src/config/appConfig');
-    for (const [key, offer] of Object.entries(BIK_OFFERS as Record<string, any>)) {
-      assert.ok(typeof offer.priceFigure === 'string' && offer.priceFigure.length > 0, `${key} exposes a priceFigure`);
-      assert.ok(/^[٠-٩]+( شهرياً)?$/.test(offer.priceFigure), `${key}.priceFigure is Arabic-Indic digits only: ${offer.priceFigure}`);
-      assert.ok(!/[دو]لار|USD|\$/.test(offer.priceFigure), `${key}.priceFigure carries no currency word`);
-      assert.ok(/[دو]لار/.test(offer.price), `${key}.price keeps the full USD wording for the consultant page`);
-    }
-    assert.equal((BIK_OFFERS as any).monthlyRetainer.perDayNote, 'أقل من ١٧ دولاراً في اليوم', 'the user-mandated per-day line stays verbatim');
+    assert.deepEqual(Object.values(BIK_OFFERS).map(offer => offer.price), ['$5000', '$499', '$272']);
+    assert.equal(BIK_OFFERS.monthlyRetainer.perDayNote, 'أقل من 17 دولاراً في اليوم');
 
     const cardsSource = src('src/components/OfferCards.tsx');
-    assert.ok(cardsSource.includes('offer.priceFigure'), 'the offer cards render the currency-free figure in the diagnostic flow');
-    assert.ok(!cardsSource.includes('{offer.price}'), 'the cards no longer render the currency price line');
+    assert.ok(cardsSource.includes('{offer.price}'), 'the report reads the configured USD price');
     const chatSource = src('src/services/chatPolicy.ts');
-    assert.ok(chatSource.includes('priceFigure'), 'the chat system prompt quotes the same currency-free figure');
+    assert.ok(chatSource.includes('offer.price'), 'the chat system prompt reads the configured USD price');
   });
 }
 

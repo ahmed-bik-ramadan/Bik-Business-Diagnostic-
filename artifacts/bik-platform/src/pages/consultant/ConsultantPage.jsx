@@ -1135,7 +1135,7 @@ export default function ConsultantPage({ visitor }) {
             {Object.entries(BIK_OFFERS).map(([key, offer]) => (
               <div key={key} className={'bkc-offer' + (key === 'executiveProject' ? ' top' : '')}>
                 <h3>{offer.name}</h3>
-                <div className="bkc-price">{offer.price}</div>
+                <div className="bkc-price"><bdi>{offer.price}</bdi>{offer.billingLabel && <span> {offer.billingLabel}</span>}</div>
                 <p className="bkc-offer-body">{offer.scope}</p>
                 <ul>{offer.includes.map(line => <li key={line}>{line}</li>)}</ul>
                 <a className="bkc-cta sm" href={baseMsg('عرض: ' + offer.name, offer.freeCallMinutes)} target="_blank" rel="noopener noreferrer">ناقش هذا العرض مع أ/ أحمد</a>

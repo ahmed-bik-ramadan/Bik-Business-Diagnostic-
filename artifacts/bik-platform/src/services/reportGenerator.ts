@@ -98,9 +98,9 @@ ${scoreResult.dataGaps.length > 0
 
 - الأثر المالي المحسوب:
 ${scoreResult.financialImpact.isComputable
-  ? `  * الإيراد الشهري: ${scoreResult.financialImpact.metrics.monthlyRevenue?.value?.toLocaleString()} ${scoreResult.financialImpact.currency}
-  * صافي الربح الشهري: ${scoreResult.financialImpact.metrics.monthlyNetProfit?.value?.toLocaleString()} ${scoreResult.financialImpact.currency}
-  * الإنفاق الشهري على اكتساب العملاء (CAC): ${scoreResult.financialImpact.metrics.monthlyAcquisitionSpend?.value?.toLocaleString() || 'غير متوفر'} ${scoreResult.financialImpact.currency}`
+  ? `  * الإيراد الشهري: ${scoreResult.financialImpact.metrics.monthlyRevenue?.value?.toLocaleString('en-US')} ${scoreResult.financialImpact.currency}
+  * صافي الربح الشهري: ${scoreResult.financialImpact.metrics.monthlyNetProfit?.value?.toLocaleString('en-US')} ${scoreResult.financialImpact.currency}
+  * الإنفاق الشهري على اكتساب العملاء (CAC): ${scoreResult.financialImpact.metrics.monthlyAcquisitionSpend?.value?.toLocaleString('en-US') || 'غير متوفر'} ${scoreResult.financialImpact.currency}`
   : `  * ${scoreResult.financialImpact.uncomputableReason || 'الأثر المالي غير قابل للحساب بدقة من البيانات المتاحة'}`}
 `;
 

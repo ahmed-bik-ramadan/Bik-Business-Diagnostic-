@@ -6,6 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { BIK_OFFERS } from '../src/config/appConfig';
 import { handleChat } from '../server/chatHandler.ts';
 
 // ---- Report A: pnpm build scripts are approved in the workspace config ----
@@ -69,15 +70,11 @@ import { handleChat } from '../server/chatHandler.ts';
   assert.ok(calls >= 2, 'the page calls the wipe at completion AND on restore');
 }
 
-// ---- م4: the per-day note is exactly «أقل من ١٧ دولاراً في اليوم» ----
+// ---- م4: the per-day note retains its wording with Latin digits ----
 {
   const src = fs.readFileSync('src/config/appConfig.ts', 'utf8');
-  assert.ok(src.includes("const toArabicIndic = (value: number) => String(value).replace(/\\d/g, d => '٠١٢٣٤٥٦٧٨٩'[Number(d)])"), 'toArabicIndic helper exists');
-  const note = src.match(/perDayNote:\s*`([^`]+)`/)?.[1] ?? '';
-  const expanded = note
-    .replace('${toArabicIndic(RETAINER_PER_DAY_USD)}', '١٧')
-    .replace('${CURRENCY_LABEL}', 'دولاراً');
-  assert.equal(expanded, 'أقل من ١٧ دولاراً في اليوم', 'per-day note is exactly the agreed wording');
+  assert.ok(!src.includes('toArabicIndic'), 'no helper converts output to Arabic-Indic digits');
+  assert.equal(BIK_OFFERS.monthlyRetainer.perDayNote, 'أقل من 17 دولاراً في اليوم');
   assert.ok(!src.includes('في اليوم الواحد'), 'the dropped suffix الواحد is gone');
 }
 

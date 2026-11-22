@@ -26,9 +26,9 @@ const OK = 'مستقر', IMP = 'يحتاج تحسين', CRIT = 'نقطة حرج�
 
 // 1. The three approved offers and their prices.
 check(Object.keys(BIK_OFFERS).sort().join() === 'executiveProject,focusedWeek,monthlyRetainer', 'exactly three offers are configured');
-check(BIK_OFFERS.focusedWeek.name === 'أسبوع استشاري مُركَّز' && BIK_OFFERS.focusedWeek.price.includes('272'), 'focused week: name and 272 USD');
-check(BIK_OFFERS.monthlyRetainer.name === 'المستشار في منصبك — تعاقد شهري' && BIK_OFFERS.monthlyRetainer.price.includes('499'), 'monthly retainer: name and 499 USD/month');
-check(BIK_OFFERS.executiveProject.name === 'التعاقد الاستشاري التنفيذي للمشروع' && BIK_OFFERS.executiveProject.price.includes('5000'), 'executive project: name and 5000 USD/month');
+check(BIK_OFFERS.focusedWeek.name === 'أسبوع استشاري مُركَّز' && BIK_OFFERS.focusedWeek.price === '$272', 'focused week: name and 272 USD');
+check(BIK_OFFERS.monthlyRetainer.name === 'المستشار في منصبك — تعاقد شهري' && BIK_OFFERS.monthlyRetainer.price === '$499', 'monthly retainer: name and 499 USD/month');
+check(BIK_OFFERS.executiveProject.name === 'التعاقد الاستشاري التنفيذي للمشروع' && BIK_OFFERS.executiveProject.price === '$5000', 'executive project: name and 5000 USD/month');
 
 // 2. Recommendation rule.
 check(recommendOffer({ axisDetails: null }).rule === 'insufficient_data', 'no axis data -> insufficient_data, focused week');

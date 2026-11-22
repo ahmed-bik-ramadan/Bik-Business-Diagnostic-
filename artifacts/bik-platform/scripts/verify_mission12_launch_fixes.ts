@@ -21,7 +21,7 @@ import {generateFullDiagnosticReport} from '../src/services/reportGenerator';
 import {generateDiagnosticReport} from '../src/services/diagnose';
 import {buildWhatsAppDossierText} from '../src/services/dualLayerReport';
 import {buildWhatsAppReportParts} from '../src/services/reportTextDelivery';
-import {buildConsultantWhatsAppUrl,APP_CONFIG} from '../src/config/appConfig';
+import {buildConsultantWhatsAppUrl,APP_CONFIG,BIK_OFFERS} from '../src/config/appConfig';
 import {CLIENT_DATA_STORAGE_DISABLED} from '../shared/privacy';
 import {ReportPreview} from '../src/components/report/ReportPreview';
 
@@ -100,11 +100,21 @@ for(const sector of sectorValues){
  const client=buildChatContext({sector,axisDetails:Object.fromEntries(axes.map(a=>[a.label,{status:a.status}]))});
  const server=validateChatRequest({messages:[{role:'user',text:'ما أولوية العمل؟'}],context:client});
  assert.ok(server.ok);assert.equal(client.sector,sector);assert.equal(server.value!.context.sector,sector);
- prompts.push(buildChatSystemPrompt(server.value!.context));
+ let prompt=buildChatSystemPrompt(server.value!.context);
+ const legacyDigits=(text:string)=>text.replace(/\d/g,digit=>'٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+ // Reconstruct only the superseded price typography for the original digest.
+ for(const offer of Object.values(BIK_OFFERS)){
+   const label=`- ${offer.name}: `;
+   assert.ok(prompt.includes(label+offer.price));
+   prompt=prompt.replace(label+offer.price,label+legacyDigits(offer.price.slice(1)));
+ }
+ const daily=BIK_OFFERS.monthlyRetainer.perDayNote;
+ assert.ok(prompt.includes(daily));
+ prompts.push(prompt.replace(daily,legacyDigits(daily)));
  check(true,`approved sector stays unchanged on client and server: ${sector}`);
 }
 check(sectorValues.length===reference.approvedSectorValues&&createHash('sha256').update(JSON.stringify(prompts)).digest('hex')===reference.legitimatePromptHash,
- 'all 207 legitimate-sector system prompts match the approved digest with the restored offer wording');
+ 'all 207 legitimate-sector prompts have the configured prices and otherwise match the approved wording');
 for(const label of Object.keys(DIAGNOSTIC_DIMENSIONS))for(const status of ['مستقر','يحتاج تحسين','نقطة حرجة','بيانات غير كافية']){
  const client=buildChatContext({sector:'retail',axisDetails:{[label]:{status}}});
  const server=validateChatRequest({messages:[{role:'user',text:'سؤال'}],context:{sector:'retail',axes:[{label,status}]}});
@@ -124,7 +134,10 @@ check(MAX_MESSAGE_CHARS===500&&DEFAULT_CHAT_MODEL==='anthropic/claude-haiku-5.5'
 check(!validateChatRequest({messages:[{role:'user',text:'ا'.repeat(501)}]}).ok&&validateChatRequest({messages:[{role:'user',text:'ا'.repeat(500)}]}).ok,'the exact existing 500-character boundary is preserved');
 const policy=fs.readFileSync(path.join(root,'src/services/chatPolicy.ts'),'utf8');
 const promptFunction=policy.slice(policy.indexOf('export function buildChatSystemPrompt'),policy.indexOf('/**\n * Output guard.'));
-check(createHash('sha256').update(promptFunction).digest('hex')===reference.promptFunctionSHA256,'the complete system-prompt function, not just its wording, remains byte-identical');
+const formerPriceLine="    // F9 (round-5): في سياق التشخيص يُذكر الرقم مجرداً بلا كلمة عملة؛ العملة الكاملة مسرحها صفحة المستشار.\n"
+  + '    return `- ${offer.name}: ${offer.priceFigure}${perDay}. ${offer.scope}`;';
+const formerPromptFunction=promptFunction.replace(/^    return `- \$\{offer\.name\}: .*perDay.*$/m,formerPriceLine);
+check(createHash('sha256').update(formerPromptFunction).digest('hex')===reference.promptFunctionSHA256,'only the authorized price display in the system-prompt function changed');
 let captured:any;
 const mockFetch=(async(_url:any,options:any)=>{captured=JSON.parse(options.body);return new Response(JSON.stringify({choices:[{message:{content:'تحتاج الأولوية إلى مراجعة المحور المالي.'}}]}),{status:200,headers:{'Content-Type':'application/json'}});}) as typeof fetch;
 const response=await handleChat({messages:[{role:'user',text:'ما أولوية العمل؟'}],context:{sector:attack,axes:[{label:attack,status:attack},{label:'الصحة المالية',status:attack}]}},

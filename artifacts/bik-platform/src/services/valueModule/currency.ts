@@ -10,19 +10,18 @@ export function answerCurrency(answer: unknown, country: unknown): ValueCurrency
 }
 export const currencyName = (currency: ValueCurrency) => platformCopy[`value.currency.${currency}`];
 export const currencyUnit = (currency: ValueCurrency) => platformCopy[`value.currencyUnit.${currency}`];
-export const formatValueNumber = (value: number, decimals = 2): string => new Intl.NumberFormat('ar-EG', {
+export const formatValueNumber = (value: number, decimals = 2): string => new Intl.NumberFormat('en-US', {
   useGrouping: true, maximumFractionDigits: decimals
 }).format(value);
 export const formatValueAmount = (value: number, currency: ValueCurrency): string => `${formatValueNumber(value, currency === 'KWD' ? 3 : 2)} ${currencyUnit(currency)}`;
-export const indianDigits = (value: string) => value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
 /** Format the field without discarding a decimal point still being typed. */
 export function displayValueInput(value: unknown): string {
   if (typeof value !== 'string' && typeof value !== 'number') return '';
   const text = String(value).replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x660))
     .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x6f0)).replace(/[\s,،٬]/gu, '').replace(/٫/g, '.');
-  if (!/^\d*(?:\.\d*)?$/.test(text)) return indianDigits(text);
+  if (!/^\d*(?:\.\d*)?$/.test(text)) return text;
   const [integer, fraction] = text.split('.');
-  return indianDigits(integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')) + (fraction === undefined ? '' : '٫' + indianDigits(fraction));
+  return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction === undefined ? '' : '.' + fraction);
 }
 export function fxFreshness(asOf: string = FX_AS_OF, now = new Date()) {
   const date = Date.parse(asOf + 'T00:00:00Z');

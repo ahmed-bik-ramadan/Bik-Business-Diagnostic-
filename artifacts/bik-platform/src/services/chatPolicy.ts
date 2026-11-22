@@ -161,8 +161,7 @@ export function buildChatSystemPrompt(context: ChatContext): string {
   const offerLine = (key: OfferKey) => {
     const offer = BIK_OFFERS[key];
     const perDay = 'perDayNote' in offer && offer.perDayNote ? ` (${offer.perDayNote})` : '';
-    // F9 (round-5): في سياق التشخيص يُذكر الرقم مجرداً بلا كلمة عملة؛ العملة الكاملة مسرحها صفحة المستشار.
-    return `- ${offer.name}: ${offer.priceFigure}${perDay}. ${offer.scope}`;
+    return `- ${offer.name}: ${offer.price}${'billingLabel' in offer ? ` ${offer.billingLabel}` : ''}${perDay}. ${offer.scope}`;
   };
   const axesBlock = context.axes.length
     ? context.axes.map(a => `- ${a.label}: ${a.status}`).join('\n')
@@ -224,15 +223,15 @@ export function guardAssistantReply(raw: unknown): string {
   if (text.search(EMAIL) !== -1 || text.search(URL_LIKE) !== -1) return CHAT_FALLBACK_REPLY;
 
   const allowed = new Set([String(FOCUSED_WEEK_USD), String(MONTHLY_RETAINER_USD), String(EXECUTIVE_PROJECT_USD), String(RETAINER_PER_DAY_USD)]);
-  const moneyPattern = /([\d٠-٩][\d٠-٩.,]*)\s*(?:دولار|دولاراً|دولارا|\$|USD|ريال|جنيه|درهم|دينار)|(?:\$|USD)\s*([\d٠-٩][\d٠-٩.,]*)/gi;
-  const toLatin = (s: string) => s.replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660));
+  const moneyPattern = /([\d٠-٩۰-۹][\d٠-٩۰-۹.,]*)\s*(?:دولار|دولاراً|دولارا|\$|USD|ريال|جنيه|درهم|دينار)|(?:\$|USD)\s*([\d٠-٩۰-۹][\d٠-٩۰-۹.,]*)/gi;
+  const toLatin = (value: string) => value.replace(/[٠-٩۰-۹]/gu, digit => String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)));
   for (const m of text.matchAll(moneyPattern)) {
     const amount = toLatin((m[1] || m[2] || '').replace(/[.,]+$/, ''));
     if (!allowed.has(amount)) return CHAT_FALLBACK_REPLY;
   }
   // Any percentage is a number the platform did not source.
-  if (/[\d٠-٩]\s*(?:%|٪|بالمئة|في المئة)/.test(text)) return CHAT_FALLBACK_REPLY;
-  return text.slice(0, MAX_REPLY_CHARS);
+  if (/[\d٠-٩۰-۹]\s*(?:%|٪|بالمئة|في المئة)/.test(text)) return CHAT_FALLBACK_REPLY;
+  return toLatin(text).slice(0, MAX_REPLY_CHARS);
 }
 
 /** True once the client has received enough assistant replies to show the contact button. */

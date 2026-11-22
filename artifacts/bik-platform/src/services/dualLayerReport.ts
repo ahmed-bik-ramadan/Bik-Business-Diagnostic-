@@ -362,7 +362,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
         } else if (q.unit) {
           answerText = `${val} ${q.unit}`;
         } else if (q.type === 'number') {
-          answerText = Number(val).toLocaleString('ar-EG');
+          answerText = Number(val).toLocaleString('en-US');
         }
 
         const meta = UNIVERSAL_QUESTION_METADATA[q.id];
@@ -400,7 +400,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
         } else if (q.unit) {
           answerText = `${val} ${q.unit}`;
         } else if (q.type === 'number') {
-          answerText = Number(val).toLocaleString('ar-EG');
+          answerText = Number(val).toLocaleString('en-US');
         }
 
         qaRecord.push({
@@ -611,7 +611,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   }));
 
   const finSnapshotText = isComputable
-    ? `الإيراد: ${finMetrics.monthlyRevenue?.value?.toLocaleString('ar-EG')} ${currency} | صافي الربح: ${finMetrics.monthlyNetProfit?.value?.toLocaleString('ar-EG')} ${currency} (محسوب)`
+    ? `الإيراد: ${finMetrics.monthlyRevenue?.value?.toLocaleString('en-US')} ${currency} | صافي الربح: ${finMetrics.monthlyNetProfit?.value?.toLocaleString('en-US')} ${currency} (محسوب)`
     : 'الأثر المالي: غير مكتمل المدخلات المحاسبية (يتطلب فحص الدفاتر)';
 
   // Build Plain Text for Copying
@@ -658,9 +658,9 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
       description: topBlindSpot.description
     },
     financial_snapshot: {
-      revenue: finMetrics.monthlyRevenue?.value?.toLocaleString('ar-EG') || 'غير محدد',
-      profit: finMetrics.monthlyNetProfit?.value?.toLocaleString('ar-EG') || 'غير محدد',
-      cac: finMetrics.monthlyCACSpend?.value?.toLocaleString('ar-EG') || 'غير محدد',
+      revenue: finMetrics.monthlyRevenue?.value?.toLocaleString('en-US') || 'غير محدد',
+      profit: finMetrics.monthlyNetProfit?.value?.toLocaleString('en-US') || 'غير محدد',
+      cac: finMetrics.monthlyCACSpend?.value?.toLocaleString('en-US') || 'غير محدد',
       status: isComputable ? 'محسوب حتمياً' : 'غير مكتمل'
     },
     top_3_priorities: top3PrioritiesForBrief,
@@ -695,8 +695,8 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
     : null;
 
   const timelineLines = (firstShownTime || lastTime) ? [
-    `- بداية الجلسة: ${firstShownTime ? new Date(firstShownTime).toLocaleString('ar-EG') : 'غير متاح في هذه الجلسة.'}`,
-    `- نهاية الجلسة: ${lastTime ? new Date(lastTime).toLocaleString('ar-EG') : 'غير متاح في هذه الجلسة.'}`,
+    `- بداية الجلسة: ${firstShownTime ? new Date(firstShownTime).toLocaleString('en-US') : 'غير متاح في هذه الجلسة.'}`,
+    `- نهاية الجلسة: ${lastTime ? new Date(lastTime).toLocaleString('en-US') : 'غير متاح في هذه الجلسة.'}`,
     `- المدة التقديرية للجلسة: ${sessionDurationSec ? `${Math.floor(sessionDurationSec / 60)} د و ${sessionDurationSec % 60} ث` : 'غير متاح في هذه الجلسة.'}`,
     `- إجمالي الأسئلة المعروضة: ${qaRecord.length}`,
     `- إجمالي الأسئلة المجابة: ${questionsAnswered.length}`,
@@ -706,9 +706,9 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   // Financial Inputs Formatted with Missing Declarations Explicitly Marked
   const financialInputsFormatted = [
     `### سجل الإفصاحات المالية الخام:`,
-    `- الإيراد الشهري المصرّح: ${normalizedFinancialInputs.monthlyRevenue !== null ? `${normalizedFinancialInputs.monthlyRevenue.toLocaleString('ar-EG')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
-    `- التكاليف والمصروفات الشهرية: ${finInputs.monthlyCosts ? `${Number(finInputs.monthlyCosts).toLocaleString('ar-EG')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
-    `- الإنفاق التسويقي / تكلفة اكتساب العميل (CAC): ${finInputs.monthlyMarketing ? `${Number(finInputs.monthlyMarketing).toLocaleString('ar-EG')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
+    `- الإيراد الشهري المصرّح: ${normalizedFinancialInputs.monthlyRevenue !== null ? `${normalizedFinancialInputs.monthlyRevenue.toLocaleString('en-US')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
+    `- التكاليف والمصروفات الشهرية: ${finInputs.monthlyCosts ? `${Number(finInputs.monthlyCosts).toLocaleString('en-US')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
+    `- الإنفاق التسويقي / تكلفة اكتساب العميل (CAC): ${finInputs.monthlyMarketing ? `${Number(finInputs.monthlyMarketing).toLocaleString('en-US')} ${currency}` : 'غير مصرّح به (مفقود)'}`,
     `- هامش صافي الربح المصرّح: ${normalizedFinancialInputs.netMarginPct !== null ? `${normalizedFinancialInputs.netMarginPct}%` : 'غير مصرّح به (مفقود)'}`,
     `- التزامات الديون وأقساط التمويل: ${finInputs.hasDebt ? `${finInputs.hasDebt} (نسبة السداد من الإيراد: ${finInputs.debtMonthlyPct ? finInputs.debtMonthlyPct + '%' : 'غير محددة'})` : 'غير مصرّح به (مفقود)'}`,
     `- نقطة التعادل التشغيلية: ${finInputs.breakEven || 'غير مصرّح به (مفقود)'}`,
@@ -719,14 +719,14 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   const financialCalculationsFormatted: string[] = [];
   if (isComputable) {
     financialCalculationsFormatted.push(`- حالة الحساب: محسوب بمعادلة ثابتة`);
-    financialCalculationsFormatted.push(`- الإيراد السنوي التقديري: ${finMetrics.annualRevenue?.value ? `${finMetrics.annualRevenue.value.toLocaleString('ar-EG')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
-    financialCalculationsFormatted.push(`- صافي الربح الشهري بمعادلة ثابتة: ${finMetrics.monthlyNetProfit?.value !== undefined ? `${finMetrics.monthlyNetProfit.value.toLocaleString('ar-EG')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
-    financialCalculationsFormatted.push(`- صافي الربح السنوي التقديري: ${finMetrics.annualNetProfit?.value !== undefined ? `${finMetrics.annualNetProfit.value.toLocaleString('ar-EG')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
-    financialCalculationsFormatted.push(`- الإنفاق الشهري على اكتساب العملاء: ${finMetrics.monthlyCACSpend?.value !== undefined ? `${finMetrics.monthlyCACSpend.value.toLocaleString('ar-EG')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
+    financialCalculationsFormatted.push(`- الإيراد السنوي التقديري: ${finMetrics.annualRevenue?.value ? `${finMetrics.annualRevenue.value.toLocaleString('en-US')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
+    financialCalculationsFormatted.push(`- صافي الربح الشهري بمعادلة ثابتة: ${finMetrics.monthlyNetProfit?.value !== undefined ? `${finMetrics.monthlyNetProfit.value.toLocaleString('en-US')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
+    financialCalculationsFormatted.push(`- صافي الربح السنوي التقديري: ${finMetrics.annualNetProfit?.value !== undefined ? `${finMetrics.annualNetProfit.value.toLocaleString('en-US')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
+    financialCalculationsFormatted.push(`- الإنفاق الشهري على اكتساب العملاء: ${finMetrics.monthlyCACSpend?.value !== undefined ? `${finMetrics.monthlyCACSpend.value.toLocaleString('en-US')} ${currency}` : 'غير متاح في هذه الجلسة.'}`);
     if (financialCalculations.relevant_scenarios && financialCalculations.relevant_scenarios.length > 0) {
       financialCalculationsFormatted.push(`### سيناريوهات التحسين المالي المحسوبة:`);
       financialCalculations.relevant_scenarios.forEach(sc => {
-        financialCalculationsFormatted.push(`- سيناريو [${sc.name}]: أثر شهري متوقع +${sc.projectedMonthlyGain.toLocaleString('ar-EG')} ${currency} (الأساس: ${sc.basis || 'حسابي بمعادلة ثابتة'})`);
+        financialCalculationsFormatted.push(`- سيناريو [${sc.name}]: أثر شهري متوقع +${sc.projectedMonthlyGain.toLocaleString('en-US')} ${currency} (الأساس: ${sc.basis || 'حسابي بمعادلة ثابتة'})`);
       });
     }
   } else {
@@ -750,9 +750,9 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   if (hasRevenue && sectorBlindSpots.monthlyTotal !== null) {
     financialCalculationsFormatted.push(`### النقاط العمياء المالية (مشتقة من أرقام العميل المصرَّح بها في التشخيص العميق، لكل شهر):`);
     sectorBlindSpots.spots.forEach(spot => {
-      financialCalculationsFormatted.push(`- ${spot.name}: ${spot.monthlyAmount.toLocaleString('ar-EG')} ${currency} شهرياً`);
+      financialCalculationsFormatted.push(`- ${spot.name}: ${spot.monthlyAmount.toLocaleString('en-US')} ${currency} شهرياً`);
     });
-    financialCalculationsFormatted.push(`- الإجمالي الشهري المشتق: ${sectorBlindSpots.monthlyTotal.toLocaleString('ar-EG')} ${currency} (قاعدة اشتقاق، ليست وعداً)`);
+    financialCalculationsFormatted.push(`- الإجمالي الشهري المشتق: ${sectorBlindSpots.monthlyTotal.toLocaleString('en-US')} ${currency} (قاعدة اشتقاق، ليست وعداً)`);
   }
 
   // Contradictions List
@@ -769,7 +769,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   const timestampVal = sessionTimestamp || firstShownTime;
   const sessionTimestampFormatted = timestampVal
     ? [
-        `- التاريخ والوقت: ${new Date(timestampVal).toLocaleString('ar-EG')}`,
+        `- التاريخ والوقت: ${new Date(timestampVal).toLocaleString('en-US')}`,
         `- التوقيت الرقمي (Epoch): ${timestampVal}`
       ]
     : ['غير متاح في هذه الجلسة.'];

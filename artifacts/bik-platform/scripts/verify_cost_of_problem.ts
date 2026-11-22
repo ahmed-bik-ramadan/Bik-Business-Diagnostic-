@@ -102,7 +102,7 @@ check(JSON.stringify(computeCostOfProblem({...clinical,axisScore:0} as ValueInpu
   'diagnostic scores cannot affect any cost amount');
 for(const raw of ['',null,undefined,'unknown','NaN','Infinity','-١٢','abc','1e6',NaN,Infinity,-1])check(parseValueNumber(raw)===null,`reject missing/malformed/negative input: ${String(raw)}`);
 check(parseValueNumber('١٢٬٣٤٥٫٧٥')===12345.75&&parseValueNumber('۱۲،۳۴۵')===12345&&parseValueNumber('0')===0,'Arabic/Persian digits, grouping, decimals and zero parse without assumptions');
-check(displayValueInput('1234.')==='١٬٢٣٤٫'&&displayValueInput('1234.50')==='١٬٢٣٤٫٥٠','numeric fields retain a decimal point and precision while displaying Indian digits');
+check(displayValueInput('١٢٣٤٫')==='1,234.'&&displayValueInput('1234.50')==='1,234.50','numeric fields retain a decimal point and precision while displaying Latin digits');
 
 assert.deepEqual(Object.keys(SECTOR_POOLS).sort(),Object.keys(DEEP_TIER_QUESTIONS).sort());
 check(true,'all nine actual deep-sector IDs are covered and no guessed deep-sector ID is added');
@@ -129,13 +129,14 @@ for(const [country,currency]of [['مصر','EGP'],['السعودية','SAR'],['ا
 check(answerCurrency('unknown',undefined)==='USD'&&answerCurrency('', 'الإمارات العربية المتحدة')==='USD','an absent/unsupported currency and an unmatched country name use USD without guessing');
 assert.deepEqual(FX_RATES_PER_USD,{USD:1,SAR:3.75,AED:3.6725,QAR:3.64,KWD:.307,EGP:53});
 check(FX_AS_OF==='2026-11-14','all six FX rates and the dated owner-supplied reference are exact');
-check(FOCUSED_WEEK_USD*FX_RATES_PER_USD.EGP===14416&&formatValueAmount(14416,'EGP')==='١٤٬٤١٦ جنيهاً','272 USD converts to exactly 14416 EGP, displayed with Indian digits and Arabic grouping');
+check(FOCUSED_WEEK_USD*FX_RATES_PER_USD.EGP===14416&&formatValueAmount(14416,'EGP')==='14,416 جنيهاً','272 USD converts to exactly 14416 EGP, displayed with Latin digits and en-US grouping');
 assert.deepEqual(VALUE_OFFERS.map(o=>[o.name,o.price]),[[BIK_OFFERS.executiveProject.name,EXECUTIVE_PROJECT_USD],[BIK_OFFERS.monthlyRetainer.name,MONTHLY_RETAINER_USD],[BIK_OFFERS.focusedWeek.name,FOCUSED_WEEK_USD]]);
 check(true,'all three offer names, prices and ordering derive from unchanged appConfig offers');
-check(valueOfferRows(100000,'EGP')[2].text.includes('٢٧٢ دولاراً (نحو ١٤٬٤١٦ جنيهاً)'),'the offer row contains the actual dollar price and selected-currency equivalent');
+check(valueOfferRows(100000,'EGP')[2].text.includes('$272 (نحو 14,416 جنيهاً)'),'the offer row contains the actual dollar price and selected-currency equivalent');
 check(valueOfferRows(100000,'EGP')[2].pct===14.416,'offer percentages compare local price with local monthly cost');
 check(valueOfferRows(0,'SAR').every(r=>r.pct===null&&!r.text.includes('NaN')&&r.text.includes('أكبر')),'zero cost has no division by zero and uses the above-cost wording');
 check(valueOfferRows(null,'SAR').every(r=>r.text.includes('أدخل أرقام')),'pending totals still show exactly three meaningful offer lines');
+check(valueOfferRows(100000,'USD').at(-1)!.text.includes('$272.') && !valueOfferRows(100000,'USD').at(-1)!.text.includes('دولاراً'), 'USD rows use a dollar sign with no suffix or trailing space');
 check(valueOfferRows(1000,'USD',[{key:'changed',name:'عرض اختباري',price:100}])[0].pct===10,'changing an injected source price changes the result without price literals in the component');
 check(fxFreshness(FX_AS_OF,new Date('2026-12-29T23:59:00Z')).stale===false&&fxFreshness(FX_AS_OF,new Date('2026-12-30T00:00:00Z')).stale===true,'FX age crosses the acceptance boundary only after forty-five full days');
 for(const report of [false,true]){
@@ -169,8 +170,8 @@ for (const [sectorL1, inventoryId] of [['retail','rd01'], ['import','imd01']]) {
 }
 
 const newCopy=Object.entries(platformCopy).filter(([key])=>key.startsWith('value.'));
-for(const [key,value]of newCopy){assert.ok(value.trim(),key);assert.doesNotMatch(value,/ROI|عائد|يغطي|لا يغطي|ضمان|سنحقق|ستربح|نسبة تسرب/iu,key);assert.doesNotMatch(value,/[0-9]|\p{Extended_Pictographic}/u,key);}
-check(newCopy.length===101,'all 101 functional value strings are centralized, nonempty, without forbidden words, Western digits or emoji; there are no exceptions');
+for(const [key,value]of newCopy){assert.ok(value.trim(),key);assert.doesNotMatch(value,/ROI|عائد|يغطي|لا يغطي|ضمان|سنحقق|ستربح|نسبة تسرب/iu,key);assert.doesNotMatch(value,/[٠-٩۰-۹]|\p{Extended_Pictographic}/u,key);}
+check(newCopy.length===101,'all 101 functional value strings are centralized, nonempty, without forbidden words, Arabic-Indic digits or emoji; there are no exceptions');
 check(platformCopy['value.disclaimer']==='تقدير حسابي من أرقامك أنت، وليس تدقيقاً ولا وعداً بنتيجة. لا يُحفظ ما كتبت.'&&platformCopy['value.sector.automotive.waste']==='إعادة عمل والتزامات إصلاح شهرياً','the two owner clarifications are exact');
 check(!Object.keys(platformCopy).some(k=>k.startsWith('roi.')),'all retired copy keys are removed');
 check(caseStudies.length===0,'the published case-study array is empty and invents no cases');
@@ -209,23 +210,23 @@ try{
  for(const [key,value]of Object.entries(clinical))edit(key as ValueField,String(value));
  const estimate = (formatted: string) => `${formatted} (${VALUE_ESTIMATE_LABEL})`;
  assert.equal(VALUE_ESTIMATE_LABEL, 'تقدير استرشادي');
- check(text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'), 'input handlers render the guarded monthly total');
- for (const [id, formatted] of Object.entries({'value-result-L':'٨٤٠ جنيهاً', 'value-result-R':'٢٬١٠٠ جنيهاً',
-   'value-result-P':'٩٠٠ جنيهاً', 'value-yearly':'٣٦٬٠٠٠ جنيهاً'})) {
+ check(text(find(tree,'value-total')) === estimate('3,000 جنيهاً'), 'input handlers render the guarded monthly total');
+ for (const [id, formatted] of Object.entries({'value-result-L':'840 جنيهاً', 'value-result-R':'2,100 جنيهاً',
+   'value-result-P':'900 جنيهاً', 'value-yearly':'36,000 جنيهاً'})) {
    check(text(find(tree, id)).includes(estimate(formatted)), `${id}: the amount carries the common estimate label`);
  }
- check(text(find(tree,'value-offer-focusedWeek')).includes(estimate('٢٧٢ دولاراً') + ' (نحو ١٤٬٤١٦ جنيهاً)') &&
+ check(text(find(tree,'value-offer-focusedWeek')).includes(estimate('$272') + ' (نحو 14,416 جنيهاً)') &&
    text(find(tree,'value-fx-note')).includes(VALUE_ESTIMATE_LABEL), 'the comparison labels the price pair and exchange rate');
  const excludedRow = nodes(tree).find(node => node.type === 'div' && node.props.children?.[0]?.props?.['data-testid'] === 'value-result-L');
  check(text(excludedRow).includes('لا يُجمع الأثران لأنهما يتقاطعان'), 'the overlap explanation appears under the excluded amount');
  check(!nodes(tree).some(node => node.type === 'button' || node.props['data-testid'] === 'value-gain'),
    'the calculator renders neither preset recovery buttons nor a gain');
  edit('margin','0');
- check(find(tree,'value-field-margin').props['aria-invalid'] === false && text(find(tree,'value-total')) === estimate('٩٠٠ جنيهاً'),
+ check(find(tree,'value-field-margin').props['aria-invalid'] === false && text(find(tree,'value-total')) === estimate('900 جنيهاً'),
    'zero margin is accepted by both UI and calculator');
  edit('margin','70');
  edit('monthlyRevenue','4499');
- check(text(tree).includes('الأرقام المدخلة لا تتسق؛ راجعها') && text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'),
+ check(text(tree).includes('الأرقام المدخلة لا تتسق؛ راجعها') && text(find(tree,'value-total')) === estimate('3,000 جنيهاً'),
    'the exact warning appears alongside a usable result');
  edit('monthlyRevenue','4500');
  check(!text(tree).includes('الأرقام المدخلة لا تتسق؛ راجعها'), 'the warning clears at the boundary');
@@ -234,19 +235,19 @@ try{
    !nodes(tree).some(node => node.type === 'output' || ['value-totals','value-offers','value-fx-note'].includes(node.props['data-testid'])),
    'zero revenue shows the priorities notice without path amounts, totals, fees or FX');
  edit('monthlyRevenue','');
- check(!text(tree).includes('لم يُدخل إيراد') && text(find(tree,'value-total')) === estimate('٣٬٠٠٠ جنيهاً'),
+ check(!text(tree).includes('لم يُدخل إيراد') && text(find(tree,'value-total')) === estimate('3,000 جنيهاً'),
    'clearing the zero restores estimates immediately');
  edit('monthlyRevenue','100000');
  app.setStore({...store,sectorAnswers:{...store.sectorAnswers,hd01:40}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value==='٤٠'&&text(find(tree,'value-total'))===estimate('٤٬٠٠٠ جنيهاً'),'changing the source answer then rendering updates the input and result, including a formerly edited prefill');
+ check(find(tree,'value-field-unitNet').props.value==='40'&&text(find(tree,'value-total'))===estimate('4,000 جنيهاً'),'changing the source answer then rendering updates the input and result, including a formerly edited prefill');
  check(Boolean(find(tree,'value-prefilled-unitNet')),'a newly read source answer carries its prefill marker');
- edit('unitNet','50');check(text(find(tree,'value-total'))===estimate('٥٬٠٠٠ جنيهاً')&&app.store().sectorAnswers.hd01===40,'local editing changes the result without changing the store answer');
+ edit('unitNet','50');check(text(find(tree,'value-total'))===estimate('5,000 جنيهاً')&&app.store().sectorAnswers.hd01===40,'local editing changes the result without changing the store answer');
  const preCurrency=JSON.stringify(app.store());find(tree,'value-currency').props.onChange({target:{value:'SAR'}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value===''&&find(tree,'value-field-monthlyRevenue').props.value===''&&find(tree,'value-field-lostUnits').props.value==='٤٠','changing currency clears financial fields and preserves counts without conversion');
+ check(find(tree,'value-field-unitNet').props.value===''&&find(tree,'value-field-monthlyRevenue').props.value===''&&find(tree,'value-field-lostUnits').props.value==='40','changing currency clears financial fields and preserves counts without conversion');
  edit('unitNet','20');edit('monthlyRevenue','100000');
- check(text(find(tree,'value-total'))===estimate('٢٬٠٠٠ ريالاً'),'new-currency inputs use their declared values without converting visitor numbers');
+ check(text(find(tree,'value-total'))===estimate('2,000 ريالاً'),'new-currency inputs use their declared values without converting visitor numbers');
  find(tree,'value-currency').props.onChange({target:{value:'EGP'}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value==='٤٠'&&find(tree,'value-field-monthlyRevenue').props.value==='١٠٠٬٠٠٠','returning to the answer currency refills current answers rather than restoring another-currency drafts');
+ check(find(tree,'value-field-unitNet').props.value==='40'&&find(tree,'value-field-monthlyRevenue').props.value==='100,000','returning to the answer currency refills current answers rather than restoring another-currency drafts');
  check(JSON.stringify(app.store())===preCurrency,'all currency operations leave the store unchanged');
  app.setStore({...store,axisDetails:{'الفريق والعمليات':{status:'نقطة حرجة'},'الموقع التنافسي':{status:'مستقر'}}});tree=app.render();edit('monthlyWaste','8172639');
  check(Boolean(find(tree,'value-field-monthlyWaste'))&&!nodes(tree).some(n=>n.props['data-testid']==='value-field-underPct'),'the actual component replaces P with W without showing four paths');
@@ -255,13 +256,13 @@ try{
  check(!context.includes('8172639')&&!/unitNet|monthlyWaste|dormantCount|returnsPerYear|underPct/.test(context),'local cost inputs never enter the existing chat context');
  assert.equal(before,JSON.stringify(store));check(true,'initial accepted answers remain byte-identical');
  const empty=mount({intakeAnswers:{},universalAnswers:{},sectorAnswers:{},axisDetails:{},sectorL1:'education'}).render();
- check(text(empty).includes('كلفة مشكلة شركتك')&&!/undefined|NaN|Infinity|[0-9]/.test(text(empty)),'a fully missing identity and empty figures still render meaningful Arabic text');
+ check(text(empty).includes('كلفة مشكلة شركتك')&&!/undefined|NaN|Infinity|[٠-٩۰-۹]/.test(text(empty)),'a fully missing identity and empty figures still render meaningful Arabic text');
  check(!nodes(empty).some(n=>n.props['data-testid']==='value-case-study'),'no case-study card appears today');
  const sample={sector:'healthcare',beforeAfter:'وصف اختباري اصطناعي فقط',months:2,note:'لا يمثل حالة منشورة'};
  check(nodes(mount(store,[sample]).render()).filter(n=>n.props['data-testid']==='value-case-study').length===1
   &&!nodes(mount({...store,sectorL1:'education'},[sample]).render()).some(n=>n.props['data-testid']==='value-case-study'),'only a matching supplied case renders, with no fabricated default');
  for(const p of nodes(tree).filter(n=>['p','output','label','option','button'].includes(n.type)))assert.ok(text(p).trim(),p.type);
- check(!/undefined|NaN|Infinity|[0-9]/.test(text(tree)),'filled output text has no empty templates, Western numerals or non-finite values');
+ check(!/undefined|NaN|Infinity|[٠-٩۰-۹]/.test(text(tree)),'filled output text has no empty templates, Arabic-Indic numerals or non-finite values');
 }finally{globalThis.fetch=originalFetch;for(const [name,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete (globalThis as any)[name];}}
 const source=fs.readFileSync(path.join(root,'src/components/CostOfProblem.tsx'),'utf8');
 check(!/\b(?:fetch|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB|setField|setState)\b/.test(source),'component source has no storage, network or store-write sinks');

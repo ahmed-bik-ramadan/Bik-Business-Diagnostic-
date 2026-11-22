@@ -45,7 +45,7 @@ export default function OfferCards({ recommended, outcomes, monthlyWaste }: Offe
           const offer = BIK_OFFERS[key];
           const isRecommended = recommended?.key === key;
           const url = buildConsultantWhatsAppUrl({
-            customMessage: `مرحباً أستاذ أحمد، أكملت تشخيص BIK وأرغب في مناقشة «${offer.name}» (${offer.priceFigure}).`
+            customMessage: `مرحباً أستاذ أحمد، أكملت تشخيص BIK وأرغب في مناقشة «${offer.name}» (${offer.price}).`
           }).url;
           return (
             <div
@@ -56,7 +56,7 @@ export default function OfferCards({ recommended, outcomes, monthlyWaste }: Offe
             >
               {isRecommended && <span className={`mb-3 inline-block self-start rounded-full px-3 py-1 text-xs font-bold ${GREEN_RECOMMENDED.badge}`}>الأنسب لوضعك</span>}
               <strong className="block text-[#0F172A]">{offer.name}</strong>
-              <span className="mt-2 block font-bold text-[#92763D]">{offer.priceFigure}</span>
+              <span className="mt-2 block font-bold text-[#92763D]"><bdi>{offer.price}</bdi>{'billingLabel' in offer && <span className="ms-1">{offer.billingLabel}</span>}</span>
               {'perDayNote' in offer && offer.perDayNote && <span className="mt-1 block text-xs font-bold leading-6 text-[#146B4F]">{offer.perDayNote}</span>}
               {monthlyLoss && <p className="mt-3 rounded-xl bg-[#F6F0DF] p-3 text-sm leading-7 text-[#5D5542]">{monthlyLoss}</p>}
               <p className="mt-3 text-sm leading-7 text-[#68717A]">{offer.scope}</p>

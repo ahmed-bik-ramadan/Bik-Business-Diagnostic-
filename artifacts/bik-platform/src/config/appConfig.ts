@@ -31,7 +31,7 @@ export const APP_CONFIG: AppConfig = {
 
 export const BIK_CONSULTANT_PUBLIC_WHATSAPP = APP_CONFIG.consultantWhatsApp;
 
-/** Single source for the two approved prices (USD). Everything else derives from these. */
+/** Single source for the three approved prices (USD). Everything else derives from these. */
 export const FOCUSED_WEEK_USD = 272;
 export const MONTHLY_RETAINER_USD = 499;
 export const EXECUTIVE_PROJECT_USD = 5000;
@@ -49,23 +49,22 @@ export const EXECUTIVE_LOSS_THRESHOLD_USD = EXECUTIVE_PROJECT_USD * 2;
 export const OFFER_GAP_LINE = 'الفارق بين هذه البطاقات ليس فرق سعر فقط: إنه حجم القرار الذي تريد أن يقود عنك. المشكلة تستمر بكلفتها الشهرية حتى تُعالج.';
 export const BIK_REFUND_POLICY = 'يُرد المبلغ إذا كان تقييمك لاستشارتنا أو عملنا أقل من 85%، أو إذا لم يتم العمل. يُخصم رسم إداري فقط، ولا يُخصم أي مبلغ مقابل العمل.';
 
-/** الأسعار المشتقة تُعرض بأرقام هندية (١٧) في كل مكان يظهر فيها للعميل. */
-const toArabicIndic = (value: number) => String(value).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[Number(d)]);
+export const formatUsdPrice = (value: number): string => `$${value}`;
 
 export const BIK_OFFERS = {
-  executiveProject: { freeCallMinutes: 40, name: 'التعاقد الاستشاري التنفيذي للمشروع', price: `${EXECUTIVE_PROJECT_USD} ${CURRENCY_LABEL} شهرياً`, priceFigure: `${toArabicIndic(EXECUTIVE_PROJECT_USD)} شهرياً`, scope: 'مشروع أزمتك نفسه في يد من يقوده عنك: الأزمة القائمة، الأزمة الكامنة، أو الصفقة الكبرى أمام جهة أخرى.',
+  executiveProject: { freeCallMinutes: 40, name: 'التعاقد الاستشاري التنفيذي للمشروع', price: formatUsdPrice(EXECUTIVE_PROJECT_USD), billingLabel: 'شهرياً', scope: 'مشروع أزمتك نفسه في يد من يقوده عنك: الأزمة القائمة، الأزمة الكامنة، أو الصفقة الكبرى أمام جهة أخرى.',
     includes: [
       'أكثر من 550 ساعة عمل تنفيذي خلال الشهر',
       'هدف عائد عشرة أضعاف الأتعاب، يُقاس من مستنداتك المالية قبل العمل وبعده، ويشمل التدفق النقدي أو الإيراد أو خفض التكلفة أو الإنتاجية بحسب نشاطك.',
       'هو هدف نعمل عليه لا ضمان نتيجة.'
     ] },
-  monthlyRetainer: { freeCallMinutes: 15, name: 'المستشار في منصبك — تعاقد شهري', price: `${MONTHLY_RETAINER_USD} ${CURRENCY_LABEL} شهرياً`, priceFigure: `${toArabicIndic(MONTHLY_RETAINER_USD)} شهرياً`, perDayNote: `أقل من ${toArabicIndic(RETAINER_PER_DAY_USD)} ${CURRENCY_LABEL} في اليوم`, scope: 'لا ينتظر أن تسأله: يفكر مكانك في القرار الذي تؤجله، ويتابع مسؤولي التنفيذ عنك.',
+  monthlyRetainer: { freeCallMinutes: 15, name: 'المستشار في منصبك — تعاقد شهري', price: formatUsdPrice(MONTHLY_RETAINER_USD), billingLabel: 'شهرياً', perDayNote: `أقل من ${RETAINER_PER_DAY_USD} ${CURRENCY_LABEL} في اليوم`, scope: 'لا ينتظر أن تسأله: يفكر مكانك في القرار الذي تؤجله، ويتابع مسؤولي التنفيذ عنك.',
     includes: [
       'نطاق وإيقاع عمل مكتوبان حسب حالة كل شركة.',
       'دون سقف لعدد المكالمات: يتواصل المستشار مع مسؤولي الأقسام المعنية بالتنفيذ، ويشرف عليهم ويتابع عملهم.',
       'يُحضّر لك قراراتك الكبرى: يدرس البدائل، يقارن الأرقام، ويقترح الخيار الجريء المنطقي.'
     ] },
-  focusedWeek: { freeCallMinutes: 15, name: 'أسبوع استشاري مُركَّز', price: `${FOCUSED_WEEK_USD} ${CURRENCY_LABEL}`, priceFigure: toArabicIndic(FOCUSED_WEEK_USD), scope: 'أسبوع واحد يُحسم فيه قرار واحد كنت تؤجله: نتحقق من الأدلة معاً، ثم ننتهي بقرار محسوم لا بملاحظات معلقة.',
+  focusedWeek: { freeCallMinutes: 15, name: 'أسبوع استشاري مُركَّز', price: formatUsdPrice(FOCUSED_WEEK_USD), scope: 'أسبوع واحد يُحسم فيه قرار واحد كنت تؤجله: نتحقق من الأدلة معاً، ثم ننتهي بقرار محسوم لا بملاحظات معلقة.',
     includes: [
       'ثلاث جلسات عميقة مع أ/ أحمد، مدة كل منها من 45 إلى 180 دقيقة بحسب التشخيص، والأخيرة تُختتم بقرار.',
       'داخل مصر: يأتيك في مقر شركتك ويرى العمل بعينه قبل أن يعلّق عليه.',
