@@ -96,7 +96,7 @@ import { handleChat } from '../server/chatHandler.ts';
 // ---- م6: the consultant page uses the full offer names, unchanged ----
 {
   const src = fs.readFileSync('src/pages/consultant/ConsultantPage.jsx', 'utf8');
-  assert.ok(src.includes('Object.entries(BIK_OFFERS)') && src.includes('{offer.name}'), 'consultant renders offer names from the shared catalog');
+  assert.ok(src.includes('BIK_OFFERS[key]') && src.includes('<OfferCard') && src.includes('offer={offer}'), 'consultant renders offer names from the shared catalog');
   const config = fs.readFileSync('src/config/appConfig.ts', 'utf8');
   for (const full of ['التعاقد الاستشاري التنفيذي للمشروع', 'المستشار في منصبك — تعاقد شهري', 'أسبوع استشاري مُركَّز']) {
     assert.ok(config.includes(full), `consultant page matches appConfig: ${full}`);

@@ -53,11 +53,13 @@ export const BIK_REFUND_POLICY = 'يُرد المبلغ إذا كان تقييم
 
 export const formatUsdPrice = (value: number): string => `$${value}`;
 
+export const BIK_EXECUTIVE_RETURN_TARGET = 'هدف عائد عشرة أضعاف الأتعاب، يُقاس من مستنداتك المالية قبل العمل وبعده، ويشمل التدفق النقدي أو الإيراد أو خفض التكلفة أو الإنتاجية بحسب نشاطك.';
+
 export const BIK_OFFERS = {
   executiveProject: { freeCallMinutes: 40, name: 'التعاقد الاستشاري التنفيذي للمشروع', price: formatUsdPrice(EXECUTIVE_PROJECT_USD), billingLabel: 'شهرياً', scope: 'مشروع أزمتك نفسه في يد من يقوده عنك: الأزمة القائمة، الأزمة الكامنة، أو الصفقة الكبرى أمام جهة أخرى.',
     includes: [
       'أكثر من 550 ساعة عمل تنفيذي خلال الشهر',
-      'هدف عائد عشرة أضعاف الأتعاب، يُقاس من مستنداتك المالية قبل العمل وبعده، ويشمل التدفق النقدي أو الإيراد أو خفض التكلفة أو الإنتاجية بحسب نشاطك.',
+      BIK_EXECUTIVE_RETURN_TARGET,
       'هو هدف نعمل عليه لا ضمان نتيجة.'
     ] },
   monthlyRetainer: { freeCallMinutes: 15, name: 'المستشار في منصبك — تعاقد شهري', price: formatUsdPrice(MONTHLY_RETAINER_USD), billingLabel: 'شهرياً', perDayNote: `أقل من ${RETAINER_PER_DAY_USD} ${CURRENCY_LABEL} في اليوم`, scope: 'لا ينتظر أن تسأله: يفكر مكانك في القرار الذي تؤجله، ويتابع مسؤولي التنفيذ عنك.',
@@ -77,7 +79,6 @@ export const BIK_OFFERS = {
 export const BIK_EXECUTIVE_REPORT_WHATSAPP_MESSAGE = 'مرحباً، أكملت تشخيص شركتي عبر BIK وأرغب في مناقشة التقرير التنفيذي وتحديد أهم الأولويات.';
 export const BIK_GENERAL_CONTACT_WHATSAPP_MESSAGE = 'مرحباً أستاذ أحمد، تعرفت على خدماتك عبر BIK وأرغب في مناقشة احتياجات نشاطي والخطوة المناسبة.';
 export const BIK_CONSULTANT_REPORT_HANDOFF_MESSAGE = 'مرحباً، أكملت تشخيص شركتي عبر BIK وأرغب في مناقشة التقرير التنفيذي وتحديد أهم الأولويات.';
-export const BIK_FREE_CALL_MESSAGE = 'مرحباً أستاذ أحمد، أرغب في حجز موعد مكالمتي المجانية (15 دقيقة) عبر BIK، وأحتاج أن أرسل لك التقرير قبل الموعد لقراءته مسبقاً.';
 
 export interface SessionHandoffSummary {
   userName?: string;

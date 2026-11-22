@@ -7,7 +7,8 @@
  * إن لم يُمرَّر visitor تظهر خانتا الاسم والشركة داخل قسم طلب الاستشارة.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BIK_OFFERS, BIK_REFUND_POLICY } from '../../config/appConfig';
+import { BIK_OFFERS } from '../../config/appConfig';
+import { OfferCard, OFFER_ORDER } from '../../components/OfferCards';
 
 /* ───────────── البيانات ───────────── */
 let WHATSAPP = '201066966515';
@@ -1130,19 +1131,12 @@ export default function ConsultantPage({ visitor }) {
         <div className="bkc-wrap">
           <h2>الخطوة الأولى مجانية، ثم ثلاثة عروض</h2>
           <p className="bkc-sub-g">ثلاثة مستويات: حسم القرار، ثم متابعة التنفيذ، ثم تنفيذ المشروع معك.</p>
-          <div className="bkc-free"><strong>جلسة أولى مجانية · {FREE_MINUTES} دقيقة</strong><span>تطرح فيها سؤالاً عن أزمتك، وأناقش معك حلاً أولياً. تحدد بعدها إن كنت تحتاج أحد العروض الثلاثة.</span></div>
           <div className="bkc-offers">
-            {Object.entries(BIK_OFFERS).map(([key, offer]) => (
-              <div key={key} className={'bkc-offer' + (key === 'executiveProject' ? ' top' : '')}>
-                <h3>{offer.name}</h3>
-                <div className="bkc-price"><bdi>{offer.price}</bdi>{offer.billingLabel && <span> {offer.billingLabel}</span>}</div>
-                <p className="bkc-offer-body">{offer.scope}</p>
-                <ul>{offer.includes.map(line => <li key={line}>{line}</li>)}</ul>
-                <a className="bkc-cta sm" href={baseMsg('عرض: ' + offer.name, offer.freeCallMinutes)} target="_blank" rel="noopener noreferrer">ناقش هذا العرض مع أ/ أحمد</a>
-              </div>
-            ))}
+            {OFFER_ORDER.map(key => {
+              const offer = BIK_OFFERS[key];
+              return <OfferCard key={key} offerKey={key} offer={offer} whatsappUrl={baseMsg('عرض: ' + offer.name, offer.freeCallMinutes)} />;
+            })}
           </div>
-          <p>{BIK_REFUND_POLICY}</p>
         </div>
       </section>
 
@@ -1200,10 +1194,6 @@ const CSS = `
 .bkc-m-ex{margin-top:16px;padding:12px 14px;border-radius:14px;background:#FBF6E8;border-right:4px solid var(--gold)}
 .bkc-m-ex h4{margin:0 0 6px;font-size:13px;font-weight:800;color:var(--gold-d)}
 .bkc-m-ex dl{margin:0}.bkc-m-ex dt{font-weight:800;font-size:14px;margin-top:8px}.bkc-m-ex dd{margin:2px 0 0;font-size:14px;line-height:1.85;color:#334155}
-.bkc-offer-body{margin:10px 0 0;font-size:14.5px;line-height:1.95;color:#334155}
-.bkc-offer-fit{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:rgba(201,169,97,.14);font-size:13.5px;font-weight:700;line-height:1.8}
-.bkc-offer.top .bkc-offer-body{color:#CBD5E1}
-.bkc-offer.top .bkc-offer-fit{background:rgba(201,169,97,.18);color:#F2D98B}
 .bkc-sub-g{margin:6px 0 0;font-size:15px;color:var(--muted)}
 .bkc-wis{margin:28px auto 0;max-width:640px;text-align:right;display:grid;gap:0;border-top:1px solid rgba(255,255,255,.14)}
 .bkc-wis div{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.14)}
@@ -1309,21 +1299,7 @@ const CSS = `
 .bkc-service h3{margin:0;font-size:16px;line-height:1.7;font-weight:800}
 .bkc-service p{margin:6px 0 0;font-size:14px;color:#334155}
 .bkc-service span{display:block;margin-top:8px;font-size:12px;font-weight:700;color:var(--gold-d)}
-.bkc-free{display:flex;flex-direction:column;gap:2px;padding:16px 18px;border-radius:16px;background:var(--ink);color:#fff;margin-bottom:16px}
-.bkc-free strong{color:var(--gold-b);font-size:17px}
-.bkc-free span{font-size:14px;color:#CBD5E1}
 .bkc-offers{display:grid;gap:16px}
-.bkc-offer.top{background:var(--ink);color:#fff;border-color:var(--gold);box-shadow:0 14px 40px rgba(15,23,42,.35)}
-.bkc-offer.top .bkc-price{color:var(--gold-b)}
-.bkc-offer.top ul{color:#CBD5E1}
-.bkc-offer.top .bkc-cta.sm{background:var(--gold);color:var(--ink)!important}
-.bkc-offer-b{display:inline-block;margin-bottom:10px;padding:2px 12px;border-radius:999px;background:var(--gold);color:var(--ink);font-size:12px;font-weight:800}
-.bkc-offer{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:22px}
-.bkc-offer h3{margin:0;font-size:20px;font-weight:900}
-.bkc-price{margin-top:6px;font-size:26px;font-weight:900;color:var(--gold-d)}
-.bkc-offer-lead{margin:10px 0 0;font-weight:700}
-.bkc-offer ul{margin:10px 0 0;padding:0 18px;font-size:14px;color:#334155}
-.bkc-offer li{margin:4px 0}
 .bkc-method{display:grid;gap:14px}
 .bkc-step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
 .bkc-step-n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--gold);font-weight:900}
@@ -1337,7 +1313,7 @@ const CSS = `
  .bkc-tag{font-size:46px}
  .bkc-stats-grid{grid-template-columns:repeat(6,1fr)}
  .bkc-svc-grid{grid-template-columns:repeat(3,1fr)}
- .bkc-offers{grid-template-columns:repeat(3,1fr)}
+ .bkc-offers{grid-template-columns:repeat(3,minmax(0,1fr))}
  .bkc-method{grid-template-columns:repeat(3,1fr)}
  .bkc-car-btn{display:grid}
  .bkc-tile{flex-basis:250px}

@@ -8,6 +8,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import OfferCards from '../src/components/OfferCards';
 import { BIK_OFFERS } from '../src/config/appConfig';
 import { recommendOffer, CRISIS_CRITICAL_AXES_FOR_RETAINER } from '../src/services/offerRecommendation';
 import { formatPlatformCopy } from '../src/copy/platformCopy';
@@ -68,7 +71,7 @@ check(!(report.dual_layer?.consultantDossier?.full_dossier_text || '').match(/27
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, out); else if (/\.(ts|tsx)$/.test(e.name)) out.push(p);
+    if (e.isDirectory()) walk(p, out); else if (/\.(ts|tsx|jsx)$/.test(e.name)) out.push(p);
   }
   return out;
 }
@@ -80,7 +83,18 @@ check(hits.length === 0, `forbidden offer names absent from src (${hits.join(', 
 const read = (rel: string) => fs.readFileSync(path.join(HERE, '..', rel), 'utf8');
 const count = (s: string, needle: string) => s.split(needle).length - 1;
 check(count(read('src/pages/Report.tsx'), '<OfferCards') === 1, 'Report page renders the offer cards exactly once');
-check(!read('src/pages/Consultant.tsx').includes('BIK_OFFERS') && !read('src/pages/Consultant.tsx').includes('<OfferCards'), 'Consultant route delegates to the approved standalone page (which carries its own three-offer cards)');
+check(!read('src/pages/Consultant.tsx').includes('BIK_OFFERS') && !read('src/pages/Consultant.tsx').includes('<OfferCards'), 'Consultant route delegates to the standalone page');
+const consultant = read('src/pages/consultant/ConsultantPage.jsx');
+check(consultant.includes('<OfferCard ') && consultant.includes('BIK_OFFERS[key]') && !consultant.includes('bkc-offer-body'), 'consultant page renders its data with the shared card');
+const cardSources = src.filter(file => /function OfferCard\s*\(/u.test(fs.readFileSync(file, 'utf8')));
+check(cardSources.length === 1 && cardSources[0].endsWith('/components/OfferCards.tsx'), 'only one shared offer-card component file exists');
+const reason = 'سبب الاختبار';
+const highlighted = renderToStaticMarkup(createElement(OfferCards, { recommended: { key: 'focusedWeek', reason } }));
+check(count(highlighted, 'الأنسب لوضعك') === 1 && highlighted.includes(reason), 'a recommended offer shows its badge with the visible reason');
+for (const missing of [undefined, '', '   ']) {
+  const neutral = renderToStaticMarkup(createElement(OfferCards, { recommended: { key: 'focusedWeek', reason: missing } }));
+  check(!neutral.includes('الأنسب لوضعك'), 'an empty reason suppresses the badge');
+}
 const priceLiterals = src.filter(f => /272|499/.test(fs.readFileSync(f, 'utf8')) && !/appConfig\.ts$|deterministicScoring\.ts$|consultant\/ConsultantPage\.jsx$/.test(f));
 check(priceLiterals.length === 0, `no hard-coded 272/499 outside config and the financial model (${priceLiterals.join(', ') || 'none'})`);
 

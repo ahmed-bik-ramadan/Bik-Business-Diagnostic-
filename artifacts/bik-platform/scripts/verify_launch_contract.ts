@@ -66,7 +66,8 @@ assert.equal(BIK_OFFERS.focusedWeek.scope, 'أسبوع واحد يُحسم في�
 assert.ok(offerCardsSource.includes('المشكلة تستمر بكلفتها الشهرية حتى تُعالج: قرابة ${amount} ${monthlyWaste.currency} على أرقامك المصرّح بها، تقدير استرشادي.'));
 assert.ok(offerCardsSource.includes('OFFER_GAP_LINE') && offerCardsSource.includes('data-testid="offer-gap-line"'), 'offers section carries the single linking line between the three cards');
 assert.ok(offerCardsSource.includes('146B4F'), 'the recommended offer card carries the luxury green');
-assert.ok(offerCardsSource.includes('الأنسب لوضعك') && offerCardsSource.includes('هدية لك'), 'recommendation badge and the free call speak to the situation (curation + gift framing)');
+assert.ok(offerCardsSource.includes('الأنسب لوضعك') && offerCardsSource.includes('data-testid="offer-reason"'), 'the recommendation badge has a visible reason');
+assert.ok(offerCardsSource.includes('data-testid="offer-free-call"') && !offerCardsSource.includes('هدية لك'), 'the free call is inside the shared card');
 assert.ok(offerCardsSource.includes('amount <= 0'), 'a loss line is built only on a valid declared figure, never invented');
 const reportSourceN = fs.readFileSync('src/pages/Report.tsx', 'utf8');
 assert.ok(reportSourceN.includes('monthlyWaste={monthlyWaste}'), 'the declared monthly figure feeds the offer cards');
