@@ -19,6 +19,7 @@ import {
 } from '../types/dualLayer';
 import { buildEvidenceBasedSwot } from './evidenceSwot';
 import { computeSectorBlindSpots } from './blindSpotCalculator';
+import { parseValueNumber } from './valueModule/compute';
 import { scrubInternalIds } from './internalIdScrub';
 import { universalQuestions } from '../data/universalQuestions';
 import { sectorQuestions } from '../data/sectorQuestions';
@@ -248,7 +249,12 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   };
 
   // النقاط العمياء المالية: مشتقة من أرقام العميل المصرَّح بها وحدها في أسئلة التشخيص العميق.
-  const sectorBlindSpots = computeSectorBlindSpots(companyData.sectorL1, combinedAnswers);
+  const declaredRevenue = scoreResult.financialImpact?.metrics?.monthlyRevenue?.value
+    ?? parseValueNumber(combinedAnswers.u31 ?? combinedAnswers.monthlyRevenue);
+  const deepRevenue = parseValueNumber(sectorL1 === 'professional' ? combinedAnswers.prd01 : combinedAnswers.ud01);
+  const monthlyRevenue = declaredRevenue ?? deepRevenue;
+  const hasRevenue = monthlyRevenue !== null && Number.isFinite(monthlyRevenue) && monthlyRevenue > 0;
+  const sectorBlindSpots = computeSectorBlindSpots(companyData.sectorL1, { ...combinedAnswers, u31: declaredRevenue });
 
   // Extract score metrics safely regardless of interface variant. NaN never counts as a score.
   const rawOverall = (scoreResult as any).overallScore ?? (scoreResult as any).overall ?? baseReport?.health_score;
@@ -741,7 +747,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
     }
     financialCalculationsFormatted.push(`- ${declaredValue.disclaimer}`);
   }
-  if (sectorBlindSpots.spots.length > 0) {
+  if (hasRevenue && sectorBlindSpots.monthlyTotal !== null) {
     financialCalculationsFormatted.push(`### النقاط العمياء المالية (مشتقة من أرقام العميل المصرَّح بها في التشخيص العميق، لكل شهر):`);
     sectorBlindSpots.spots.forEach(spot => {
       financialCalculationsFormatted.push(`- ${spot.name}: ${spot.monthlyAmount.toLocaleString('ar-EG')} ${currency} شهرياً`);
@@ -870,6 +876,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
   });
 
   const clientReport: ClientExecutiveReport = {
+    sector_sensitivities: hasRevenue ? sectorBlindSpots.sensitivities : [],
     review: buildReviewedSections(params.review),
     executive_diagnosis: {
       headline: baseReport?.headline_diagnosis || `تشخيص أداء: ${companyName}`,
@@ -896,7 +903,7 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
     financial_impact: (() => {
       const base = scoreResult.financialImpact;
       const blindSpotRows = sectorBlindSpots.spots.map(spot => ({ name: spot.name, monthly_amount: spot.monthlyAmount }));
-      if (sectorBlindSpots.spots.length === 0) return base || null;
+      if (!hasRevenue || sectorBlindSpots.monthlyTotal === null) return base || null;
       const declaredValueModel: DeclaredValueModel = base?.declaredValueModel
         ? { ...base.declaredValueModel, computedMonthlyWaste: sectorBlindSpots.monthlyTotal }
         // لا نموذج قيمة مصرَّح به من الأسئلة المالية المباشرة: تُحمَل الكلفة الشهرية المشتقة

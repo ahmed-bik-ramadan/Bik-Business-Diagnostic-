@@ -1,11 +1,5 @@
-/**
- * Blind-spot loss computation: every sector deep-tier formula runs on the client's own
- * declared figures only. A blind spot enters the report when (a) the sector's deep
- * questions were answered, (b) every required deep field is a positive finite number,
- * and (c) the computed monthly amount is positive. Nothing is invented, and the sum
- * feeds the decision balance only as a derived-from-declared reading.
- */
 import { BLIND_SPOT_FORMULAS } from '../data/sectorFinancialTaxonomy';
+import { VALUE_ESTIMATE_LABEL } from './valueModule/compute';
 
 export interface SectorBlindSpot {
   id: string;
@@ -15,30 +9,48 @@ export interface SectorBlindSpot {
 
 export interface SectorBlindSpotsResult {
   spots: SectorBlindSpot[];
-  /** مجموع الخسائر الشهرية المشتقة من أرقام العميل المصرَّح بها (0 حين لا شيء يُحسب). */
-  monthlyTotal: number;
+  monthlyTotal: number | null;
+  sensitivities: SectorBlindSpot[];
 }
 
-function finitePositive(value: unknown): boolean {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0;
+function totalDeclaredLosses(amounts: readonly number[]): number | null {
+  if (!amounts.length) return null;
+  const total = amounts.reduce((sum, amount) => sum + amount, 0);
+  return Number.isFinite(total) ? total : null;
 }
 
-export function computeSectorBlindSpots(sectorL1: string | undefined | null, answers: Record<string, any>): SectorBlindSpotsResult {
-  const formulas = BLIND_SPOT_FORMULAS[sectorL1 || ''] ?? BLIND_SPOT_FORMULAS.universal ?? [];
+export function computeSectorBlindSpots(sectorL1: string | undefined | null, answers: Record<string, unknown>): SectorBlindSpotsResult {
+  const formulas = sectorL1 && Object.hasOwn(BLIND_SPOT_FORMULAS, sectorL1)
+    ? BLIND_SPOT_FORMULAS[sectorL1] : BLIND_SPOT_FORMULAS.universal;
   const spots: SectorBlindSpot[] = [];
+  const sensitivities: SectorBlindSpot[] = [];
   for (const formula of formulas) {
-    const deepReady = formula.requiredDeepFields.every(field => finitePositive(answers[field]));
-    if (!deepReady) continue;
-    let amount = 0;
-    try {
-      amount = Math.round(formula.compute(answers, answers));
-    } catch {
-      amount = 0;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) continue;
-    spots.push({ id: formula.id, name: formula.name, monthlyAmount: amount });
+    const { id, name } = formula;
+    const monthlyAmount = formula.compute(answers, answers);
+    if (monthlyAmount === null) continue;
+    const row = { id, name, monthlyAmount };
+    if (formula.kind === 'sensitivity') sensitivities.push(row);
+    else spots.push(row);
   }
-  const monthlyTotal = spots.reduce((sum, spot) => sum + spot.monthlyAmount, 0);
-  return { spots, monthlyTotal };
+  return { spots, monthlyTotal: totalDeclaredLosses(spots.map(spot => spot.monthlyAmount)), sensitivities };
+}
+
+// Older session reports stored both kinds together, identified only by their published names.
+const declaredNames = new Set(Object.values(BLIND_SPOT_FORMULAS).flat()
+  .filter(formula => formula.kind === 'declaredLoss').map(formula => formula.name));
+type ReportedRow = { name: string; monthly_amount: number };
+
+export function declaredSectorRows(rows: readonly ReportedRow[] | undefined): ReportedRow[] {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter(row => row && declaredNames.has(row.name) && Number.isFinite(row.monthly_amount) && row.monthly_amount > 0);
+}
+
+export function legacySectorLossTotal(rows: readonly ReportedRow[] | undefined): number | null {
+  return totalDeclaredLosses(declaredSectorRows(rows).map(row => row.monthly_amount));
+}
+
+export function formatOnePointSensitivity(subject: string, value: number, currency: string | undefined): string {
+  const number = value.toLocaleString('en-US', { maximumSignificantDigits: 15 });
+  const amount = currency === 'USD' ? `$${number}` : [number, currency].filter(Boolean).join(' ');
+  return `كل نقطة مئوية من ${subject} تساوي بحسب أرقامك: ${amount} شهرياً (${VALUE_ESTIMATE_LABEL})`;
 }

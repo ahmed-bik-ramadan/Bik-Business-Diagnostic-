@@ -1,11 +1,13 @@
-import { UniversalQuestion } from './universalQuestions';
+import { parseValueNumber } from '../services/valueModule/compute';
+import type { UniversalQuestion } from './universalQuestions';
 
 export interface BlindSpotFormula {
   id: string;
   name: string;
+  kind: 'declaredLoss' | 'sensitivity';
   requiredDeepFields: string[];     // new deep-tier question ids
-  requiredAnswerIds: string[];       // existing sector question ids used
-  compute: (deep: Record<string, number>, answers: Record<string, any>) => number;
+  requiredAnswerIds: string[];       // numeric answers outside the deep fields
+  compute: (deep: Answers, answers: Answers) => number | null;
   monthlyOrOneTime: 'monthly';
 }
 
@@ -184,7 +186,7 @@ export const DEEP_TIER_QUESTIONS: Record<string, UniversalQuestion[]> = {
 
 /**
  * Deep tier for every sector without its own set: two accounting-grounded questions
- * (revenue and uncollected receivables) so no sector leaves the report without a loss reading.
+ * (revenue and uncollected receivables).
  */
 export const UNIVERSAL_DEEP_QUESTIONS: UniversalQuestion[] = [
   {
@@ -205,344 +207,98 @@ export const UNIVERSAL_DEEP_QUESTIONS: UniversalQuestion[] = [
   },
 ];
 
-/** Monthly carrying cost of uncollected receivables (financing, ageing and collection effort). */
-export const UNIV_RECEIVABLES_CARRY_FACTOR = 0.10;
+type Answers = Readonly<Record<string, unknown>>;
+type NumericAnswers = Record<string, number>;
+
+function positiveFields(answers: Answers, fields: readonly string[], maximum = Infinity): NumericAnswers | null {
+  const values: NumericAnswers = {};
+  for (const field of fields) {
+    const value = parseValueNumber(answers[field]);
+    if (value === null || value <= 0 || value > maximum) return null;
+    values[field] = value;
+  }
+  return values;
+}
+
+function declaredLoss(
+  id: string, name: string, requiredDeepFields: string[], requiredAnswerIds: string[],
+  calculate: (deep: NumericAnswers, percentages: NumericAnswers) => number
+): BlindSpotFormula {
+  return {
+    id, name, kind: 'declaredLoss', requiredDeepFields, requiredAnswerIds, monthlyOrOneTime: 'monthly',
+    compute(deep, answers) {
+      const bases = positiveFields(deep, requiredDeepFields);
+      const rates = positiveFields(answers, requiredAnswerIds, 100);
+      if (!bases || !rates) return null;
+      const amount = Math.round(calculate(bases, rates));
+      return Number.isFinite(amount) && amount > 0 ? amount : null;
+    }
+  };
+}
+
+// An empty field list means the questionnaire does not supply a monetary base for this subject.
+function sensitivity(id: string, name: string, baseFields: string[], answerFields: string[] = []): BlindSpotFormula {
+  return {
+    id, name, kind: 'sensitivity', requiredDeepFields: baseFields, requiredAnswerIds: answerFields, monthlyOrOneTime: 'monthly',
+    compute(deep, answers) {
+      if (baseFields.length + answerFields.length === 0) return null;
+      const bases = positiveFields(deep, baseFields);
+      const otherBases = positiveFields(answers, answerFields);
+      if (!bases || !otherBases) return null;
+      const base = [...Object.values(bases), ...Object.values(otherBases)].reduce((product, value) => product * value, 1);
+      const amount = base / 100;
+      return Number.isFinite(amount) && amount > 0 ? amount : null;
+    }
+  };
+}
 
 export const BLIND_SPOT_FORMULAS: Record<string, BlindSpotFormula[]> = {
   healthcare: [
-    {
-      id: 'hc_noshow',
-      name: 'خسارة المواعيد الفارغة (No-Show)',
-      requiredDeepFields: ['hd01', 'hd02'],
-      requiredAnswerIds: ['h01'],
-      // h01 is a 0-100% percentage slider
-      compute: (deep, answers) => {
-        const avgVisit = Number(deep.hd01) || 0;
-        const monthlyAppts = Number(deep.hd02) || 0;
-        const noShowRatio = (Number(answers.h01) || 0) / 100;
-        return Math.round(avgVisit * monthlyAppts * noShowRatio);
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      id: 'hc_followup_gap',
-      name: 'فجوة متابعة المرضى',
-      requiredDeepFields: ['hd01', 'hd02'],
-      requiredAnswerIds: ['h04'],
-      compute: (deep, answers) => {
-        const factorMap: Record<string, number> = {
-          high_commit: 0.02,
-          high_low: 0.15,
-          low: 0.05
-        };
-        const factor = factorMap[answers.h04] ?? 0.05;
-        const avgVisit = Number(deep.hd01) || 0;
-        const monthlyAppts = Number(deep.hd02) || 0;
-        return Math.round(avgVisit * monthlyAppts * factor);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    declaredLoss('hc_noshow', 'خسارة المواعيد الفارغة (No-Show)', ['hd01', 'hd02'], ['h01'],
+      (deep, rates) => deep.hd01 * deep.hd02 * (rates.h01 / 100)),
+    sensitivity('hc_followup_gap', 'فجوة متابعة المرضى', ['hd01', 'hd02'])
   ],
-
   automotive: [
-    {
-      id: 'auto_rework',
-      name: 'خسارة إعادة العمل (Rework)',
-      requiredDeepFields: ['ad01'],
-      requiredAnswerIds: ['a03', 'a09'],
-      compute: (deep, answers) => {
-        const ticketMidpoint: Record<string, number> = {
-          lt500: 350,
-          '500_1500': 1000,
-          '1500_3000': 2250,
-          gt3000: 4000
-        };
-        const avgTicket = ticketMidpoint[answers.a09] ?? 1000;
-        const monthlyJobs = Number(deep.ad01) || 0;
-        const reworkRatio = (Number(answers.a03) || 0) / 100;
-        return Math.round(avgTicket * monthlyJobs * reworkRatio);
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      id: 'auto_idle_capacity',
-      name: 'الطاقة الفنية الضائعة',
-      requiredDeepFields: ['ad02', 'ad03'],
-      requiredAnswerIds: ['a04'],
-      compute: (deep, answers) => {
-        const idleFactorMap: Record<string, number> = {
-          gt80: 0.10,
-          '60_80': 0.30,
-          lt60: 0.50
-        };
-        const idleFactor = idleFactorMap[answers.a04] ?? 0.30;
-        const technicians = Number(deep.ad02) || 0;
-        const hourlyRate = Number(deep.ad03) || 0;
-        const WORKING_HOURS_PER_MONTH = 208; // 8h x 26 days
-        return Math.round(technicians * WORKING_HOURS_PER_MONTH * hourlyRate * idleFactor);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    // Invoice bands do not give a rework cost. Hourly rates do not give monthly paid hours.
+    sensitivity('auto_rework', 'خسارة إعادة العمل (Rework)', []),
+    sensitivity('auto_idle_capacity', 'الطاقة الفنية الضائعة', [])
   ],
-
   retail: [
-    {
-      id: 'retail_dead_stock',
-      name: 'رأس المال المجمَّد في المخزون الراكد',
-      requiredDeepFields: ['rd01'],
-      requiredAnswerIds: ['rt03'],
-      compute: (deep, answers) => {
-        const deadStockFactorMap: Record<string, number> = {
-          proactive: 0.05,
-          discount: 0.15,
-          no_plan: 0.30
-        };
-        const factor = deadStockFactorMap[answers.rt03] ?? 0.15;
-        const totalInventory = Number(deep.rd01) || 0;
-        return Math.round(totalInventory * factor);
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      id: 'retail_conversion_gap',
-      name: 'فجوة معدل التحويل',
-      requiredDeepFields: ['rd02', 'rd03'],
-      requiredAnswerIds: ['rt01'],
-      compute: (deep, answers) => {
-        if (answers.rt01 === 'gt30') return 0;
-        const visitors = Number(deep.rd02) || 0;
-        const avgBasket = Number(deep.rd03) || 0;
-        const GAP_ASSUMPTION = 0.10; // standard 10pp improvement headroom
-        return Math.round(visitors * avgBasket * GAP_ASSUMPTION);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    sensitivity('retail_dead_stock', 'رأس المال المجمَّد في المخزون الراكد', ['rd01']),
+    sensitivity('retail_conversion_gap', 'فجوة معدل التحويل', ['rd02', 'rd03'])
   ],
-
   fnb: [
-    {
-      // Accounting basis: food-cost control. The declared waste slider on the
-      // raw-material cost is the client's own stated leak, month after month.
-      id: 'fnb_food_waste',
-      name: 'الهدر الغذائي اليومي على المواد الخام',
-      requiredDeepFields: ['fd02'],
-      requiredAnswerIds: ['f04'],
-      compute: (deep, answers) => {
-        const materialCost = Number(deep.fd02) || 0;
-        const wastePct = Number(answers.f04) || 0;
-        return Math.round(materialCost * (wastePct / 100));
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: menu engineering. Prices unchanged while costs move erode
-      // the gross margin; the headroom below is a conservative documented assumption.
-      id: 'fnb_menu_engineering_gap',
-      name: 'تآكل هامش الربح بفعل قائمة غير مُسعَّرة',
-      requiredDeepFields: ['fd01'],
-      requiredAnswerIds: ['f05', 'f08'],
-      compute: (deep, answers) => {
-        if (answers.f08 === 'yes_both') return 0; // margins tracked item by item
-        const dailySales = Number(deep.fd01) || 0;
-        if (answers.f05 === 'no') return Math.round(dailySales * 30 * 0.05);
-        if (answers.f05 === 'yes_reactive') return Math.round(dailySales * 30 * 0.03);
-        return 0;
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    declaredLoss('fnb_food_waste', 'الهدر الغذائي اليومي على المواد الخام', ['fd02'], ['f04'],
+      (deep, rates) => deep.fd02 * (rates.f04 / 100)),
+    sensitivity('fnb_menu_engineering_gap', 'تآكل هامش الربح بفعل قائمة غير مُسعَّرة', [], ['u31'])
   ],
-
   realestate: [
-    {
-      // Accounting basis: pipeline leakage. Monthly deals from the declared lead count
-      // and conversion slider, times the declared post-earnest-money cancellation rate.
-      id: 're_cancellation_leak',
-      name: 'خسارة الصفقات الملغاة بعد وصولها إلى المرحلة النهائية',
-      requiredDeepFields: ['red01', 'red02'],
-      requiredAnswerIds: ['re01', 're06'],
-      compute: (deep, answers) => {
-        const monthlyLeads = Number(deep.red01) || 0;
-        const commission = Number(deep.red02) || 0;
-        const conversionPct = Number(answers.re01) || 0;
-        const cancelPct = Number(answers.re06) || 0;
-        const monthlyDeals = monthlyLeads * (conversionPct / 100);
-        return Math.round(monthlyDeals * (cancelPct / 100) * commission);
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: conversion benchmark. A 10% lead-to-deal rate is the
-      // documented conservative headroom; anything declared below it is a leak.
-      id: 're_conversion_gap',
-      name: 'فجوة معدل تحويل الاستفسارات إلى صفقات',
-      requiredDeepFields: ['red01', 'red02'],
-      requiredAnswerIds: ['re01'],
-      compute: (deep, answers) => {
-        const monthlyLeads = Number(deep.red01) || 0;
-        const commission = Number(deep.red02) || 0;
-        const conversionPct = Number(answers.re01) || 0;
-        const BENCHMARK_PCT = 10;
-        if (conversionPct >= BENCHMARK_PCT) return 0;
-        return Math.round(monthlyLeads * ((BENCHMARK_PCT - conversionPct) / 100) * commission);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    declaredLoss('re_cancellation_leak', 'خسارة الصفقات الملغاة بعد وصولها إلى المرحلة النهائية',
+      ['red01', 'red02'], ['re01', 're06'],
+      (deep, rates) => deep.red01 * (rates.re01 / 100) * (rates.re06 / 100) * deep.red02),
+    sensitivity('re_conversion_gap', 'فجوة معدل تحويل الاستفسارات إلى صفقات', ['red01', 'red02'])
   ],
-
   professional: [
-    {
-      // Accounting basis: revenue leakage. Written-but-uncontrolled scope creep
-      // leaks about a tenth of monthly revenue; a documented conservative factor.
-      id: 'prof_scope_creep_leak',
-      name: 'تسرُّب إيراد بفعل نطاق عمل غير موثَّق',
-      requiredDeepFields: ['prd01'],
-      requiredAnswerIds: ['p06'],
-      compute: (deep, answers) => {
-        const monthlyRevenue = Number(deep.prd01) || 0;
-        const factorMap: Record<string, number> = {
-          verbal: 0.10,
-          no_control: 0.10,
-          template: 0.05,
-          contract: 0
-        };
-        return Math.round(monthlyRevenue * (factorMap[answers.p06] ?? 0.05));
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: capacity cost. Time on automatable tasks has a labour cost;
-      // only 30% of it is realistically recoverable, a documented conservative share.
-      id: 'prof_automation_leak',
-      name: 'تكلفة وقت الفريق على مهام قابلة للأتمتة',
-      requiredDeepFields: ['prd01'],
-      requiredAnswerIds: ['p04'],
-      compute: (deep, answers) => {
-        const monthlyRevenue = Number(deep.prd01) || 0;
-        const automatablePct = Number(answers.p04) || 0;
-        const RECOVERABLE_SHARE = 0.30;
-        return Math.round(monthlyRevenue * (automatablePct / 100) * RECOVERABLE_SHARE);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    sensitivity('prof_scope_creep_leak', 'تسرُّب إيراد بفعل نطاق عمل غير موثَّق', ['prd01']),
+    // A share of team time cannot be valued from service revenue without a labour cost.
+    sensitivity('prof_automation_leak', 'تكلفة وقت الفريق على مهام قابلة للأتمتة', [])
   ],
-
   import: [
-    {
-      // Accounting basis: working-capital management. Stagnant inventory freezes
-      // capital; the factor follows the client's own declared turnover health.
-      id: 'import_dead_stock_capital',
-      name: 'رأس مال مجمَّد في مخزون بطيء الدوران',
-      requiredDeepFields: ['imd01'],
-      requiredAnswerIds: ['im01'],
-      compute: (deep, answers) => {
-        const inventory = Number(deep.imd01) || 0;
-        const factorMap: Record<string, number> = {
-          high_turnover: 0,
-          medium: 0.175,   // midpoint of the declared 10-25% stagnant band
-          low_turnover: 0.30
-        };
-        return Math.round(inventory * (factorMap[answers.im01] ?? 0.175));
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: FX exposure. An unhedged import cycle carries a
-      // documented conservative monthly exposure factor on declared purchases.
-      id: 'import_forex_leak',
-      name: 'تكلفة تقلب العملة على مشتريات غير محوَّطة',
-      requiredDeepFields: ['imd02'],
-      requiredAnswerIds: ['im04'],
-      compute: (deep, answers) => {
-        const monthlyPurchases = Number(deep.imd02) || 0;
-        if (answers.im04 === 'hedge' || answers.im04 === 'supplier_currency') return 0;
-        const UNHEDGED_FX_FACTOR = 0.05;
-        return Math.round(monthlyPurchases * UNHEDGED_FX_FACTOR);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    sensitivity('import_dead_stock_capital', 'رأس مال مجمَّد في مخزون بطيء الدوران', ['imd01']),
+    sensitivity('import_forex_leak', 'تكلفة تقلب العملة على مشتريات غير محوَّطة', ['imd02'])
   ],
-
   tech: [
-    {
-      // Accounting identity: churn x MRR = recurring revenue lost per month.
-      // No assumption beyond the client's own two declared figures.
-      id: 'tech_churn_leak',
-      name: 'إيراد متكرر يتسرب مع نسبة انسحاب العملاء',
-      requiredDeepFields: ['ted01'],
-      requiredAnswerIds: ['t02'],
-      compute: (deep, answers) => {
-        const mrr = Number(deep.ted01) || 0;
-        const churnPct = Number(answers.t02) || 0;
-        return Math.round(mrr * (churnPct / 100));
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: cost-structure health. Infrastructure spend above 30%
-      // of revenue eats the gross margin; the excess is the declared leak.
-      id: 'tech_infra_excess',
-      name: 'زيادة تكلفة البنية التقنية عن الحد الصحي',
-      requiredDeepFields: ['ted01'],
-      requiredAnswerIds: ['t12'],
-      compute: (deep, answers) => {
-        const mrr = Number(deep.ted01) || 0;
-        const infraPct = Number(answers.t12) || 0;
-        const HEALTHY_CAP_PCT = 30;
-        if (infraPct <= HEALTHY_CAP_PCT) return 0;
-        return Math.round(mrr * ((infraPct - HEALTHY_CAP_PCT) / 100));
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    declaredLoss('tech_churn_leak', 'إيراد متكرر يتسرب مع نسبة انسحاب العملاء', ['ted01'], ['t02'],
+      (deep, rates) => deep.ted01 * (rates.t02 / 100)),
+    // The infrastructure percentage in t12 is a share of total revenue.
+    sensitivity('tech_infra_excess', 'زيادة تكلفة البنية التقنية عن الحد الصحي', [], ['u31'])
   ],
-
   construction: [
-    {
-      // Accounting basis: job costing. Declared share of projects over budget,
-      // times a documented average overrun depth on the affected projects.
-      id: 'const_cost_overrun',
-      name: 'تجاوزات التكلفة على المشاريع الجارية',
-      requiredDeepFields: ['cod01', 'cod02'],
-      requiredAnswerIds: ['c02'],
-      compute: (deep, answers) => {
-        const projectValue = Number(deep.cod01) || 0;
-        const activeProjects = Number(deep.cod02) || 0;
-        const overrunPct = Number(answers.c02) || 0;
-        const OVERRUN_DEPTH = 0.15; // average depth of an overrun on affected projects
-        return Math.round(projectValue * activeProjects * (overrunPct / 100) * OVERRUN_DEPTH);
-      },
-      monthlyOrOneTime: 'monthly'
-    },
-    {
-      // Accounting basis: change-order control. Verbal change orders leak about
-      // 8% of contract value — a documented conservative industry factor.
-      id: 'const_change_order_leak',
-      name: 'تسريبات أوامر تغيير غير موثَّقة',
-      requiredDeepFields: ['cod01', 'cod02'],
-      requiredAnswerIds: ['c08'],
-      compute: (deep, answers) => {
-        if (answers.c08 !== 'verbal') return 0;
-        const projectValue = Number(deep.cod01) || 0;
-        const activeProjects = Number(deep.cod02) || 0;
-        const CHANGE_ORDER_LEAK = 0.08;
-        return Math.round(projectValue * activeProjects * CHANGE_ORDER_LEAK);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
+    // Whole contracts in progress do not establish monthly project costs or monthly change-order value.
+    sensitivity('const_cost_overrun', 'تجاوزات التكلفة على المشاريع الجارية', []),
+    sensitivity('const_change_order_leak', 'تسريبات أوامر تغيير غير موثَّقة', [])
   ],
-
-  // Fallback for every sector without its own formulas: the receivables carrying
-  // cost, computed on the client's declared uncollected balance alone.
   universal: [
-    {
-      id: 'univ_collection_leak',
-      name: 'التكلفة الشهرية لذمم مدينة لم تُحصّل',
-      requiredDeepFields: ['ud02'],
-      requiredAnswerIds: [],
-      compute: (deep) => {
-        const receivables = Number(deep.ud02) || 0;
-        return Math.round(receivables * UNIV_RECEIVABLES_CARRY_FACTOR);
-      },
-      monthlyOrOneTime: 'monthly'
-    }
-  ],
+    sensitivity('univ_collection_leak', 'التكلفة الشهرية لذمم مدينة لم تُحصّل', ['ud02'])
+  ]
 };

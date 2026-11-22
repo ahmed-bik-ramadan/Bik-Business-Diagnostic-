@@ -5,6 +5,7 @@ import { transformSync } from 'esbuild';
 import { platformCopy, formatPlatformCopy } from '../src/copy/platformCopy';
 import { sanitizeDiagnosticPersisted } from '../src/services/persistedStateSanitizer';
 import { buildWhatsAppDossierText } from '../src/services/dualLayerReport';
+import { computeSectorBlindSpots, legacySectorLossTotal } from '../src/services/blindSpotCalculator';
 import { buildWhatsAppReportParts } from '../src/services/reportTextDelivery';
 
 const memory = () => {
@@ -132,6 +133,7 @@ assert.ok(!Object.hasOwn(JSON.parse(String(requests.at(-1)!.init.body)), 'startM
 
 // The lead is rendered once above the preview, using the session's original axis order.
 const Report = component('src/pages/Report.tsx', {
+  '../services/blindSpotCalculator': { legacySectorLossTotal },
   '../services/reportGate': { resolveReportGate: () => ({ open: true, redirect: null }) },
   '../services/dialect': { reviewCopy: () => ({}) },
   '../components/report/ReportPreview': { ReportPreview: 'report-preview' },
@@ -157,6 +159,27 @@ assert.deepEqual(leadTexts('crisis', axes), [formatPlatformCopy('result.crisisLe
 assert.deepEqual(leadTexts('analysis', axes), [], 'analysis has no crisis lead');
 assert.deepEqual(leadTexts('crisis', { first: { status: 'مستقر' } }), [], 'crisis without critical axes has no lead');
 assert.deepEqual(leadTexts('crisis', null), [], 'missing axes have no lead');
+
+// A pre-11D report can have a combined sector total saved in its current browser session.
+const sector = computeSectorBlindSpots('healthcare', {hd01: 350, hd02: 400, h01: 20});
+const sectorRows = sector.spots.map(spot => ({name: spot.name, monthly_amount: spot.monthlyAmount}));
+function offerAmount(
+  rows: typeof sectorRows, computedMonthlyWaste: number | null, monthlyReducibleWaste: number | null,
+  sector_sensitivities?: typeof sector.sensitivities
+) {
+  const clientReport = { sector_sensitivities, financial_impact: {
+    declaredValueModel: { currency: 'EGP', monthlyReducibleWaste, computedMonthlyWaste },
+    sector_blind_spots: rows
+  }};
+  store.setState({ report: { dual_layer: { clientReport, consultantDossier: {} } } as any });
+  return elements(Report()).find(node => node.type === 'offers')?.props.monthlyWaste?.amount;
+}
+const legacyRows = [...sectorRows, {name: sector.sensitivities[0].name, monthly_amount: 21000}];
+assert.equal(offerAmount(legacyRows, 49000, null), 28000, 'legacy assumed losses cannot enter offer selection');
+assert.equal(offerAmount(legacyRows.slice(1), 21000, null), undefined, 'a report with only an old assumed loss shows no offer loss');
+assert.equal(offerAmount(sectorRows, 28000, null, sector.sensitivities), 28000, 'new reports pass only the declared loss total');
+assert.equal(offerAmount([], null, null, sector.sensitivities), undefined, 'new sensitivities cannot enter offer selection');
+assert.equal(offerAmount(legacyRows, 49000, 3000), 3000, 'explicitly declared waste takes priority over the sector total');
 
 const protectedConsumers = ['src/pages/Questionnaire.tsx', 'src/services/adaptiveDiagnosticEngine.ts', 'src/services/deterministicScoring.ts', 'src/services/dualLayerReport.ts', 'src/services/reportTextDelivery.ts'];
 for (const file of protectedConsumers) assert.ok(!readFileSync(file, 'utf8').includes('startMode'), `${file}: mode does not affect questions, scoring or WhatsApp`);

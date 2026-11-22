@@ -44,6 +44,7 @@ import { ReportDetails } from '../components/report/ReportDetails';
 import OfferCards from '../components/OfferCards';
 import CostOfProblem from '../components/CostOfProblem';
 import { lossSustainsExecutive, recommendOffer } from '../services/offerRecommendation';
+import { legacySectorLossTotal } from '../services/blindSpotCalculator';
 import { buildOfferOutcomes } from '../services/offerOutcomes';
 
 export default function Report() {
@@ -54,14 +55,16 @@ export default function Report() {
   // سطر الخسارة في بطاقات العروض: المصرَّح به من أرقام العميل وحده، أو المشتق من أرقامه
   // المصرَّح بها في التشخيص العميق، من ميزان القرار، بلا أي رقم مُختلَق.
   const monthlyWaste = useMemo(() => {
-    const model = report?.dual_layer?.clientReport?.financial_impact?.declaredValueModel;
+    const client = report?.dual_layer?.clientReport;
+    const model = client?.financial_impact?.declaredValueModel;
     if (!model) return null;
     // المصرَّح به مباشرة من صاحب النشاط يُعرض كما هو؛ والمشتق من أرقامه في التشخيص العميق
     // يُستعمل فقط حين لا يوجد إعلان مباشر. لا رقم ثالث ولا رقم مُختلَق.
     const declared = model.monthlyReducibleWaste;
-    const amount = declared != null && Number.isFinite(declared) && declared > 0
-      ? declared
-      : model.computedMonthlyWaste;
+    if (declared != null && Number.isFinite(declared) && declared > 0) return { amount: declared, currency: model.currency };
+    const amount = client.sector_sensitivities
+      ? model.computedMonthlyWaste
+      : legacySectorLossTotal(client.financial_impact?.sector_blind_spots);
     if (amount == null || !Number.isFinite(amount) || amount <= 0) return null;
     return { amount, currency: model.currency };
   }, [report]);

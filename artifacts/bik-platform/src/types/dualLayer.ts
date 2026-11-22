@@ -224,6 +224,7 @@ export interface ConsultantDossier {
 }
 
 export interface ClientExecutiveReport {
+  sector_sensitivities?: import('../services/blindSpotCalculator').SectorBlindSpot[];
   review?: import('../services/reviewState').ReviewedSection[];
   executive_diagnosis: {
     headline: string;

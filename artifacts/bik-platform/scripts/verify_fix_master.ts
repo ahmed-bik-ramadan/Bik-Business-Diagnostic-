@@ -56,14 +56,18 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  // Mission 11D updates the sector formulas and their report consumers.
+  'src/components/report/ReportPreview.tsx': '63514c2b2dee23928ecc7955491a0d60d95f413abb1d0639d8aca65bf9e59fd6',
+  'src/data/sectorFinancialTaxonomy.ts': '0f11c60211d80923473c7306f76670f6a569ef0db603bbddb37bf5f5786c7b71',
+  'src/services/dualLayerReport.ts': '8654531d2c789db5d4de320bd52de81638a9e1d37241615adf93abb68490b956',
   // Mission 11C replaces the three financial projections with unit sensitivities.
   'src/services/deterministicScoring.ts': 'c1d862892d0d06402ebbf8ac638133b45c66884d8b318d12e5568080b1f60397',
-  'src/services/reportFallback.ts': '3bf57c6f9432f06f39d5d96f5beec795018f62299f9e464b310f8dd65e79bf7a',
+  'src/services/reportFallback.ts': 'd32debedbeb296216a9c1c95e7071810b4a456c8de7c9fc628b83e248a5538d4',
   'src/components/OfferCards.tsx': '84e5af82fc7618f9d59a5b6151414b861863901d5b547c8c899512bd718b5aeb',
   'src/config/appConfig.ts': '864fcac3b1dd0e56e51ce049195734177cfe0f0f62879e6084f48f3217faa5b9',
   'src/pages/LeadGate.tsx': '85f5ad18180e218317a4fadbdf48b542bf58376fcadac0edb081652b2e3a24c2',
   'src/pages/Questionnaire.tsx': 'ed5e2569d01c10563e1bf8c56c9039c1dffa95d2a25a31a938f25e558d868ae9',
-  'src/pages/Report.tsx': 'a5ec10b0702e8524be711fddc1cb906ebf1b631ac630b80e7e167e0a89b6da2a',
+  'src/pages/Report.tsx': 'fc0969259d94cc1cd228ac0a44e89bed3b805ffc14587b5cd53666fc753a1676',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': '0b54278393c8324b0476f61c812f31e99342fe4ec78f07362f25cf379cbcd5cd',
   'src/pages/consultant/ConsultantPage.jsx': 'b7efaa2619e07cbb0d2ab787b27e9983ed42821ca37013f8637c937ebeb87cbf'

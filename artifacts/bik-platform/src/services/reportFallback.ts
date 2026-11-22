@@ -14,6 +14,7 @@ import { getEnrichedQuestion } from '../data/questionClassification';
 import { STRATEGIC_HYPOTHESES } from '../data/diagnosticHypotheses';
 import { getSectorQuestions, getSectorHypotheses } from '../data/sectorRegistry';
 import { buildDualLayerReport } from './dualLayerReport';
+import { formatOnePointSensitivity } from './blindSpotCalculator';
 import { QuestionLedgerEntry } from '../types/dualLayer';
 import { getActiveKnowledgeTrace } from '../data/activeKnowledgeRules';
 
@@ -158,9 +159,7 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
   for (const key of Object.keys(sensitivityNames) as (keyof FinancialSensitivities)[]) {
     const value = sensitivities[key];
     if (value === undefined) continue;
-    const formatted = value.toLocaleString('en-US', { maximumSignificantDigits: 15 });
-    const amount = currency === 'USD' ? `$${formatted}` : [formatted, currency].filter(Boolean).join(' ');
-    sensitivityLines[key] = `كل نقطة مئوية من ${sensitivityNames[key]} تساوي بحسب أرقامك: ${amount} شهرياً (تقدير استرشادي)`;
+    sensitivityLines[key] = formatOnePointSensitivity(sensitivityNames[key], value, currency);
   }
 
   if (scoreResult.topWeaknesses.length > 0) {
@@ -672,7 +671,10 @@ export function createFallbackReport(input: FallbackReportInput): DiagnosticRepo
     }
   });
 
-  if (!hasRevenue) dual_layer.clientReport.financial_impact = null;
+  const clientReport = dual_layer.clientReport;
+  if (!hasRevenue && !clientReport.sector_sensitivities?.length && !clientReport.financial_impact?.sector_blind_spots?.length) {
+    clientReport.financial_impact = null;
+  }
 
   return {
     review: dual_layer.clientReport.review,

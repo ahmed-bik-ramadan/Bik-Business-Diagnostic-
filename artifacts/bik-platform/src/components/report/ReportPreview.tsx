@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ClientExecutiveReport } from '../../types/dualLayer';
+import { declaredSectorRows, formatOnePointSensitivity } from '../../services/blindSpotCalculator';
 
 interface Props { clientReport: ClientExecutiveReport; }
 
@@ -12,6 +13,8 @@ const statusLabels: Record<string, string> = {
 
 export function ReportPreview({ clientReport: report }: Props) {
   const valueModel = report.financial_impact?.declaredValueModel;
+  const declaredRows = declaredSectorRows(report.financial_impact?.sector_blind_spots);
+  const currency = report.financial_impact?.currency;
   return <div className="space-y-4">
     <section data-testid="preview-summary" className="overflow-hidden rounded-[1.7rem] bg-[#0F172A] p-6 text-[#FBFAF6] md:p-8">
       <p className="text-xs font-bold tracking-wide text-[#DCC78D]">الخلاصة التنفيذية</p>
@@ -47,6 +50,11 @@ export function ReportPreview({ clientReport: report }: Props) {
         <p className="mt-2 text-sm leading-7"><strong>خطوة أولى:</strong> {priority.first_action}</p>
       </div>)}
       {!report.top_priorities?.length && <p className="mt-3 text-sm leading-7 text-[#68717A]">استكمال البيانات التي قد تغيّر القرار قبل اعتماد خطة تنفيذ.</p>}
+      {report.sector_sensitivities?.map(spot => (
+        <p key={spot.id} className="mt-2 text-sm leading-7 text-[#68717A]">
+          {formatOnePointSensitivity(spot.name, spot.monthlyAmount, currency)}
+        </p>
+      ))}
     </section>
 
     <section data-testid="preview-financial" className="rounded-2xl border border-[#C9A961]/35 bg-[#F6F0DF] p-5 md:p-7">
@@ -59,9 +67,9 @@ export function ReportPreview({ clientReport: report }: Props) {
         <p className="mt-3 text-sm leading-7 text-[#5D5542]">لا يُحسب هذا الميزان بأمانة من البيانات الحالية، ولن يُختلق رقم لا يقوم على أرض صلبة. ما ينقص التحقق: {valueModel?.gaps.join('، ') || 'معلومات مالية إضافية للتحقق'}.</p>
         <p className="mt-2 text-xs leading-6 text-[#70664F]">استكمال هذا النقص هو أول عمل مشترك مع أ/ أحمد، ومكالمتكما المجانية تبدأ من عنده.</p>
       </>}
-      {(report.financial_impact?.sector_blind_spots?.length || 0) > 0 && <div className="mt-4 space-y-2 rounded-xl border border-[#146B4F]/25 bg-[#F1F3EC] p-4" data-testid="preview-blind-spots">
+      {declaredRows.length > 0 && <div className="mt-4 space-y-2 rounded-xl border border-[#146B4F]/25 bg-[#F1F3EC] p-4" data-testid="preview-blind-spots">
         <p className="text-xs font-bold text-[#146B4F]">من أرقامك المصرَّح بها في التشخيص العميق: ما يتركه كل شهر بين يديك</p>
-        {report.financial_impact!.sector_blind_spots!.map(spot => <p key={spot.name} className="text-sm leading-7 text-[#44584C]">{spot.name}: قرابة {spot.monthly_amount.toLocaleString('ar-EG')} {report.financial_impact?.currency} شهرياً</p>)}
+        {declaredRows.map(spot => <p key={spot.name} className="text-sm leading-7 text-[#44584C]">{spot.name}: قرابة {spot.monthly_amount.toLocaleString('ar-EG')} {report.financial_impact?.currency} شهرياً</p>)}
         <p className="text-xs leading-6 text-[#70664F]">أرقام مشتقة من إجاباتك أنت بمعادلات محاسبية معلنة، ليست وعداً ولا تدقيقاً.</p>
       </div>}
     </section>
