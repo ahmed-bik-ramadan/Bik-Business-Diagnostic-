@@ -56,6 +56,7 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  'src/pages/Processing.tsx': '6f8a6259d8bc5b450d6f46e0ded14b3b6dd8fd2a156743dc5d1dddc448667a27',
   // Mission 11D updates the sector formulas and their report consumers.
   'src/components/report/ReportPreview.tsx': '63514c2b2dee23928ecc7955491a0d60d95f413abb1d0639d8aca65bf9e59fd6',
   'src/data/sectorFinancialTaxonomy.ts': '0f11c60211d80923473c7306f76670f6a569ef0db603bbddb37bf5f5786c7b71',
