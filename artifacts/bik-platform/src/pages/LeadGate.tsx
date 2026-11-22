@@ -170,6 +170,10 @@ export default function LeadGate() {
               <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-1 h-4 w-4 accent-[#0F172A]" />
               <span>أوافق صراحةً على تجهيز التقرير وإتاحة فتح أجزائه في واتساب كي أشاركها بنفسي مع المستشار. أفهم أن فتح واتساب لا يرسل الرسالة تلقائياً، وأن BIK لا يؤكد الإرسال أو الاستلام.</span>
             </label>
+            <div className="flex flex-wrap gap-x-5 text-sm font-semibold text-[#26354E]">
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4">سياسة الخصوصية</a>
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-4">الشروط</a>
+            </div>
             {error && <p role="alert" className="text-sm font-semibold text-[#8A3F32]">{error}</p>}
               <button type="submit" disabled={!consent} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F172A] px-5 py-4 font-bold text-white transition hover:bg-[#26354E] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto">
               {hasExistingConsent ? 'متابعة الجزء الذي توقفت عنده' : 'متابعة إلى تجهيز التقرير'} <ArrowLeft size={18} />

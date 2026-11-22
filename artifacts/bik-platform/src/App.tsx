@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Footer from './components/Footer'
 const Welcome = lazy(() => import('./pages/Welcome'))
 const SectorSelect = lazy(() => import('./pages/SectorSelect'))
 const DiagnosticDepth = lazy(() => import('./pages/DiagnosticDepth'))
@@ -13,6 +14,8 @@ const Report = lazy(() => import('./pages/Report'))
 const Consultant = lazy(() => import('./pages/Consultant'))
 const OfferSummary = lazy(() => import('./pages/OfferSummary'))
 const PaymentSent = lazy(() => import('./pages/PaymentSent'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Terms = lazy(() => import('./pages/Terms'))
 import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
@@ -35,12 +38,15 @@ function App() {
               <Route path="/consultant" element={<Consultant />} />
               <Route path="/offer-summary/:offerKey" element={<OfferSummary />} />
               <Route path="/payment-sent" element={<PaymentSent />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="/admin" element={<Navigate to="/" replace />} />
               <Route path="/admin-bik-dashboard-2025" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
+        <Footer />
       </div>
     </BrowserRouter>
   )

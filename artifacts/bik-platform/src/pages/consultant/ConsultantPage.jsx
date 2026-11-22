@@ -1155,8 +1155,6 @@ export default function ConsultantPage({ visitor }) {
         </div>
       </section>
 
-      <footer className="bkc-foot">أ/ أحمد رمضان · Business transformation &amp; development consultant</footer>
-
       {open && <CaseModal item={open} onClose={closeCase} contact={contact} setContact={setContact} visitor={visitor} />}
     </div>
   );
@@ -1306,7 +1304,6 @@ const CSS = `
 .bkc-step h3{margin:12px 0 6px;font-size:17px;font-weight:800}
 .bkc-step p{margin:0;font-size:14px;color:#334155}
 .bkc-final{background:radial-gradient(120% 90% at 50% 100%,#1D2D54 0%,var(--ink) 65%);color:#fff;padding:52px 0}
-.bkc-foot{padding:20px;text-align:center;font-size:12px;color:var(--muted)}
 .bkc :focus-visible{outline:3px solid rgba(201,169,97,.9);outline-offset:3px}
 @media (min-width:760px){
  .bkc-hero h1{font-size:60px}

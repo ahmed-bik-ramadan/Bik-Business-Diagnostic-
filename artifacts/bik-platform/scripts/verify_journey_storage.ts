@@ -1,7 +1,7 @@
 // Run after the platform build. Install Chromium with "pnpm exec playwright-core install chromium"
 // in this package if neither Playwright Chromium nor system Chromium is installed.
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { chromium, type Page } from 'playwright-core';
 import { createElement } from 'react';
@@ -14,6 +14,58 @@ import OfferSummary from '../src/pages/OfferSummary';
 
 const visitor = { name: 'زائر الاختبار', company: 'شركة الاختبار', city: 'القاهرة', review: 'نحتاج إلى متابعة مواعيد التحصيل بانتظام.' };
 const button = (page: Page, text: string) => page.getByRole('button', { name: text, exact: true });
+const approvedCopy = readFileSync(new URL('../../../docs/codex/BIK_TEXTS_LEGAL_FAQ_PAYMENT.md', import.meta.url), 'utf8');
+const approvedSection = (number: number) => approvedCopy.split(/^## /mu).find(section => section.startsWith(number + ') '))!;
+const legalLinks = [
+  { path: '/privacy', title: 'سياسة الخصوصية', section: 2 },
+  { path: '/terms', title: 'الشروط', section: 3 },
+];
+
+async function verifyFooter(page: Page) {
+  assert.equal(await page.locator('footer').count(), 1);
+  const footer = page.getByRole('contentinfo');
+  assert.equal(await footer.getByText('BIK Business Solutions', { exact: true }).count(), 1);
+  for (const { path, title } of legalLinks) {
+    assert.equal(await footer.getByRole('link', { name: title, exact: true }).getAttribute('href'), path);
+  }
+}
+
+async function verifyLegalRoutes(page: Page, origin: string) {
+  for (const { path, title, section } of legalLinks) {
+    await page.goto(origin + path);
+    const main = page.getByRole('main');
+    await main.getByRole('heading', { name: title, level: 1, exact: true }).waitFor();
+    const approved = [...approvedSection(section).matchAll(/^\*\*(.+?)\*\*\s*([^\r\n]+)$/gmu)];
+    assert.equal(approved.length, 7);
+    assert.deepEqual(await main.getByRole('heading', { level: 2 }).allTextContents(), approved.map(match => match[1]));
+    assert.deepEqual(await main.locator('p').allTextContents(), approved.map(match => match[2]));
+    assert.deepEqual(await main.evaluate(element => [getComputedStyle(element).direction, element.scrollWidth <= element.clientWidth]),
+      ['rtl', true]);
+    await verifyFooter(page);
+    await page.waitForFunction(() => document.activeElement?.tagName === 'MAIN');
+    await page.keyboard.press('Tab');
+    assert.equal(await main.getByRole('link', { name: 'صفحة الترحيب' }).evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press('Enter');
+    await page.waitForURL(origin + '/');
+    await page.getByTestId('start-analysis').waitFor();
+  }
+}
+
+async function verifyGateLegalLinks(page: Page, origin: string) {
+  const main = page.getByRole('main');
+  for (const { path, title } of legalLinks) {
+    const link = main.getByRole('link', { name: title, exact: true });
+    assert.equal(await link.getAttribute('href'), path);
+    assert.equal(await link.getAttribute('target'), '_blank');
+    assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+    const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
+    await popup.waitForURL(origin + path);
+    await popup.getByRole('heading', { name: title, level: 1, exact: true }).waitFor();
+    await popup.close();
+    assert.equal(new URL(page.url()).pathname, '/lead-gate');
+    assert.equal(await main.getByRole('checkbox').isChecked(), false);
+  }
+}
 
 async function enterIntake(page: Page) {
   const identity = page.locator('section').first();
@@ -254,6 +306,8 @@ async function verifyPaymentRoutes(page: Page, origin: string) {
 
 async function runJourney(page: Page, origin: string) {
   await page.goto(origin);
+  await page.getByTestId('start-analysis').waitFor();
+  await verifyFooter(page);
   await page.getByTestId('start-analysis').click();
   await page.getByRole('textbox').fill('مطعم فاخر');
   await page.getByRole('button', { name: /مطعم فاخر/ }).click();
@@ -271,6 +325,7 @@ async function runJourney(page: Page, origin: string) {
     }
   }
   await page.waitForURL('**/lead-gate');
+  await verifyGateLegalLinks(page, origin);
   await page.getByLabel('رمز الدولة').selectOption('+968');
   await page.getByLabel('رقم الهاتف').fill('00968 091234567');
   await page.getByRole('checkbox').check();
@@ -313,12 +368,14 @@ async function runJourney(page: Page, origin: string) {
   }
   await page.getByTestId('open-full-analysis').click();
   await page.getByTestId('consultant-cta').waitFor();
+  await verifyFooter(page);
   assert.ok((await page.getByRole('heading', { level: 1 }).innerText()).includes(visitor.company));
   assert.ok((await page.getByTestId('review-report-section').innerText()).includes(visitor.review));
   await verifyOfferCards(page, true);
   await page.getByTestId('header-consultant-link').click();
   await page.waitForURL('**/consultant');
   await page.locator('.bkc-back').waitFor();
+  await verifyFooter(page);
   await verifyOfferCards(page, false);
   await page.locator('.bkc-back').click();
   await button(page, 'ابدأ من جديد').click();
@@ -356,6 +413,7 @@ try {
     });
     const page = await context.newPage();
     page.setDefaultTimeout(12000);
+    await verifyLegalRoutes(page, origin);
     for (const route of ['/sector-select', '/diagnostic-depth', '/company-intake', '/questionnaire', '/review/1', '/processing', '/lead-gate', '/report-transfer', '/report', '/consultant', '/']) {
       await observer.evaluate(() => localStorage.setItem('bik-analysis-session:old', 'legacy report'));
       await page.goto(origin + route);
@@ -368,6 +426,7 @@ try {
     await observer.waitForFunction(() => (window as any).observedWrites.includes('test-finished'));
     assert.deepEqual(await observer.evaluate(() => (window as any).observedWrites), ['test-finished']);
     assert.deepEqual(await observer.evaluate(() => Object.entries(localStorage).sort()), [['other-app', 'keep'], ['test-finished', '1']]);
+    console.log('LEGAL PAGES: PASS (verbatim copy, direct routes, shared footer and lead-gate links in new tabs)');
     console.log('JOURNEY STORAGE: PASS (direct entry, intake, questionnaire, reviews, report preparation, multipart transfer, reload and restart)');
   } finally {
     await server.close();
