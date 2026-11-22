@@ -23,7 +23,9 @@ async function enterIntake(page: Page) {
 }
 
 async function answerQuestionnaire(page: Page) {
-  await page.getByTestId('dialect-country-select').selectOption({ label: 'مصر' });
+  const dialect = page.getByTestId('questionnaire-dialect');
+  await dialect.waitFor();
+  assert.equal(await dialect.innerText(), 'مصري');
   const card = page.locator('.questionnaire-card');
   const heading = card.getByRole('heading');
   while (new URL(page.url()).pathname === '/questionnaire') {
@@ -42,6 +44,27 @@ async function answerQuestionnaire(page: Page) {
     }
     await page.waitForFunction(text => location.pathname !== '/questionnaire' ||
       (document.querySelector('.questionnaire-card h2')?.textContent?.trim() || text) !== text, previous);
+  }
+}
+
+async function verifyIntakeDialects(page: Page, origin: string) {
+  await page.goto(origin);
+  for (const [country, label] of [
+    ['مصر', 'مصري'], ['السعودية', 'سعودي'], ['الإمارات', 'إماراتي'],
+    ['الكويت', 'خليجي عام'], ['المغرب', 'فصحى'], ['', 'فصحى'], ['غير معروف', 'فصحى']
+  ]) {
+    await page.evaluate(country => {
+      sessionStorage.setItem('bik-diagnostic-storage', JSON.stringify({
+        state: { sectorL1: 'retail', diagnosticDepth: 'quick', intakeAnswers: { country } },
+        version: 0
+      }));
+    }, country);
+    await page.goto(origin + '/questionnaire');
+    const dialect = page.getByTestId('questionnaire-dialect');
+    await dialect.waitFor();
+    assert.equal(await dialect.innerText(), label);
+    assert.equal(await page.getByTestId('dialect-country-select').count(), 0);
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('bik_visitor_country')), null);
   }
 }
 
@@ -131,6 +154,7 @@ try {
       await page.goto(origin + route);
       await page.waitForFunction(() => localStorage.getItem('bik-analysis-session:old') === null);
     }
+    await verifyIntakeDialects(page, origin);
     await runJourney(page, origin);
     // Wait until the observer has processed all preceding mutations.
     await page.evaluate(() => localStorage.setItem('test-finished', '1'));

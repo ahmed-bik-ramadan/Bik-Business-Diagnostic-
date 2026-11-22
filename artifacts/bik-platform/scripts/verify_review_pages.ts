@@ -12,7 +12,7 @@ import { computeDeterministicScore, DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS } fr
 import { getSectorQuestions } from '../src/data/sectorRegistry';
 import { createTransferProgress, readTransferProgress, writeTransferProgress, transferProgressKey } from '../src/services/reportTransferState';
 import * as recovery from '../src/services/analysisRecovery';
-import { dialectForCountry, reviewCopy } from '../src/services/dialect';
+import { dialectForCountry, questionnaireCopy, reviewCopy } from '../src/services/dialect';
 import { reviewSessions } from './fixtures/reviewSessions';
 
 let passed = 0;
@@ -145,10 +145,20 @@ const pages = buildReviewPages(missing);
 check(pages[0].sources.length === 0 && pages[0].lines[0].includes('لم تكتمل') && pages[0].lines[0].includes('إجابة أخرى'), 'unknown answers produce an honest invitation, not invented pain');
 check(['unknown', 'لا أعرف', '...', '…', null, 'skipped'].every(isReviewGap), 'unknown, skipped and ellipsis are data gaps');
 check(pages.every(page => !page.title.includes('أ/') && !page.title.includes('  ') && !page.subtitle.includes('«»')), 'missing names/companies omit the entire optional phrase');
-for (const country of ['مصر', 'السعودية', 'الإمارات', 'الكويت', 'المغرب']) {
-  assert.equal(reviewCopy(dialectForCountry(country)).yes, 'نعم');
-  assert.ok(reviewCopy(dialectForCountry(country)).previous);
+for (const [country, dialect] of [
+  ['مصر', 'egyptian'], ['السعودية', 'saudi'], ['الإمارات', 'emirati'],
+  ['الكويت', 'gulf'], ['المغرب', 'fusha'], ['', 'fusha'], ['غير معروف', 'fusha']
+] as const) {
+  const intakeAnswers = { country };
+  assert.equal(dialectForCountry(intakeAnswers.country), dialect);
+  assert.equal(reviewCopy(dialect).yes, 'نعم');
+  assert.equal(questionnaireCopy(dialect).stageLabel, questionnaireCopy('fusha').stageLabel);
+  assert.equal(questionnaireCopy(dialect).remaining(5), questionnaireCopy('fusha').remaining(5));
+  assert.equal(reviewCopy(dialect).previous, questionnaireCopy('fusha').previous);
 }
+assert.equal(questionnaireCopy('egyptian').submit, 'ابعت الإجابات');
+assert.equal(dialectForCountry(undefined), 'fusha');
+assert.equal(dialectForCountry(7), 'fusha');
 check(true, 'all five existing dialect selections supply review copy');
 
 const raw = 'أريد مرجعاً واضحاً.\nهاتفي +20 1066966515، بريدي review@example.com ورابطي https://example.com.\n  أريد u06 كما كتبته 🚢.';

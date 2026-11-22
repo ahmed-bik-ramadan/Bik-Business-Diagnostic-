@@ -56,6 +56,7 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',
   'src/pages/AdminDashboard.tsx': '7dd731e9193fb587ac0e4d7712c07ae7e311ed74b127c0b4e09b4078e22b845e',
   'src/services/evidenceSwot.ts': '88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4',
   'src/services/reportGenerator.ts': '6377cdcc08004128737a289ec227bc0ded44984ad1e433ab5508dcf014132038',
@@ -70,8 +71,8 @@ const revisedStructure = {
   'src/components/OfferCards.tsx': '972573e63414f6569a40c75d5c3b2be3d8950fc72c7a27e1eb1f1872368864d1',
   'src/config/appConfig.ts': 'f1383cbe621b8d7b2facbcb3115913b96a33c8937783dcf47ff50deeabf93efb',
   'src/pages/LeadGate.tsx': '8c4ad0b31155247438db22e2b207fffd63a3d998168989f408de4925ee6bb74b',
-  'src/pages/Questionnaire.tsx': 'ed5e2569d01c10563e1bf8c56c9039c1dffa95d2a25a31a938f25e558d868ae9',
-  'src/pages/Report.tsx': 'fc0969259d94cc1cd228ac0a44e89bed3b805ffc14587b5cd53666fc753a1676',
+  'src/pages/Questionnaire.tsx': 'edeabe6cbbfa021fc4573b192b47e43c8530ff62cf6c00a4b7be26c6ebf11c48',
+  'src/pages/Report.tsx': 'dd53cc0e8bc5325d7eac9ad5c22cd7f54893e27bd6aa81d3b7d8727202feaf96',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': '0b54278393c8324b0476f61c812f31e99342fe4ec78f07362f25cf379cbcd5cd',
   'src/pages/consultant/ConsultantPage.jsx': '168e6fdba9654ac069939306eb35247887444cfe63a9d81aada7d2d7e1c385f8',

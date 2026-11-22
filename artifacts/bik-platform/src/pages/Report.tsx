@@ -38,7 +38,7 @@ function collectGateInputs(input: { sessionId?: string; report: unknown; dossier
     doneMarkVerified
   };
 }
-import { reviewCopy } from '../services/dialect';
+import { dialectForCountry, reviewCopy } from '../services/dialect';
 import { ReportPreview } from '../components/report/ReportPreview';
 import { ReportDetails } from '../components/report/ReportDetails';
 import OfferCards from '../components/OfferCards';
@@ -49,7 +49,7 @@ import { buildOfferOutcomes } from '../services/offerOutcomes';
 
 export default function Report() {
   const navigate = useNavigate();
-  const { sessionId, report, axisScores, axisDetails, companyName, startMode } = useDiagnosticStore();
+  const { sessionId, report, axisScores, axisDetails, companyName, startMode, intakeAnswers } = useDiagnosticStore();
   const firstCriticalAxis = Object.entries(axisDetails || {}).find(([, detail]) => detail?.status === 'نقطة حرجة')?.[0];
   const dossier = report?.dual_layer?.consultantDossier?.full_dossier_text || '';
   // سطر الخسارة في بطاقات العروض: المصرَّح به من أرقام العميل وحده، أو المشتق من أرقامه
@@ -105,7 +105,7 @@ export default function Report() {
         <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'}: أين تختنق أرباحك، ولماذا، وماذا يكلّفك تجاهل ذلك</h1>
       </div>
       {!!report.dual_layer.clientReport.review?.length && <section className="rounded-[1.7rem] border border-[#C9A961]/30 bg-[#FBFAF6] p-6 md:p-8" data-testid="review-report-section">
-        <h2 className="font-display text-2xl font-bold">{reviewCopy('fusha').sectionTitle}</h2>
+        <h2 className="font-display text-2xl font-bold">{reviewCopy(dialectForCountry(intakeAnswers.country)).sectionTitle}</h2>
         {report.dual_layer.clientReport.review.map(section => <div key={section.page} className="mt-5">
           <h3 className="font-bold">{section.label}</h3>
           <p className="mt-2 whitespace-pre-wrap break-words leading-8">{section.text}</p>

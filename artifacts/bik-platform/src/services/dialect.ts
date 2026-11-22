@@ -10,16 +10,14 @@ export type Dialect = 'egyptian' | 'saudi' | 'emirati' | 'gulf' | 'fusha';
 const GULF_GENERAL = ['الكويت', 'قطر', 'البحرين', 'عمان', 'سلطنة عمان'];
 const FUSHA_COUNTRIES = ['الأردن', 'المغرب', 'تونس', 'ليبيا', 'الجزائر', 'السودان', 'موريتانيا', 'الصومال', 'جيبوتي', 'العراق', 'لبنان', 'سوريا', 'فلسطين', 'اليمن', 'أخرى'];
 
-export function dialectForCountry(country: string | null | undefined): Dialect {
-  const c = (country || '').trim();
+export function dialectForCountry(country: unknown): Dialect {
+  const c = typeof country === 'string' ? country.trim() : '';
   if (c === 'مصر') return 'egyptian';
   if (c === 'السعودية') return 'saudi';
   if (c === 'الإمارات') return 'emirati';
   if (GULF_GENERAL.includes(c)) return 'gulf';
   return 'fusha';
 }
-
-export const DIALECT_COUNTRY_OPTIONS = ['مصر', 'السعودية', 'الإمارات', 'الكويت', 'قطر', 'البحرين', 'عمان', 'الأردن', 'المغرب', 'تونس', 'ليبيا', 'أخرى'] as const;
 
 export const DIALECT_NAMES: Record<Dialect, string> = {
   egyptian: 'مصري',
@@ -55,26 +53,16 @@ const FUSHA_COPY: QuestionnaireCopy = {
   chipHint: 'نخاطبك بأسلوب بلدك'
 };
 
-const QUESTIONNAIRE_COPY: Record<Dialect, QuestionnaireCopy> = {
-  fusha: FUSHA_COPY,
-  egyptian: { ...FUSHA_COPY, completedSuffix: 'مكتمل', questionOf: 'من الأسئلة', previous: 'السابق', remaining: m => `المتبقي تقريباً: ${m} د`, next: 'التالي', skip: 'تخطي', submit: 'ابعت الإجابات' },
-  saudi: { ...FUSHA_COPY, completedSuffix: 'مكتمل', questionOf: 'من الأسئلة', previous: 'السابق', remaining: m => `المتبقي تقريباً: ${m} د`, next: 'التالي', skip: 'تخطي', submit: 'أرسل الإجابات' },
-  emirati: { ...FUSHA_COPY, completedSuffix: 'مكتمل', questionOf: 'من الأسئلة', previous: 'السابق', remaining: m => `المتبقي تقريباً: ${m} د`, next: 'التالي', skip: 'تخطي', submit: 'أرسل الإجابات' },
-  gulf: { ...FUSHA_COPY, completedSuffix: 'مكتمل', questionOf: 'من الأسئلة', previous: 'السابق', remaining: m => `المتبقي تقريباً: ${m} د`, next: 'التالي', skip: 'تخطي', submit: 'أرسل الإجابات' }
+const QUESTIONNAIRE_COPY: Record<Dialect, Partial<QuestionnaireCopy>> = {
+  fusha: {},
+  egyptian: { questionOf: 'من الأسئلة', submit: 'ابعت الإجابات' },
+  saudi: { questionOf: 'من الأسئلة', submit: 'أرسل الإجابات' },
+  emirati: { questionOf: 'من الأسئلة', submit: 'أرسل الإجابات' },
+  gulf: { questionOf: 'من الأسئلة', submit: 'أرسل الإجابات' }
 };
 
 export function questionnaireCopy(dialect: Dialect): QuestionnaireCopy {
-  return QUESTIONNAIRE_COPY[dialect] || FUSHA_COPY;
-}
-
-const COUNTRY_KEY = 'bik_visitor_country';
-
-export function readStoredCountry(storage: Pick<Storage, 'getItem'>): string {
-  try { return storage.getItem(COUNTRY_KEY) || ''; } catch { return ''; }
-}
-
-export function writeStoredCountry(storage: Pick<Storage, 'setItem'>, country: string): void {
-  try { storage.setItem(COUNTRY_KEY, country); } catch { /* الجلسة تكفي */ }
+  return { ...FUSHA_COPY, ...QUESTIONNAIRE_COPY[dialect] };
 }
 
 /** Review editorial copy stays in simplified Arabic; only suitable navigation/help is dialectal. */

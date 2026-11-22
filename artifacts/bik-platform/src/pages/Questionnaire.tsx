@@ -8,7 +8,7 @@ import { sectorQuestions } from '../data/sectorQuestions';
 import { DEEP_TIER_QUESTIONS } from '../data/sectorFinancialTaxonomy';
 import { deltaQuestions } from '../data/deltaQuestions';
 import { toastMessages } from '../data/toastMessages';
-import { dialectForCountry, questionnaireCopy, DIALECT_COUNTRY_OPTIONS, DIALECT_NAMES, readStoredCountry, writeStoredCountry } from '../services/dialect';
+import { dialectForCountry, questionnaireCopy, DIALECT_NAMES } from '../services/dialect';
 import { saveProgress, trackEvent } from '../services/supabase';
 import { getNextAdaptiveQuestion } from '../services/adaptiveDiagnosticEngine';
 import { normalizeMultiChoice, validateQuestionAnswer } from '../services/questionAnswerValidation';
@@ -27,6 +27,7 @@ const Questionnaire: React.FC = () => {
     userName, 
     universalAnswers, 
     sectorAnswers,
+    intakeAnswers,
     diagnosticDepth,
     setField,
     recordQuestionShown,
@@ -36,10 +37,8 @@ const Questionnaire: React.FC = () => {
   } = useDiagnosticStore();
 
   const [toast, setToast] = useState<{ text: string, id: number } | null>(null);
-  const [country, setCountryState] = useState<string>(() => readStoredCountry(sessionStorage));
-  const dialect = dialectForCountry(country);
+  const dialect = dialectForCountry(intakeAnswers.country);
   const copy = questionnaireCopy(dialect);
-  const selectCountry = (next: string) => { setCountryState(next); writeStoredCountry(sessionStorage, next); };
   const [currentValue, setCurrentValue] = useState<any>(null);
   const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [adaptiveStep, setAdaptiveStep] = useState<NextQuestionResult | null>(null);
@@ -353,20 +352,10 @@ const Questionnaire: React.FC = () => {
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-semibold text-[#64748B]">{copy.stageLabel} <span className="text-luxury-accent">01</span></span>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-slate-500" title={copy.chipHint}>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500" title={copy.chipHint}>
                 <span>{copy.chipLabel}</span>
-                <select
-                  value={country}
-                  onChange={(e) => selectCountry(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 focus:border-luxury-accent focus:outline-none"
-                  data-testid="dialect-country-select"
-                  aria-label="اختر بلدك لنخاطبك بأسلوبه"
-                >
-                  <option value="">اختر بلدك…</option>
-                  {DIALECT_COUNTRY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <span className="rounded-md bg-[#F6F0DF] px-2 py-0.5 font-bold text-[#8B7135]">{DIALECT_NAMES[dialect]}</span>
-              </label>
+                <span className="rounded-md bg-[#F6F0DF] px-2 py-0.5 font-bold text-[#8B7135]" data-testid="questionnaire-dialect">{DIALECT_NAMES[dialect]}</span>
+              </div>
               <span className="text-sm font-bold text-luxury-accent">{progressPct}% {copy.completedSuffix}</span>
             </div>
           </div>

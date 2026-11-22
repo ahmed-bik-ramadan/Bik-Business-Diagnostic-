@@ -14,7 +14,7 @@ export default function ReviewPage() {
   const page = (validPage ? Number(params.page) : 1) as ReviewPageNumber;
   const historyPrepared = useRef(false);
   const redirect = validPage ? reviewEntryRedirect(store, page) : '/review/1';
-  const copy = reviewCopy(dialectForCountry(String(store.intakeAnswers.country || '')));
+  const copy = reviewCopy(dialectForCountry(store.intakeAnswers.country));
   const content = useMemo(() => buildReviewPages(store)[page - 1], [page, store.userName, store.companyName,
     store.intakeAnswers, store.universalAnswers, store.sectorAnswers, store.sectorL1, store.sectorL2, store.sessionId, store.review]);
   const editing = store.review.editing[page] === true;

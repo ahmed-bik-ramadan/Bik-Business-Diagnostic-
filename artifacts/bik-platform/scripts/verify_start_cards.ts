@@ -7,6 +7,7 @@ import { sanitizeDiagnosticPersisted } from '../src/services/persistedStateSanit
 import { buildWhatsAppDossierText } from '../src/services/dualLayerReport';
 import { computeSectorBlindSpots, legacySectorLossTotal } from '../src/services/blindSpotCalculator';
 import { buildWhatsAppReportParts } from '../src/services/reportTextDelivery';
+import { dialectForCountry, reviewCopy } from '../src/services/dialect';
 
 const memory = () => {
   const data = new Map<string, string>();
@@ -135,7 +136,7 @@ assert.ok(!Object.hasOwn(JSON.parse(String(requests.at(-1)!.init.body)), 'startM
 const Report = component('src/pages/Report.tsx', {
   '../services/blindSpotCalculator': { legacySectorLossTotal },
   '../services/reportGate': { resolveReportGate: () => ({ open: true, redirect: null }) },
-  '../services/dialect': { reviewCopy: () => ({}) },
+  '../services/dialect': { dialectForCountry, reviewCopy },
   '../components/report/ReportPreview': { ReportPreview: 'report-preview' },
   '../components/report/ReportDetails': { ReportDetails: 'report-details' },
   '../components/ConsultantChat': { __esModule: true, default: 'chat' },
