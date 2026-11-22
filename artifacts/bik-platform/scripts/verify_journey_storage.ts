@@ -67,6 +67,41 @@ async function verifyGateLegalLinks(page: Page, origin: string) {
   }
 }
 
+async function verifyFaq(page: Page, group: 'أ' | 'ب' | 'ج') {
+  const approvedGroup = approvedSection(6).split(/^### /mu).find(section => section.startsWith(group + ') '))!;
+  const approved = [...approvedGroup.matchAll(/^- \*\*(.+?)\*\* ([^\r\n]+)$/gmu)];
+  assert.equal(approved.length, group === 'ج' ? 4 : 5);
+
+  const faq = page.getByRole('region', { name: 'الأسئلة الشائعة', exact: true });
+  await faq.waitFor();
+  assert.deepEqual(await faq.evaluate(el => [getComputedStyle(el).direction, el.scrollWidth <= el.clientWidth]), ['rtl', true]);
+  assert.deepEqual(await faq.getByRole('button').allTextContents(), approved.map(match => match[1]));
+  assert.equal(await faq.locator('[aria-expanded="true"]').count(), 0);
+  if (group === 'ب') {
+    assert.ok(await faq.evaluate(el => {
+      const lastCard = document.querySelector('[data-offer="focusedWeek"]');
+      return lastCard && (lastCard.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }), 'the report FAQ follows the offers');
+  }
+
+  for (const [index, [, question, answer]] of approved.entries()) {
+    const trigger = faq.getByRole('button', { name: question, exact: true });
+    const content = faq.getByRole('region', { name: question, exact: true });
+    assert.equal(await content.isVisible(), false);
+    if (index === 0) await trigger.focus();
+    else await page.keyboard.press('Tab');
+    assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+
+    await page.keyboard.press(index % 2 === 0 ? 'Enter' : 'Space');
+    await content.waitFor();
+    assert.equal(await content.innerText(), answer);
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press(index % 2 === 0 ? 'Space' : 'Enter');
+    await content.waitFor({ state: 'hidden' });
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+  }
+}
+
 async function enterIntake(page: Page) {
   const identity = page.locator('section').first();
   const inputs = identity.getByRole('textbox');
@@ -308,6 +343,7 @@ async function runJourney(page: Page, origin: string) {
   await page.goto(origin);
   await page.getByTestId('start-analysis').waitFor();
   await verifyFooter(page);
+  await verifyFaq(page, 'أ');
   await page.getByTestId('start-analysis').click();
   await page.getByRole('textbox').fill('مطعم فاخر');
   await page.getByRole('button', { name: /مطعم فاخر/ }).click();
@@ -369,6 +405,7 @@ async function runJourney(page: Page, origin: string) {
   await page.getByTestId('open-full-analysis').click();
   await page.getByTestId('consultant-cta').waitFor();
   await verifyFooter(page);
+  await verifyFaq(page, 'ب');
   assert.ok((await page.getByRole('heading', { level: 1 }).innerText()).includes(visitor.company));
   assert.ok((await page.getByTestId('review-report-section').innerText()).includes(visitor.review));
   await verifyOfferCards(page, true);
@@ -376,6 +413,7 @@ async function runJourney(page: Page, origin: string) {
   await page.waitForURL('**/consultant');
   await page.locator('.bkc-back').waitFor();
   await verifyFooter(page);
+  await verifyFaq(page, 'ج');
   await verifyOfferCards(page, false);
   await page.locator('.bkc-back').click();
   await button(page, 'ابدأ من جديد').click();
@@ -427,6 +465,7 @@ try {
     assert.deepEqual(await observer.evaluate(() => (window as any).observedWrites), ['test-finished']);
     assert.deepEqual(await observer.evaluate(() => Object.entries(localStorage).sort()), [['other-app', 'keep'], ['test-finished', '1']]);
     console.log('LEGAL PAGES: PASS (verbatim copy, direct routes, shared footer and lead-gate links in new tabs)');
+    console.log('FAQ: PASS (verbatim copy, RTL, Tab navigation and Enter/Space toggling on all three pages)');
     console.log('JOURNEY STORAGE: PASS (direct entry, intake, questionnaire, reviews, report preparation, multipart transfer, reload and restart)');
   } finally {
     await server.close();

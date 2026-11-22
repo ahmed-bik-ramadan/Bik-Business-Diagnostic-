@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BIK_OFFERS } from '../../config/appConfig';
 import { OfferCard, OFFER_ORDER } from '../../components/OfferCards';
+import Faq from '../../components/Faq';
 
 /* ───────────── البيانات ───────────── */
 let WHATSAPP = '201066966515';
@@ -1154,6 +1155,10 @@ export default function ConsultantPage({ visitor }) {
           <ServiceRequest contact={contact} setContact={setContact} visitor={visitor} caseTitle="" dark />
         </div>
       </section>
+
+      <div className="bkc-sec">
+        <div className="bkc-wrap"><Faq group="consultant" /></div>
+      </div>
 
       {open && <CaseModal item={open} onClose={closeCase} contact={contact} setContact={setContact} visitor={visitor} />}
     </div>

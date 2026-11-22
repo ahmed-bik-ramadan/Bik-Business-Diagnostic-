@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle2, Compass, LockKeyhole, Sparkles, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Faq from '../components/Faq';
 import { platformCopy } from '../copy/platformCopy';
 import { useDiagnosticStore, type StartMode } from '../store/diagnosticStore';
 import { startSession } from '../services/api';
@@ -110,6 +111,9 @@ export default function Welcome() {
           <span className="w-full text-xs text-slate-500">النتائج إرشادية تُقرأ على ضوء أرقامك، ولا تُعدّ وعداً بنتيجة.</span>
         </div>
       </section>
+      <div className="mx-auto max-w-7xl px-5 pb-14 pt-10 md:px-10">
+        <Faq group="welcome" />
+      </div>
     </main>
   );
 }

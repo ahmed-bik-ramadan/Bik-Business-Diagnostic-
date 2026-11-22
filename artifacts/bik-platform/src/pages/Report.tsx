@@ -42,6 +42,7 @@ import { dialectForCountry, reviewCopy } from '../services/dialect';
 import { ReportPreview } from '../components/report/ReportPreview';
 import { ReportDetails } from '../components/report/ReportDetails';
 import OfferCards from '../components/OfferCards';
+import Faq from '../components/Faq';
 import CostOfProblem from '../components/CostOfProblem';
 import { lossSustainsExecutive, recommendOffer } from '../services/offerRecommendation';
 import { legacySectorLossTotal } from '../services/blindSpotCalculator';
@@ -128,6 +129,7 @@ export default function Report() {
         <Link to="/consultant" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9A961] px-6 py-4 font-bold text-[#0F172A] hover:bg-[#DCC78D] md:mt-0 md:w-auto md:shrink-0"><UserRound size={18} /> تعرّف على المستشار</Link>
       </section>
       <p className="text-center text-xs leading-7 text-[#68717A]">التقرير قراءة أولية مبنية على إفصاحات الجلسة. لا يحل محل تدقيق الحسابات أو التحقق الميداني، ولا يضمن نتيجة مستقبلية.</p>
+      <Faq group="report" />
     </div>
   </main>;
 }

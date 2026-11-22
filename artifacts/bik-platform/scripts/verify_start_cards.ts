@@ -59,6 +59,7 @@ function component(file: string, additions: Record<string, unknown> = {}) {
     react: { __esModule: true, default: react, ...react },
     'lucide-react': new Proxy({}, { get: (_target, key) => String(key) }),
     'react-router-dom': { useNavigate: () => (route: string) => routes.push(route), Link: 'a' },
+    '../components/Faq': { __esModule: true, default: 'faq' },
     '../copy/platformCopy': { platformCopy, formatPlatformCopy },
     '../store/diagnosticStore': { useDiagnosticStore: hookedStore },
     '../services/api': api,
