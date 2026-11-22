@@ -64,11 +64,12 @@ async function runJourney(page: Page, origin: string) {
     }
   }
   await page.waitForURL('**/lead-gate');
-  await page.getByLabel('رمز الدولة').selectOption('+20');
-  await page.getByLabel('رقم الهاتف').fill('1012345678');
+  await page.getByLabel('رمز الدولة').selectOption('+968');
+  await page.getByLabel('رقم الهاتف').fill('00968 091234567');
   await page.getByRole('checkbox').check();
   await page.locator('button[type=submit]').click();
   await page.waitForURL('**/report-transfer');
+  assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('bik-diagnostic-storage')!).state.whatsapp), '+96891234567');
   const openButton = page.getByTestId('open-whatsapp');
   const alert = page.getByRole('alert');
   await openButton.or(alert).first().waitFor();

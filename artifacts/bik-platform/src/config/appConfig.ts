@@ -6,6 +6,8 @@
  * No environment variables, tokens, or server-side WhatsApp APIs are required.
  */
 
+import { normalizePhoneNumber, sanitizeNationalInput } from '../services/phoneNormalization';
+
 export interface AppConfig {
   /**
    * Verified public WhatsApp contact number for consultant Ahmed Ramadan.
@@ -192,7 +194,9 @@ export function buildConsultantWhatsAppUrl(options?: {
   isReportDeliveryCTA?: boolean;
   sessionHandoff?: SessionHandoffSummary;
 }): { url: string; isConfigured: boolean; displayNotice?: string; messageText?: string } {
-  const rawNumber = (APP_CONFIG.consultantWhatsApp || '').trim().replace(/[^0-9]/g, '');
+  const configured = sanitizeNationalInput('+00', APP_CONFIG.consultantWhatsApp || '');
+  const international = configured.startsWith('+') || configured.startsWith('00') ? configured : `+${configured}`;
+  const rawNumber = normalizePhoneNumber('+00', international)?.slice(1);
 
   if (!rawNumber) {
     return {
