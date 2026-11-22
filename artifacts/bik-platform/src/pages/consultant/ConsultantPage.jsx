@@ -1134,7 +1134,7 @@ export default function ConsultantPage({ visitor }) {
           <div className="bkc-offers">
             {OFFER_ORDER.map(key => {
               const offer = BIK_OFFERS[key];
-              return <OfferCard key={key} offerKey={key} offer={offer} whatsappUrl={baseMsg('عرض: ' + offer.name, offer.freeCallMinutes)} />;
+              return <OfferCard key={key} offerKey={key} offer={offer} />;
             })}
           </div>
         </div>

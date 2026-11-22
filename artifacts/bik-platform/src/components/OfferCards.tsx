@@ -1,8 +1,9 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { MessageCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
-  BIK_EXECUTIVE_RETURN_TARGET, BIK_OFFERS, BIK_REFUND_POLICY, OFFER_GAP_LINE, buildConsultantWhatsAppUrl
+  BIK_EXECUTIVE_RETURN_TARGET, BIK_OFFERS, BIK_REFUND_POLICY, OFFER_GAP_LINE
 } from '../config/appConfig';
 import type { OfferKey } from '../services/offerRecommendation';
 import type { OfferOutcome } from '../services/offerOutcomes';
@@ -16,7 +17,6 @@ interface OfferCardsProps {
 interface OfferCardProps {
   offerKey: OfferKey;
   offer: (typeof BIK_OFFERS)[OfferKey];
-  whatsappUrl: string;
   reason?: string;
   outcomes?: OfferOutcome[];
   monthlyLoss?: string | null;
@@ -30,7 +30,7 @@ function lossLine(monthlyWaste: OfferCardsProps['monthlyWaste']): string | null 
   return `المشكلة تستمر بكلفتها الشهرية حتى تُعالج: قرابة ${amount} ${monthlyWaste.currency} على أرقامك المصرّح بها، تقدير استرشادي.`;
 }
 
-export function OfferCard({ offerKey, offer, whatsappUrl, reason, outcomes, monthlyLoss }: OfferCardProps) {
+export function OfferCard({ offerKey, offer, reason, outcomes, monthlyLoss }: OfferCardProps) {
   const executive = offerKey === 'executiveProject';
   const recommendation = reason?.trim();
   const surface = executive ? 'bg-[#0F172A] text-[#F6F3EC]' : 'bg-white text-[#0F172A]';
@@ -97,9 +97,7 @@ export function OfferCard({ offerKey, offer, whatsappUrl, reason, outcomes, mont
             )}
             {outcomes && outcomes.length === 0 && <p className={`mt-4 border-t border-[#C9A961]/35 pt-4 text-xs leading-6 ${bodyText}`} data-testid="offer-outcomes-empty">لم تظهر محاور تحتاج معالجة في إجاباتك. هذا العرض مناسب لاختبار قرار أو فرصة محددة.</p>}
             <p className={`mt-4 text-sm leading-7 ${bodyText}`}>{BIK_REFUND_POLICY}</p>
-            {whatsappUrl
-              ? <a href={whatsappUrl} target="_blank" rel="noreferrer" className={`mt-5 ${button}`}><MessageCircle size={17} aria-hidden="true" /> ناقش هذا العرض مع أ/ أحمد</a>
-              : <p className={`mt-5 text-xs leading-6 ${bodyText}`}>رابط واتساب غير متاح حالياً.</p>}
+            <Link to={`/offer-summary/${offerKey}`} className={`mt-5 ${button}`}>اختر هذا العرض</Link>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -118,10 +116,7 @@ export default function OfferCards({ recommended, outcomes, monthlyWaste }: Offe
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {OFFER_ORDER.map(key => {
           const offer = BIK_OFFERS[key];
-          const url = buildConsultantWhatsAppUrl({
-            customMessage: `مرحباً أستاذ أحمد، أكملت تشخيص BIK وأرغب في مناقشة «${offer.name}» (${offer.price}).`
-          }).url;
-          return <OfferCard key={key} offerKey={key} offer={offer} whatsappUrl={url}
+          return <OfferCard key={key} offerKey={key} offer={offer}
             reason={recommended?.key === key ? recommended.reason : undefined} outcomes={outcomes} monthlyLoss={monthlyLoss} />;
         })}
       </div>

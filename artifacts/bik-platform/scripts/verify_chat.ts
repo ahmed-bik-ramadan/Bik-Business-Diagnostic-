@@ -357,9 +357,9 @@ function sources() {
     '7-C: removing only the authorized insertion and digit correction restores the byte-identical legacy prompt');
   const priceLiterals = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'server')), path.join(ROOT, 'server.ts')]
     .filter(file => file.endsWith('.ts') || file.endsWith('.tsx'))
-    .filter(file => !file.endsWith(path.join('src', 'config', 'appConfig.ts')))
+    .filter(file => !['appConfig.ts', 'paymentConfig.ts'].some(config => file.endsWith(path.join('src', 'config', config))))
     .filter(file => /(?<![\d.])(272|499)(?![\d.])/.test(fs.readFileSync(file, 'utf8')));
-  check(priceLiterals.length === 0, `prices 272/499 are defined only in appConfig${priceLiterals.length ? ': ' + priceLiterals.join(', ') : ''}`);
+  check(priceLiterals.length === 0, `price literals 272/499 stay in appConfig and the payment mapping${priceLiterals.length ? ': ' + priceLiterals.join(', ') : ''}`);
   const server2 = fs.readFileSync(path.join(ROOT, 'server.ts'), 'utf8');
   check(!server2.includes('GoogleGenAI') && !server2.includes('gemini-'), 'server.ts has no Gemini client or model ids');
   check(server2.includes('app.post("/api/consult", (_req, res) => res.status(410)') && server2.includes('app.post("/api/proposal", (_req, res) => res.status(410)'), 'legacy /api/consult and /api/proposal return 410');

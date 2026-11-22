@@ -11,6 +11,8 @@ const LeadGate = lazy(() => import('./pages/LeadGate'))
 const ReportTransfer = lazy(() => import('./pages/ReportTransfer'))
 const Report = lazy(() => import('./pages/Report'))
 const Consultant = lazy(() => import('./pages/Consultant'))
+const OfferSummary = lazy(() => import('./pages/OfferSummary'))
+const PaymentSent = lazy(() => import('./pages/PaymentSent'))
 import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
@@ -31,6 +33,8 @@ function App() {
               <Route path="/report-transfer" element={<ReportTransfer />} />
               <Route path="/report" element={<Report />} />
               <Route path="/consultant" element={<Consultant />} />
+              <Route path="/offer-summary/:offerKey" element={<OfferSummary />} />
+              <Route path="/payment-sent" element={<PaymentSent />} />
               <Route path="/admin" element={<Navigate to="/" replace />} />
               <Route path="/admin-bik-dashboard-2025" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />

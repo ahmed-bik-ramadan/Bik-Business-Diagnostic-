@@ -68,14 +68,14 @@ const revisedStructure = {
   // Mission 11C replaces the three financial projections with unit sensitivities.
   'src/services/deterministicScoring.ts': 'c1d862892d0d06402ebbf8ac638133b45c66884d8b318d12e5568080b1f60397',
   'src/services/reportFallback.ts': '54eb6ce6226664e15d6c2bb8dfadde16d7ed481e25a95625148fd293879f01e9',
-  'src/components/OfferCards.tsx': '25109189439cc78a18d0de86d06fa59bdeb26f7e171ee66a9fcedca3a2408e0e',
+  'src/components/OfferCards.tsx': 'a78a50ade808d798181ac3bb84c525b43656e1cef4a0bbfb580a73b374fb5615',
   'src/config/appConfig.ts': 'f05db41691ad87f60e473e61d40f939b3935c17a79aa4c83aa9c6323753be1a9',
   'src/pages/LeadGate.tsx': '8c4ad0b31155247438db22e2b207fffd63a3d998168989f408de4925ee6bb74b',
   'src/pages/Questionnaire.tsx': 'edeabe6cbbfa021fc4573b192b47e43c8530ff62cf6c00a4b7be26c6ebf11c48',
   'src/pages/Report.tsx': 'dd53cc0e8bc5325d7eac9ad5c22cd7f54893e27bd6aa81d3b7d8727202feaf96',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': '0b54278393c8324b0476f61c812f31e99342fe4ec78f07362f25cf379cbcd5cd',
-  'src/pages/consultant/ConsultantPage.jsx': 'cb061be0119a4722a891fb709559fabacfaa5262e66b67092d0c4df06c759ebb',
+  'src/pages/consultant/ConsultantPage.jsx': '88de6b24d69d40f4b3d79c5ffae68a8952f9aaf4f9694c9ed027031cadd2ddfd',
 };
 for (const [file, expected] of Object.entries({ ...baseline.structure, ...revisedStructure })) {
   check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match the approved revision`);

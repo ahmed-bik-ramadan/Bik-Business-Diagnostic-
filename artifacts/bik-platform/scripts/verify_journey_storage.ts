@@ -4,8 +4,13 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { chromium, type Page } from 'playwright-core';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { preview } from 'vite';
 import { APP_CONFIG, BIK_EXECUTIVE_RETURN_TARGET, BIK_OFFERS, BIK_REFUND_POLICY } from '../src/config/appConfig';
+import { paymentConfig } from '../src/config/paymentConfig';
+import OfferSummary from '../src/pages/OfferSummary';
 
 const visitor = { name: 'زائر الاختبار', company: 'شركة الاختبار', city: 'القاهرة', review: 'نحتاج إلى متابعة مواعيد التحصيل بانتظام.' };
 const button = (page: Page, text: string) => page.getByRole('button', { name: text, exact: true });
@@ -125,22 +130,18 @@ async function verifyOfferCards(page: Page, inReport: boolean) {
     assert.ok(await dialog.evaluate(el => el.contains(document.activeElement)), 'focus moves into the dialog');
     assert.deepEqual(await dialog.getByTestId('offer-includes').locator('li').allTextContents(), [...offer.includes]);
     assert.equal(await dialog.getByText(BIK_REFUND_POLICY, { exact: true }).count(), 1);
-    const contact = dialog.getByRole('link', { name: 'ناقش هذا العرض مع أ/ أحمد' });
-    const url = new URL((await contact.getAttribute('href'))!);
-    assert.equal(url.origin, 'https://wa.me');
-    assert.equal(url.pathname, '/' + APP_CONFIG.consultantWhatsApp);
-    assert.ok(url.searchParams.get('text')?.includes(offer.name));
+    const choose = dialog.getByRole('link', { name: 'اختر هذا العرض', exact: true });
+    assert.equal(await choose.getAttribute('href'), '/offer-summary/' + key);
     if (inReport) {
       assert.equal(await dialog.getByTestId('offer-loss').innerText(),
         'المشكلة تستمر بكلفتها الشهرية حتى تُعالج: قرابة 1,250 EGP على أرقامك المصرّح بها، تقدير استرشادي.');
       assert.equal(await dialog.locator('[data-testid="offer-outcomes"], [data-testid="offer-outcomes-empty"]').count(), 1);
     } else {
-      assert.ok(url.searchParams.get('text')?.includes(`(${minutes[index]} دقيقة)`));
       assert.equal(await dialog.getByTestId('offer-loss').count(), 0);
     }
     const close = dialog.getByRole('button', { name: 'إغلاق', exact: true });
     if (index === 0) {
-      const controls = [trigger, close, contact];
+      const controls = [trigger, close, choose];
       for (const control of controls) {
         const [bg, fg] = control === trigger ? [appearance.button, appearance.card]
           : await control.evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el.closest('[role="dialog"]')!).backgroundColor]);
@@ -160,7 +161,95 @@ async function verifyOfferCards(page: Page, inReport: boolean) {
     await page.waitForFunction(key => document.activeElement?.closest('[data-offer]')?.getAttribute('data-offer') === key, key);
     assert.equal(await card.innerText(), before, 'closing the dialog restores the compact card');
   }
+  await cards.last().getByRole('button', { name: 'لماذا تناسبك هذه الخدمة' }).click();
+  await page.getByRole('dialog').getByRole('link', { name: 'اختر هذا العرض' }).click();
+  await page.waitForURL('**/offer-summary/focusedWeek');
+  await page.getByRole('heading', { name: BIK_OFFERS.focusedWeek.name + ' — $272' }).waitFor();
+  await page.goBack();
+  await cards.first().waitFor();
   console.log(`OFFER DIALOGS (${inReport ? 'report' : 'consultant'}): executive button contrast ${Math.min(...executiveRatios).toFixed(2)}:1`);
+}
+
+function verifyPayLinkConfiguration() {
+  assert.deepEqual(paymentConfig, {
+    272: { url: '', depositUsd: 95.20 }, 499: { url: '', depositUsd: 174.65 }, 5000: null,
+  });
+  const renderSummary = (offerKey: string) => renderToStaticMarkup(
+    createElement(MemoryRouter, { initialEntries: ['/offer-summary/' + offerKey] },
+      createElement(Routes, null,
+        createElement(Route, { path: '/offer-summary/:offerKey', element: createElement(OfferSummary) })))
+  );
+  const testUrl = 'https://www.paypal.com/test-deposit';
+  for (const [key, price] of [['focusedWeek', 272], ['monthlyRetainer', 499]] as const) {
+    assert.doesNotMatch(renderSummary(key), /ادفع المقدم/u);
+    const payment = paymentConfig[price];
+    payment.url = testUrl;
+    try {
+      const summary = renderSummary(key);
+      assert.ok(summary.includes(`href="${testUrl}" target="_blank" rel="noopener noreferrer"`));
+      assert.match(summary, /ادفع المقدم/u);
+      assert.doesNotMatch(renderSummary('executiveProject'), /ادفع المقدم/u);
+    } finally {
+      payment.url = '';
+    }
+  }
+}
+
+async function checkWhatsAppLink(page: Page, label: string, message: string) {
+  const link = page.getByRole('link', { name: label, exact: true });
+  const url = new URL((await link.getAttribute('href'))!);
+  assert.equal(url.origin, 'https://wa.me');
+  assert.equal(url.pathname, '/' + APP_CONFIG.consultantWhatsApp);
+  assert.equal(url.searchParams.get('text'), message);
+  assert.equal(await link.getAttribute('target'), '_blank');
+  assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+}
+
+async function verifyPaymentRoutes(page: Page, origin: string) {
+  // Keep this check in a fresh context, without diagnostic state from the other journey.
+  await page.addInitScript(() => {
+    const mutations: string[] = [];
+    Object.assign(window, { storageMutations: mutations });
+    for (const method of ['setItem', 'removeItem', 'clear'] as const) {
+      const original = Reflect.get(Storage.prototype, method);
+      Reflect.set(Storage.prototype, method, function (this: Storage, ...args: string[]) {
+        mutations.push(method);
+        return Reflect.apply(original, this, args);
+      });
+    }
+  });
+  const checkNoStorage = async () => assert.deepEqual(
+    await page.evaluate(() => [Object.entries(localStorage), Object.entries(sessionStorage), (window as any).storageMutations]),
+    [[], [], []],
+  );
+  for (const [key, detail] of [
+    ['focusedWeek', 'المقدم: $95.20 (35% من قيمة العرض، جزء من الأتعاب لا فوقها)'],
+    ['monthlyRetainer', 'المقدم: $174.65 (35% من قيمة العرض، جزء من الأتعاب لا فوقها)'],
+    ['executiveProject', 'نبدأ بمكالمة 40 دقيقة نتفق فيها على النطاق، ثم تصلك فاتورة بالمقدم.'],
+  ] as const) {
+    const offer = BIK_OFFERS[key];
+    await page.goto(origin + '/offer-summary/' + key);
+    await page.getByRole('heading', { name: offer.name + ' — ' + offer.price }).waitFor();
+    assert.equal(await page.getByText(detail, { exact: true }).count(), 1);
+    assert.equal(await page.getByRole('link', { name: 'ادفع المقدم' }).count(), 0);
+    await checkWhatsAppLink(page, 'راسل أحمد أولاً',
+      `مرحباً أستاذ أحمد، أرغب في مناقشة «${offer.name}» (${offer.price}) قبل دفع المقدم.`);
+    await checkNoStorage();
+  }
+  for (const [query, offerName] of [
+    ['?offer=monthlyRetainer', ' ' + BIK_OFFERS.monthlyRetainer.name],
+    ['?offer=__proto__', ''],
+    ['', ''],
+  ]) {
+    await page.goto(origin + '/payment-sent' + query);
+    await page.getByRole('heading', { name: 'شكراً لك.' }).waitFor();
+    assert.equal(await page.getByText('أرسل إيصال الدفع إلى أحمد عبر واتساب ليؤكد استلامه ويحدد موعد البدء.', { exact: true }).count(), 1);
+    await checkWhatsAppLink(page, 'أرسل الإيصال', `أرسلت مقدم عرض${offerName} وأرفقت الإيصال.`);
+    await checkNoStorage();
+  }
+  await page.goto(origin + '/offer-summary/__proto__');
+  await page.waitForURL(origin + '/');
+  console.log('PAYMENT ROUTES: PASS (direct entry, conditional PayPal links, WhatsApp messages, unknown offers and no browser storage)');
 }
 
 async function runJourney(page: Page, origin: string) {
@@ -237,12 +326,19 @@ async function runJourney(page: Page, origin: string) {
   assert.deepEqual(await page.evaluate(() => Object.keys(sessionStorage)), []);
 }
 
+verifyPayLinkConfiguration();
 const systemChromium = ['/usr/bin/chromium', '/usr/bin/chromium-browser'].find(existsSync);
 const browser = await chromium.launch({ executablePath: existsSync(chromium.executablePath()) ? chromium.executablePath() : systemChromium });
 try {
   const server = await preview({ configFile: false, logLevel: 'error', preview: { host: '127.0.0.1', port: 0 } });
   try {
     const origin = 'http://127.0.0.1:' + (server.httpServer.address() as AddressInfo).port;
+    const paymentContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    try {
+      await verifyPaymentRoutes(await paymentContext.newPage(), origin);
+    } finally {
+      await paymentContext.close();
+    }
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     await context.route(origin + '/storage-observer', route => route.fulfill({ contentType: 'text/html', body: '<title>Storage observer</title>' }));
     await context.route('https://wa.me/**', route => route.fulfill({ body: 'Simulated WhatsApp handoff' }));

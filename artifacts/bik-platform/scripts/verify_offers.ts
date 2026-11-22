@@ -95,7 +95,7 @@ for (const missing of [undefined, '', '   ']) {
   const neutral = renderToStaticMarkup(createElement(OfferCards, { recommended: { key: 'focusedWeek', reason: missing } }));
   check(!neutral.includes('الأنسب لوضعك'), 'an empty reason suppresses the badge');
 }
-const priceLiterals = src.filter(f => /272|499/.test(fs.readFileSync(f, 'utf8')) && !/appConfig\.ts$|deterministicScoring\.ts$|consultant\/ConsultantPage\.jsx$/.test(f));
+const priceLiterals = src.filter(f => /272|499/.test(fs.readFileSync(f, 'utf8')) && !/config\/(?:appConfig|paymentConfig)\.ts$|deterministicScoring\.ts$|consultant\/ConsultantPage\.jsx$/.test(f));
 check(priceLiterals.length === 0, `no hard-coded 272/499 outside config and the financial model (${priceLiterals.join(', ') || 'none'})`);
 
 // Mission 6-B: executive rules precede the crisis-start monthly rule; data sufficiency stays first.
