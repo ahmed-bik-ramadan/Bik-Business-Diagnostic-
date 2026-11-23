@@ -1,0 +1,18 @@
+[build]
+  command = "pnpm --filter @workspace/bik-platform run build"
+  publish = "artifacts/bik-platform/dist"
+
+[build.environment]
+  NODE_VERSION = "24.22.3"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
