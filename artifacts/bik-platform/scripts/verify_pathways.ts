@@ -11,13 +11,36 @@ const path = new URL('../src/pathways/pathways.slim.json', import.meta.url);
 const file = readFileSync(path, 'utf8');
 assert.equal(file, generateSlimPathways(), 'the committed projection matches the generator byte for byte');
 const slim = JSON.parse(file) as SlimPathway[];
-const { pathways: source } = JSON.parse(readFileSync(new URL('../../../docs/codex/bik-library-v2.json', import.meta.url), 'utf8'));
-const expectedIds = source.filter((p: { release_group: number; scope_flag?: string }) => p.release_group === 1 && !p.scope_flag)
-  .map((p: { id: string }) => p.id).sort();
-assert.equal(slim.length, 80);
+const { pathways: source } = JSON.parse(readFileSync(new URL('../../../docs/codex/bik-library-v2.json', import.meta.url), 'utf8')) as {
+  pathways: { id: string; release_group: number; scope_flag?: string | null }[];
+};
+const overrides = JSON.parse(readFileSync(new URL('../../../docs/codex/release-overrides.json', import.meta.url), 'utf8'));
+const approved = {
+  'PW-AX2-006': { release_group: 1 },
+  'PW-AX2-007': { release_group: 1 },
+  'PW-AX2-008': { release_group: 1 },
+  'PW-AX2-009': { release_group: 1 },
+  'PW-AX2-010': { release_group: 1 },
+  'PW-AX2-011': { release_group: 1, scope_flag: null },
+  'PW-AX2-014': { release_group: 1, scope_flag: null },
+};
+assert.deepEqual(overrides, approved);
+assert.equal(source.filter(p => p.scope_flag).length, 20);
+assert.deepEqual([1, 2, 3].map(group => source.filter(p => p.release_group === group).length), [80, 5, 20]);
+const expectedIds = source.filter(p => Object.hasOwn(approved, p.id) || (p.release_group === 1 && !p.scope_flag))
+  .map(p => p.id).sort();
+const slimIds = new Set(slim.map(pathway => pathway.id));
+assert.equal(slim.length, 87);
 assert.deepEqual(slim.map(p => p.id).sort(), expectedIds);
+for (const id of ['PW-AX2-012', 'PW-AX2-013', 'PW-AX2-015']) assert.ok(!slimIds.has(id), `${id} remains excluded`);
+for (const pathway of source) {
+  if (!Object.hasOwn(approved, pathway.id) && (pathway.release_group === 3 || pathway.scope_flag)) {
+    assert.ok(!slimIds.has(pathway.id), `${pathway.id} remains outside the published scope`);
+  }
+}
 for (const pathway of slim) {
   assert.deepEqual(Object.keys(pathway), ['id', 'axis', 'title', 'service_name', 'dialects', 'platform_copy']);
+  assert.deepEqual(Object.keys(pathway.dialects).sort(), ['egypt', 'emirati', 'gulf_generic', 'msa_neutral', 'saudi']);
   for (const copy of Object.values(pathway.platform_copy)) assert.deepEqual(Object.keys(copy), ['headline', 'meaning', 'action']);
 }
 assert.deepEqual(Object.values(PATHWAY_AXIS_NAMES), Object.keys(DIAGNOSTIC_DIMENSIONS));
@@ -51,7 +74,12 @@ assert.deepEqual(await selectForReport({
 assert.deepEqual(await selectForReport({
   axisDetails: { [PATHWAY_AXIS_NAMES.AX2]: { score: 0, status: 'نقطة حرجة' } },
   topWeaknesses: [{ sourceQuestionId: 'u06' }],
-}, 'fusha'), [], 'scope exclusions leave this axis without a published match');
+}, 'fusha'), [], 'published pathways still need a shared token to qualify');
+const financialMatches = await selectForReport({
+  axisDetails: { [PATHWAY_AXIS_NAMES.AX2]: { score: 0, status: 'نقطة حرجة' } },
+  topWeaknesses: [{ sourceQuestionId: 'u08' }],
+}, 'fusha');
+assert.deepEqual(financialMatches.map(pathway => pathway.id), ['PW-AX2-011', 'PW-AX2-014']);
 
 const groups = await listForConsultant('fusha');
 assert.deepEqual(groups.map(({ title }) => title), Object.keys(DIAGNOSTIC_DIMENSIONS));
@@ -75,4 +103,4 @@ const partial: SlimPathway = {
 assert.deepEqual(localizePathway(partial, 'saudi'), {
   ...localizePathway(example, 'fusha'), headline: example.platform_copy.saudi?.headline,
 });
-console.log('PATHWAYS: PASS (reproducible slim file, scoped IDs, deterministic matching and dialect fallback)');
+console.log('PATHWAYS: PASS (87 projected IDs, approved overrides, raw release counts, matching and dialect fallback)');

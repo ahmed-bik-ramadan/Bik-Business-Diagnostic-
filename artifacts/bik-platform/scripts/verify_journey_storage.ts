@@ -17,8 +17,10 @@ const visitor = { name: 'زائر الاختبار', company: 'شركة الاخ
 const button = (page: Page, text: string) => page.getByRole('button', { name: text, exact: true });
 const approvedCopy = readFileSync(new URL('../../../docs/codex/BIK_TEXTS_LEGAL_FAQ_PAYMENT.md', import.meta.url), 'utf8');
 const library = JSON.parse(readFileSync(new URL('../../../docs/codex/bik-library-v2.json', import.meta.url), 'utf8')) as {
-  pathways: (SlimPathway & { release_group: number; scope_flag?: string | null })[];
+  pathways: SlimPathway[];
 };
+const slim = JSON.parse(readFileSync(new URL('../src/pathways/pathways.slim.json', import.meta.url), 'utf8')) as SlimPathway[];
+const publishedIds = new Set(slim.map(pathway => pathway.id));
 const approvedSection = (number: number) => approvedCopy.split(/^## /mu).find(section => section.startsWith(number + ') '))!;
 const legalLinks = [
   { path: '/privacy', title: 'سياسة الخصوصية', section: 2 },
@@ -354,11 +356,11 @@ async function verifyConsultantPathways(page: Page, dialect: LibraryDialect) {
     };
   }));
   const byId = new Map(cards.map(card => [card.id, card]));
-  assert.equal(cards.length, 80);
-  assert.equal(byId.size, 80);
+  assert.equal(cards.length, 87);
+  assert.deepEqual([...byId.keys()].sort(), [...publishedIds].sort());
   for (const pathway of library.pathways) {
     const card = byId.get(pathway.id);
-    if (pathway.release_group !== 1 || pathway.scope_flag) {
+    if (!publishedIds.has(pathway.id)) {
       assert.equal(card, undefined, `excluded pathway ${pathway.id}`);
       continue;
     }
@@ -376,7 +378,12 @@ async function verifyConsultantPathways(page: Page, dialect: LibraryDialect) {
   const groups = section.locator('details');
   assert.deepEqual(await groups.evaluateAll(elements => elements.map(element => element.getAttribute('data-pathway-axis'))),
     ['AX1', 'AX2', 'AX3', 'AX4', 'AX5', 'AX6']);
-  assert.equal(await groups.nth(1).locator('summary').getAttribute('aria-disabled'), 'true');
+  const cash = groups.nth(1);
+  const cashSummary = cash.locator('summary');
+  assert.equal(await cashSummary.getAttribute('aria-disabled'), null);
+  await cashSummary.press('Enter');
+  assert.equal(await cash.getByRole('link', { name: 'ناقش هذه الحالة مع أحمد' }).count(), 7);
+  await cashSummary.press('Space');
   const first = groups.first();
   await first.locator('summary').press('Enter');
   assert.ok(await first.getByRole('link', { name: 'ناقش هذه الحالة مع أحمد' }).first().isVisible());
@@ -535,7 +542,7 @@ try {
     assert.deepEqual(await observer.evaluate(() => Object.entries(localStorage).sort()), [['other-app', 'keep'], ['test-finished', '1']]);
     console.log('LEGAL PAGES: PASS (verbatim copy, direct routes, shared footer and lead-gate links in new tabs)');
     console.log('FAQ: PASS (verbatim copy, RTL, Tab navigation and Enter/Space toggling on all three pages)');
-    console.log('CONSULTANT PATHWAYS: PASS (all 105 IDs checked, 80 rendered with WhatsApp links, keyboard groups and dialects)');
+    console.log('CONSULTANT PATHWAYS: PASS (all 105 IDs checked, 87 rendered with WhatsApp links, keyboard groups and dialects)');
     console.log('JOURNEY STORAGE: PASS (direct entry, intake, questionnaire, reviews, report preparation, multipart transfer, reload and restart)');
   } finally {
     await server.close();
