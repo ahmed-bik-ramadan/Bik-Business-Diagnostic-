@@ -43,6 +43,7 @@ No fear, no pressure, no fake urgency, no guarantees, no invented statistics. Ev
 - Verification commands run from the repo root: `pnpm --filter @workspace/bik-platform run typecheck` and `pnpm --filter @workspace/bik-platform run test`. The root `pnpm run typecheck` is known broken (root tsconfig.json and tsconfig.base.json are missing; lib/* are unused template leftovers). Do not fix it inside a mission other than Mission 19.
 - Check visually at 390px width (phone) and at desktop. RTL must not break.
 - Routes must survive direct open (SPA fallback exists in `vercel.json`).
+- Publish the static Vite output in `artifacts/bik-platform/dist`. The local `start` and `serve` commands use `artifacts/bik-platform/server-dist/server.js`.
 - Library data: `bik-library-base.json` (pathways, patterns referenced by code B0/B_EVAL/V_INV/G_*/T/J/X/P/R). Show a pathway only if `release_group` is 1 unless the mission says otherwise. Never show money values for a pathway without the value type label.
 - You may read files from the connected GitHub, Vercel and Google Drive when a mission names them.
 - The existing tests are `scripts/verify_*.ts` scripts inside artifacts/bik-platform and several assert UI copy. When a mission changes copy, update the affected verify scripts in the same mission and say which. New tests must follow the same pattern and be added to the `test:additions` script.

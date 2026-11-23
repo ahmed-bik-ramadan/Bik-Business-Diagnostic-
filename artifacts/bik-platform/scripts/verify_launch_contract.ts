@@ -53,8 +53,9 @@ assert.ok(leadGateSource.includes('تبقى إجاباتك في متصفحك أ�
 const generatorSource = fs.readFileSync('src/services/reportGenerator.ts', 'utf8');
 assert.ok(generatorSource.includes("process.env.ENABLE_GEMINI_REPORTS !== 'true'"));
 const packageSource = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-assert.ok(packageSource.scripts.build.includes('dist/server.js'));
-assert.equal(packageSource.scripts.start, 'NODE_ENV=production node dist/server.js');
+assert.ok(packageSource.scripts.build.includes('--outfile=server-dist/server.js'));
+assert.equal(packageSource.scripts.start, 'NODE_ENV=production node server-dist/server.js');
+assert.equal(packageSource.scripts.serve, packageSource.scripts.start);
 const serverSource = fs.readFileSync('server.ts', 'utf8');
 assert.ok(serverSource.includes('storageMode: "session_only"'));
 assert.ok(serverSource.includes("req.method === 'POST' && req.path === '/api/v1/leads/submit'"));

@@ -2,7 +2,7 @@
 
 - Build from the repository root with `pnpm --filter @workspace/bik-platform run build` on Node.js `24.22.3`.
 - Publish `artifacts/bik-platform/dist` and rewrite `/*` to `/index.html` with status `200`.
-- The current build includes the Express bundle `dist/server.js`, which contains server routes. [Build audit](./PROGRESS.md)
+- The build writes the local Express bundle to `server-dist/server.js` outside the publish folder. [Build audit](./PROGRESS.md)
 
 ## At launch
 
