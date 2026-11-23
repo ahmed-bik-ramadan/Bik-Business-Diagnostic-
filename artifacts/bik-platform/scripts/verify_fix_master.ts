@@ -75,7 +75,7 @@ const revisedStructure = {
   'src/pages/Report.tsx': '28d33fd2219b83467ab3c79f3f5983748974824f0c4709cac381055b98d35f08',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': 'b29cfdda70130ad681f2afcab3b9226460bbb771b337cbf8d4fe0f21f1c024c0',
-  'src/pages/consultant/ConsultantPage.jsx': 'a9ef0d8c80d48be144c93feb24f7cfcb1f9b0426d3fecd0fb789efba5e0da4f4',
+  'src/pages/consultant/ConsultantPage.jsx': 'a1a98b8b3c344b0a00d36ef3a56ad75197cc934f89797acd2c9cdd5dcec88838',
 };
 for (const [file, expected] of Object.entries({ ...baseline.structure, ...revisedStructure })) {
   check(digest(structure(syntax(file))) === expected, `${file}: executable structure, identifiers and numbers match the approved revision`);

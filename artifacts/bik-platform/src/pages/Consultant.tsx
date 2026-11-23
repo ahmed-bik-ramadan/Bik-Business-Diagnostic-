@@ -20,7 +20,7 @@ const Consultant: React.FC = () => {
     return { name, company: (companyName || '').trim(), sector, country };
   }, [userName, companyName, sectorL1, intakeAnswers]);
 
-  return <ConsultantPage visitor={visitor} />;
+  return <ConsultantPage visitor={visitor} country={intakeAnswers?.country} />;
 };
 
 export default Consultant;

@@ -11,10 +11,14 @@ import { preview } from 'vite';
 import { APP_CONFIG, BIK_EXECUTIVE_RETURN_TARGET, BIK_OFFERS, BIK_REFUND_POLICY } from '../src/config/appConfig';
 import { paymentConfig } from '../src/config/paymentConfig';
 import OfferSummary from '../src/pages/OfferSummary';
+import type { LibraryDialect, SlimPathway } from '../src/pathways/engine';
 
 const visitor = { name: 'زائر الاختبار', company: 'شركة الاختبار', city: 'القاهرة', review: 'نحتاج إلى متابعة مواعيد التحصيل بانتظام.' };
 const button = (page: Page, text: string) => page.getByRole('button', { name: text, exact: true });
 const approvedCopy = readFileSync(new URL('../../../docs/codex/BIK_TEXTS_LEGAL_FAQ_PAYMENT.md', import.meta.url), 'utf8');
+const library = JSON.parse(readFileSync(new URL('../../../docs/codex/bik-library-v2.json', import.meta.url), 'utf8')) as {
+  pathways: (SlimPathway & { release_group: number; scope_flag?: string | null })[];
+};
 const approvedSection = (number: number) => approvedCopy.split(/^## /mu).find(section => section.startsWith(number + ') '))!;
 const legalLinks = [
   { path: '/privacy', title: 'سياسة الخصوصية', section: 2 },
@@ -339,6 +343,48 @@ async function verifyPaymentRoutes(page: Page, origin: string) {
   console.log('PAYMENT ROUTES: PASS (direct entry, conditional PayPal links, WhatsApp messages, unknown offers and no browser storage)');
 }
 
+async function verifyConsultantPathways(page: Page, dialect: LibraryDialect) {
+  const section = page.getByRole('region', { name: 'ما الذي يقلقك في شركتك؟', exact: true });
+  await section.locator('[data-pathway-id]').first().waitFor({ state: 'attached' });
+  const cards = await section.locator('[data-pathway-id]').evaluateAll(elements => elements.map(element => {
+    const link = element.querySelector('a');
+    return {
+      id: element.getAttribute('data-pathway-id'), phrase: element.querySelector('h3')?.textContent,
+      href: link?.href, target: link?.target, rel: link?.rel,
+    };
+  }));
+  const byId = new Map(cards.map(card => [card.id, card]));
+  assert.equal(cards.length, 80);
+  assert.equal(byId.size, 80);
+  for (const pathway of library.pathways) {
+    const card = byId.get(pathway.id);
+    if (pathway.release_group !== 1 || pathway.scope_flag) {
+      assert.equal(card, undefined, `excluded pathway ${pathway.id}`);
+      continue;
+    }
+    assert.ok(card?.href, `visible pathway and contact link for ${pathway.id}`);
+    const phrase = pathway.dialects[dialect];
+    assert.equal(card.phrase, phrase);
+    const url = new URL(card.href);
+    assert.equal(url.origin, 'https://wa.me');
+    assert.equal(url.pathname, '/' + APP_CONFIG.consultantWhatsApp);
+    assert.equal(url.searchParams.get('text'), `مرحباً أستاذ أحمد، أرغب في مناقشة حالة: «${phrase}» ضمن ${pathway.service_name}.`);
+    assert.equal(card.target, '_blank');
+    assert.equal(card.rel, 'noopener noreferrer');
+  }
+
+  const groups = section.locator('details');
+  assert.deepEqual(await groups.evaluateAll(elements => elements.map(element => element.getAttribute('data-pathway-axis'))),
+    ['AX1', 'AX2', 'AX3', 'AX4', 'AX5', 'AX6']);
+  assert.equal(await groups.nth(1).locator('summary').getAttribute('aria-disabled'), 'true');
+  const first = groups.first();
+  await first.locator('summary').press('Enter');
+  assert.ok(await first.getByRole('link', { name: 'ناقش هذه الحالة مع أحمد' }).first().isVisible());
+  await first.locator('summary').press('Space');
+  assert.equal(await first.evaluate(element => (element as HTMLDetailsElement).open), false);
+  assert.equal(await page.locator('.bkc-tile:not([aria-hidden="true"])').count(), 23);
+}
+
 async function runJourney(page: Page, origin: string) {
   await page.goto(origin);
   await page.getByTestId('start-analysis').waitFor();
@@ -431,6 +477,7 @@ async function runJourney(page: Page, origin: string) {
   await page.getByTestId('header-consultant-link').click();
   await page.waitForURL('**/consultant');
   await page.locator('.bkc-back').waitFor();
+  await verifyConsultantPathways(page, 'egypt');
   await verifyFooter(page);
   await verifyFaq(page, 'ج');
   await verifyOfferCards(page, false);
@@ -449,7 +496,10 @@ try {
     const origin = 'http://127.0.0.1:' + (server.httpServer.address() as AddressInfo).port;
     const paymentContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
     try {
-      await verifyPaymentRoutes(await paymentContext.newPage(), origin);
+      const direct = await paymentContext.newPage();
+      await verifyPaymentRoutes(direct, origin);
+      await direct.goto(origin + '/consultant');
+      await verifyConsultantPathways(direct, 'msa_neutral');
     } finally {
       await paymentContext.close();
     }
@@ -485,6 +535,7 @@ try {
     assert.deepEqual(await observer.evaluate(() => Object.entries(localStorage).sort()), [['other-app', 'keep'], ['test-finished', '1']]);
     console.log('LEGAL PAGES: PASS (verbatim copy, direct routes, shared footer and lead-gate links in new tabs)');
     console.log('FAQ: PASS (verbatim copy, RTL, Tab navigation and Enter/Space toggling on all three pages)');
+    console.log('CONSULTANT PATHWAYS: PASS (all 105 IDs checked, 80 rendered with WhatsApp links, keyboard groups and dialects)');
     console.log('JOURNEY STORAGE: PASS (direct entry, intake, questionnaire, reviews, report preparation, multipart transfer, reload and restart)');
   } finally {
     await server.close();

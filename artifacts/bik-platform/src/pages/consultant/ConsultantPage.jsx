@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BIK_OFFERS } from '../../config/appConfig';
 import { OfferCard, OFFER_ORDER } from '../../components/OfferCards';
 import Faq from '../../components/Faq';
+import ConsultantPathways from '../../pathways/ConsultantPathways';
 
 /* ───────────── البيانات ───────────── */
 let WHATSAPP = '201066966515';
@@ -1059,7 +1060,7 @@ function CaseModal({ item, onClose, contact, setContact, visitor }) {
 }
 
 /* ───────────── الصفحة ───────────── */
-export default function ConsultantPage({ visitor }) {
+export default function ConsultantPage({ visitor, country = visitor?.country }) {
   const [open, setOpen] = useState(null);
   const [contact, setContact] = useState({ name: '', company: '' });
   const [statsRef, statsSeen] = useInView();
@@ -1117,16 +1118,7 @@ export default function ConsultantPage({ visitor }) {
         <Carousel onOpen={openCase} paused={!!open} />
       </section>
 
-      <section className="bkc-sec">
-        <div className="bkc-wrap">
-          <h2>الخدمات</h2>
-          <div className="bkc-svc-grid">
-            {SERVICE_NAMES.map((s) => (
-              <div key={s} className="bkc-svc-tile"><span>{s}</span><Icon name="chevL" size={16} /></div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ConsultantPathways country={country} />
 
       <section className="bkc-sec bkc-alt">
         <div className="bkc-wrap">
@@ -1187,9 +1179,6 @@ const CSS = `
 .bkc-intro{margin:26px auto 0;max-width:620px;font-size:17px;line-height:2.05;color:#E2E8F0}
 .bkc-intro b{color:var(--gold-b);font-weight:800}
 .bkc-stats-note{margin:18px 0 0;text-align:center;font-size:13px;color:var(--muted)}
-.bkc-svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.bkc-svc-tile{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:62px;padding:10px 14px;border-radius:12px;background:var(--ink);color:#fff;font-size:14px;font-weight:700;line-height:1.55}
-.bkc-svc-tile svg{flex:0 0 auto;color:var(--gold-b)}
 .bkc-m-q{margin:22px 0 0;font-size:16px;font-weight:800;line-height:1.8}
 .bkc-intro span{display:block}
 .bkc-intro span+span{margin-top:6px}
@@ -1314,7 +1303,6 @@ const CSS = `
  .bkc-hero h1{font-size:60px}
  .bkc-tag{font-size:46px}
  .bkc-stats-grid{grid-template-columns:repeat(6,1fr)}
- .bkc-svc-grid{grid-template-columns:repeat(3,1fr)}
  .bkc-offers{grid-template-columns:repeat(3,minmax(0,1fr))}
  .bkc-method{grid-template-columns:repeat(3,1fr)}
  .bkc-car-btn{display:grid}
