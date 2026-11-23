@@ -7,6 +7,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ReportPreview } from '../src/components/report/ReportPreview';
 import { createFallbackReport } from '../src/services/reportFallback';
+import { buildDualLayerReport } from '../src/services/dualLayerReport';
 import { evaluateDiagnosticState, extractEvidenceFromAnswer } from '../src/services/adaptiveDiagnosticEngine';
 import { getSectorTaxonomy } from '../src/data/sectorRegistry';
 import { STRATEGIC_HYPOTHESES } from '../src/data/diagnosticHypotheses';
@@ -208,6 +209,36 @@ async function runPhase1Audits() {
   strict.deepEqual(restored.blind_spots.slice(0, 3).map(spot => spot.estimated_cost), [marginText, acquisitionText, conversionText]);
   strict.deepEqual(restored.dual_layer!.consultantDossier.financial_calculations.relevant_scenarios, []);
   strict.doesNotMatch(JSON.stringify(restored), /999999/);
+
+  const dossierAnswers = { ...declared, u06: 15 };
+  const dossierScore = computeDeterministicScore(dossierAnswers);
+  strict.equal(dossierScore.financialImpact.isComputable, true);
+  const legacy = withLegacyScenario.financialImpact.scenarios[0];
+  const recorded = [
+    { ...legacy, id: 'zero', label: 'Recorded zero', projectedMonthlyGain: 0 },
+    { ...legacy, id: 'positive', label: 'Recorded value', projectedMonthlyGain: 175 }
+  ];
+  const buildDossier = (scenarios: typeof dossierScore.financialImpact.scenarios) =>
+    buildDualLayerReport({
+      scoreResult: { ...dossierScore, financialImpact: { ...dossierScore.financialImpact, scenarios } },
+      companyData: { sectorL1: 'retail' },
+      universalAnswers: dossierAnswers,
+    });
+  const recordedOnly = buildDossier(recorded);
+  const mixed = buildDossier([
+    { ...legacy, id: 'null', label: 'Missing gain', projectedMonthlyGain: null },
+    recorded[0],
+    { ...legacy, id: 'absent', label: 'Absent gain', projectedMonthlyGain: undefined },
+    recorded[1],
+  ]);
+  strict.deepEqual(mixed.consultantDossier.financial_calculations.relevant_scenarios.map(scenario => [
+    scenario.name, scenario.projectedMonthlyGain,
+  ]), [['Recorded zero', 0], ['Recorded value', 175]]);
+  strict.equal(mixed.consultantDossier.full_dossier_text, recordedOnly.consultantDossier.full_dossier_text);
+  strict.equal(renderToStaticMarkup(createElement(ReportPreview, { clientReport: mixed.clientReport })),
+    renderToStaticMarkup(createElement(ReportPreview, { clientReport: recordedOnly.clientReport })));
+  assert(true, 'The numeric dossier omits missing gains and retains real values, with identical rendered text');
+
   const partial = preview(fallback({ u33: '', u34: '' }, { rd02: '25' }));
   strict.ok(partial.includes(marginText));
   strict.doesNotMatch(partial, /كل نقطة مئوية من (تكلفة الاكتساب|التحويل)/u);

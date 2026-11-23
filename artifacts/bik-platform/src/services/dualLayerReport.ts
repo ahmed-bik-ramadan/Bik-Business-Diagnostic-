@@ -511,12 +511,14 @@ export function buildDualLayerReport(params: BuildDualLayerParams): DualLayerRep
       label: 'الإنفاق الشهري على اكتساب العملاء',
       type: 'CALCULATED'
     },
-    relevant_scenarios: (scoreResult.financialImpact?.scenarios || []).map((sc: any) => ({
-      name: sc.name || sc.label,
-      projectedMonthlyGain: sc.projectedMonthlyGain ?? 0,
-      basis: sc.basis || sc.disclaimer,
-      type: 'SCENARIO' as const
-    })),
+    relevant_scenarios: (scoreResult.financialImpact?.scenarios || [])
+      .filter(sc => sc.projectedMonthlyGain != null)
+      .map((sc: any) => ({
+        name: sc.name || sc.label,
+        projectedMonthlyGain: sc.projectedMonthlyGain,
+        basis: sc.basis || sc.disclaimer,
+        type: 'SCENARIO' as const
+      })),
     is_computable: isComputable,
     currency,
     uncomputableReason: scoreResult.financialImpact?.uncomputableReason,

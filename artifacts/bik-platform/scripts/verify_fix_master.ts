@@ -64,7 +64,7 @@ const revisedStructure = {
   // Mission 11D updates the sector formulas and their report consumers.
   'src/components/report/ReportPreview.tsx': '63514c2b2dee23928ecc7955491a0d60d95f413abb1d0639d8aca65bf9e59fd6',
   'src/data/sectorFinancialTaxonomy.ts': '0f11c60211d80923473c7306f76670f6a569ef0db603bbddb37bf5f5786c7b71',
-  'src/services/dualLayerReport.ts': '8654531d2c789db5d4de320bd52de81638a9e1d37241615adf93abb68490b956',
+  'src/services/dualLayerReport.ts': '97105505d8e4eda2ab205feb7be7c239b339a06b4461263387e287b2a2941638',
   // Mission 11C replaces the three financial projections with unit sensitivities.
   'src/services/deterministicScoring.ts': 'c1d862892d0d06402ebbf8ac638133b45c66884d8b318d12e5568080b1f60397',
   'src/services/reportFallback.ts': '54eb6ce6226664e15d6c2bb8dfadde16d7ed481e25a95625148fd293879f01e9',
