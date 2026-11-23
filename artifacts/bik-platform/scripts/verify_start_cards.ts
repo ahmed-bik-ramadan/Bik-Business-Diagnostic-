@@ -143,6 +143,8 @@ const Report = component('src/pages/Report.tsx', {
   '../components/ConsultantChat': { __esModule: true, default: 'chat' },
   '../services/chatPolicy': { buildChatContext: () => ({}) },
   '../components/OfferCards': { __esModule: true, default: 'offers' },
+  '../pathways/PathwayCards': { __esModule: true, default: 'pathway-cards' },
+  '../pathways/engine': { selectForReport: async () => [] },
   // 5-E adds a local child below the offers; the start/lead contract still executes the real Report.
   '../components/CostOfProblem': { __esModule: true, default: 'cost-of-problem' },
   '../services/offerRecommendation': { lossSustainsExecutive: () => false, recommendOffer: () => ({ key: 'focusedWeek', reason: '', rule: 'specific_issue' }) },

@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { generateSlimPathways } from './build_pathways_slim';
 import { listForConsultant, localizePathway, PATHWAY_AXIS_NAMES, selectForReport, type SlimPathway } from '../src/pathways/engine';
 import { DIAGNOSTIC_DIMENSIONS } from '../src/services/deterministicScoring';
+import PathwayCards from '../src/pathways/PathwayCards';
 
 const path = new URL('../src/pathways/pathways.slim.json', import.meta.url);
 const file = readFileSync(path, 'utf8');
@@ -33,6 +36,12 @@ const matches = await selectForReport(result, 'fusha');
 assert.deepEqual(matches.map(p => p.id), ['PW-AX1-001', 'PW-AX1-002', 'PW-AX3-003', 'PW-AX3-005']);
 assert.deepEqual(await selectForReport(result, 'fusha'), matches);
 assert.ok(matches.every(p => expectedIds.includes(p.id)));
+const markup = renderToStaticMarkup(createElement(PathwayCards, { pathways: matches }));
+assert.equal((markup.match(/<article\b/g) ?? []).length, matches.length);
+assert.match(markup, /ما يظهر في المحورين الأضعف/u);
+assert.match(markup, /هذه فرضيات نفحصها معك، وليست أحكاماً على شركتك\./u);
+assert.doesNotMatch(markup.replace(/<[^>]*>/g, ''), /[0-9٠-٩۰-۹]/u);
+assert.equal(renderToStaticMarkup(createElement(PathwayCards, { pathways: [] })), '');
 assert.deepEqual(await selectForReport({ topWeaknesses: result.topWeaknesses }, 'fusha'), []);
 assert.deepEqual(await selectForReport({ ...result, topWeaknesses: [] }, 'fusha'), []);
 assert.deepEqual(await selectForReport({

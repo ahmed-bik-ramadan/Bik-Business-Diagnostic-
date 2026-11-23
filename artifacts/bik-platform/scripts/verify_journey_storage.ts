@@ -368,7 +368,7 @@ async function runJourney(page: Page, origin: string) {
   await page.locator('button[type=submit]').click();
   await page.waitForURL('**/report-transfer');
   assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('bik-diagnostic-storage')!).state.whatsapp), '+96891234567');
-  // Exercise the dialog with a declared loss while preserving the verified report transfer.
+  // Exercise the offer dialog and a weak-axis match while preserving the report transfer.
   await page.evaluate(() => {
     const key = 'bik-diagnostic-storage';
     const stored = JSON.parse(sessionStorage.getItem(key)!);
@@ -377,6 +377,16 @@ async function runJourney(page: Page, origin: string) {
       ...client.financial_impact,
       declaredValueModel: { isComputable: false, gaps: [], monthlyReducibleWaste: 1250, currency: 'EGP' }
     };
+    const dimension = 'بنية الشركة وهويتها';
+    const detail = stored.state.axisDetails[dimension];
+    stored.state.axisDetails[dimension] = { ...detail, score: 0, status: 'نقطة حرجة' };
+    stored.state.report.evidence = [
+      ...(stored.state.report.evidence ?? []),
+      {
+        sourceQuestionId: 'u03', dimension, signal: 'negative', userAnswerRaw: 'no', userAnswerParsed: 'no',
+        questionLabel: 'استقلالية الشركة التشغيلية عن المالك', findingDescription: 'استقلالية الشركة التشغيلية عن المالك'
+      }
+    ];
     sessionStorage.setItem(key, JSON.stringify(stored));
   });
   await page.reload();
@@ -404,6 +414,15 @@ async function runJourney(page: Page, origin: string) {
   }
   await page.getByTestId('open-full-analysis').click();
   await page.getByTestId('consultant-cta').waitFor();
+  const pathways = page.getByRole('region', { name: 'ما يظهر في المحورين الأضعف', exact: true });
+  await pathways.locator('[data-pathway-id^="PW-AX1-"]').first().waitFor();
+  assert.match(await pathways.innerText(), /هذه فرضيات نفحصها معك، وليست أحكاماً على شركتك\./u);
+  assert.doesNotMatch(await pathways.innerText(), /[0-9٠-٩۰-۹]/u);
+  assert.deepEqual(await pathways.evaluate(element => [
+    getComputedStyle(element).direction,
+    element.scrollWidth <= element.clientWidth,
+    Boolean(element.compareDocumentPosition(document.querySelector('[data-offer]')!) & Node.DOCUMENT_POSITION_FOLLOWING),
+  ]), ['rtl', true, true]);
   await verifyFooter(page);
   await verifyFaq(page, 'ب');
   assert.ok((await page.getByRole('heading', { level: 1 }).innerText()).includes(visitor.company));

@@ -47,10 +47,14 @@ import CostOfProblem from '../components/CostOfProblem';
 import { lossSustainsExecutive, recommendOffer } from '../services/offerRecommendation';
 import { legacySectorLossTotal } from '../services/blindSpotCalculator';
 import { buildOfferOutcomes } from '../services/offerOutcomes';
+import PathwayCards from '../pathways/PathwayCards';
+import { selectForReport, type PathwayCardContent } from '../pathways/engine';
 
 export default function Report() {
   const navigate = useNavigate();
   const { sessionId, report, axisScores, axisDetails, companyName, startMode, intakeAnswers } = useDiagnosticStore();
+  const dialect = dialectForCountry(intakeAnswers.country);
+  const [pathways, setPathways] = useState<PathwayCardContent[]>([]);
   const firstCriticalAxis = Object.entries(axisDetails || {}).find(([, detail]) => detail?.status === 'نقطة حرجة')?.[0];
   const dossier = report?.dual_layer?.consultantDossier?.full_dossier_text || '';
   // سطر الخسارة في بطاقات العروض: المصرَّح به من أرقام العميل وحده، أو المشتق من أرقامه
@@ -87,6 +91,17 @@ export default function Report() {
     }
   }, [gate, navigate]);
 
+  useEffect(() => {
+    if (!gate.open || !report?.dual_layer) return;
+    let active = true;
+    setPathways([]);
+    const topWeaknesses = report.evidence?.filter(item => item.signal === 'negative');
+    selectForReport({ axisDetails, topWeaknesses }, dialect)
+      .then(selection => { if (active) setPathways(selection); })
+      .catch(() => { if (active) setPathways([]); });
+    return () => { active = false; };
+  }, [axisDetails, dialect, gate.open, report]);
+
   if (!gate.open) {
     return <main className="min-h-[100dvh] grid place-items-center bg-[#F4F1E9]" dir="rtl"><p role="status">يجري التحقق من بوابة التقرير…</p></main>;
   }
@@ -106,7 +121,7 @@ export default function Report() {
         <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">{companyName?.trim() ? `تشخيص ${companyName.trim()}` : 'تشخيص شركتك'}: أين تختنق أرباحك، ولماذا، وماذا يكلّفك تجاهل ذلك</h1>
       </div>
       {!!report.dual_layer.clientReport.review?.length && <section className="rounded-[1.7rem] border border-[#C9A961]/30 bg-[#FBFAF6] p-6 md:p-8" data-testid="review-report-section">
-        <h2 className="font-display text-2xl font-bold">{reviewCopy(dialectForCountry(intakeAnswers.country)).sectionTitle}</h2>
+        <h2 className="font-display text-2xl font-bold">{reviewCopy(dialect).sectionTitle}</h2>
         {report.dual_layer.clientReport.review.map(section => <div key={section.page} className="mt-5">
           <h3 className="font-bold">{section.label}</h3>
           <p className="mt-2 whitespace-pre-wrap break-words leading-8">{section.text}</p>
@@ -115,6 +130,7 @@ export default function Report() {
       {startMode === 'crisis' && firstCriticalAxis && <p className="rounded-2xl border border-[#C9A961]/40 bg-[#FBFAF6] px-5 py-4 font-bold leading-7" data-testid="crisis-lead">{formatPlatformCopy('result.crisisLead', { axis: firstCriticalAxis })}</p>}
       <ReportPreview clientReport={report.dual_layer.clientReport} />
       <ReportDetails clientReport={report.dual_layer.clientReport} report={report} axisScores={axisScores} axisDetails={axisDetails} />
+      <PathwayCards pathways={pathways} />
       <div className="text-center">
         <Link to="/consultant" className="inline-flex items-center gap-2 text-sm font-bold text-[#526B7B] hover:text-[#0F172A]" data-testid="before-offers-consultant-link">قبل أن تختار عرضاً: من الذي سيقوده؟ تعرّف على أ/ أحمد <ArrowLeft size={15} /></Link>
       </div>
