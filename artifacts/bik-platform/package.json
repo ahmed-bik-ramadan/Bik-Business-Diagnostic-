@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsx scripts/check_value_fx.ts --report && vite build --config vite.config.ts && esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
+    "build": "tsx scripts/check_value_fx.ts --report && vite build --config vite.config.ts && tsx scripts/stamp_release.ts && esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "start": "NODE_ENV=production node dist/server.js",
     "serve": "NODE_ENV=production node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
