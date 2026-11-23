@@ -91,7 +91,7 @@ Do:
 2. `index.html`: Arabic title "BIK | قراءة أولية لحال شركتك", Arabic description without "SWOT", `og:image` 1200x630 with the BIK logo, `og:locale=ar_AR`, `robots.txt` with noindex until the owner decides.
 3. Hosting: read the current commercial-use terms of Vercel Hobby, Cloudflare Pages and Netlify free plans and report; do not migrate.
 4. `release.json` with version and date.
-5. Dead code: after Missions 10-17 tests pass, remove `server/platform-db.ts`, `server/db.ts`, supabase stub, `AdminDashboard.tsx`, the Gemini path in `reportGenerator.ts`, `server/storage.ts`, `voiceTranscription.ts`, `@replit/connectors-sdk`, one group per commit, running typecheck and tests after each.
+5. Dead code: after Missions 10-17 tests pass, remove `server/platform-db.ts`, `server/db.ts`, supabase stub, `AdminDashboard.tsx`, the Gemini path in `reportGenerator.ts`, `server/storage.ts`, `@replit/connectors-sdk`, one group per commit, running typecheck and tests after each.
 6. A "qualified conversation" tag note in `docs/codex/TRACKING.md` for the owner's manual WhatsApp log.
 Resume: "Resume Mission 19."
 
