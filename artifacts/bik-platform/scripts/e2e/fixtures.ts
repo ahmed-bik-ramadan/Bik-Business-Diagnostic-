@@ -1,0 +1,158 @@
+export type Answer = string | number | readonly string[];
+
+export interface JourneyFixture {
+  country: string;
+  city: string;
+  company: string;
+  sector: string;
+  subsector: string;
+  intake: readonly string[];
+  answers: Readonly<Record<string, Answer>>;
+  dialect: 'egypt' | 'saudi';
+  expectPathways: boolean;
+}
+
+export const visitorName = 'زائر اختبار المنصة';
+export const omanPhone = '+968 91234567';
+export const normalizedOmanPhone = '+96891234567';
+
+const sharedAnswers = {
+  u07: 'salaries',
+  u14: ['referral'],
+  u21: 'نتابع الأسعار المنشورة في السوق.',
+  u29: ['training'],
+  u30: 'profitability_time',
+  u32: 120,
+  u33: 200,
+  u34: 160,
+} satisfies Record<string, Answer>;
+
+export const weak: JourneyFixture = {
+  country: 'مصر',
+  city: 'القاهرة',
+  company: 'مطعم الاختبار الضعيف',
+  sector: 'fnb',
+  subsector: 'مطعم فاخر',
+  intake: [
+    'أقل من سنة',
+    'أقل من 3 سنوات',
+    'خبرة سابقة',
+    'لم أطبق أياً من الأعلى',
+    'لا بعد',
+    'خسارة حتى الآن',
+    'لا',
+    'الجودة الأعلى',
+    'محلي مدينة واحدة',
+  ],
+  answers: {
+    ...sharedAnswers,
+    u01: 'never',
+    u02: 'cant',
+    u03: 'no',
+    u04: 'negative_surprise',
+    u05: 'declined',
+    u06: 3,
+    u08: 'yes',
+    u09: 15,
+    u10: 'lt20',
+    u11: 'no',
+    u12: 'gt_month',
+    u13: 'recent_unknown',
+    u15: 'gt_month',
+    u16: 'no',
+    u17: 'gt40',
+    u18: 'none',
+    u19: 'gt25',
+    u20: 'no',
+    u22: 'no',
+    u23: 'lower_price',
+    u24: 'none',
+    u25: 'no_goal',
+    u26: 'pricing',
+    u27: 'zero',
+    u28: 'no',
+    u31: 24000,
+    u35: 'EGP',
+    f01: 'decreased',
+    f02: 'lt2',
+    f03: 'mostly_delivery',
+    f04: 30,
+    f05: 'no',
+    f06: 'lt10',
+    f07: 'gt50',
+    f08: 'neither',
+    f09: 'ignore',
+    f10: 'no_tried',
+    f11: 'reactive',
+    f12: 'mostly_organic',
+  },
+  dialect: 'egypt',
+  expectPathways: true,
+};
+
+export const strong: JourneyFixture = {
+  country: 'السعودية',
+  city: 'الرياض',
+  company: 'عيادة الاختبار القوية',
+  sector: 'healthcare',
+  subsector: 'عيادة أسنان',
+  intake: [
+    '7 سنوات فأكثر',
+    '15 سنة فأكثر',
+    'خبرة سابقة',
+    'أبحاث سوقية',
+    'نعم',
+    'أقل من 6 أشهر',
+    'أكثر من 100%',
+    'لا',
+    'التخصص الدقيق',
+    'وطني',
+  ],
+  answers: {
+    ...sharedAnswers,
+    u01: 'always',
+    u02: 'week',
+    u03: 'yes_comfortable',
+    u04: 'expected',
+    u05: 'faster',
+    u06: 25,
+    u08: 'no',
+    u09: 80,
+    u10: 'gt60',
+    u11: 'yes_clear',
+    u12: 'same_day',
+    u13: 'recent_known',
+    u15: 'week',
+    u16: 'yes_metrics',
+    u17: 'lt20',
+    u18: 'most',
+    u19: 'lt10',
+    u20: 'big_yes',
+    u22: 'systematic',
+    u23: 'raise_value',
+    u24: 'strong',
+    u25: 'specific_number',
+    u26: 'none',
+    u27: 'gt10',
+    u28: 'yes',
+    u31: 150000,
+    u35: 'SAR',
+    h01: 5,
+    h02: 'referral_patient',
+    h03: 'automatic',
+    h04: 'high_commit',
+    h05: 'lt10',
+    h06: 'yes_active',
+    h07: 'balanced',
+    h08: 'generates',
+    h09: 'systematic',
+    h10: 'none',
+    h11: 'know_ratio',
+    h12: 'yes',
+    d_dent_01: 'low',
+    d_dent_02: 'active',
+    d_dent_03: 'cost',
+  },
+  dialect: 'saudi',
+  expectPathways: false,
+};
