@@ -30,7 +30,6 @@
     "src/data/sectorRegistry.ts": "4ccd8ecb6984142265c1ec0f1d5d12b78dfdc281981618398761067d6673cfd7",
     "src/data/toastMessages.ts": "839edccdd5d7313271041138eee148538e09136928fc64ccbe1ef07a5bb446f9",
     "src/data/universalQuestions.ts": "27fbae3362586be23d714bb78f0925496dbb2afce124af207b455241badf9346",
-    "src/pages/AdminDashboard.tsx": "7dd731e9193fb587ac0e4d7712c07ae7e311ed74b127c0b4e09b4078e22b845e",
     "src/pages/CompanyIntake.tsx": "03767f336b055115cee02f7ca4df9d58e1f26301009b0917f7ff6a53034ff1c6",
     "src/pages/LeadGate.tsx": "282cdeb61996133f8ee02cc933200d1c57efc9b0af0e3e04f8f1b88f013c8881",
     "src/pages/Processing.tsx": "192328036a00673ea792b76c2643efc138af0f10706fca2cce91c672a1087ff4",

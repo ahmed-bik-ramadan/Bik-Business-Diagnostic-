@@ -57,7 +57,6 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
   'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',
-  'src/pages/AdminDashboard.tsx': '7dd731e9193fb587ac0e4d7712c07ae7e311ed74b127c0b4e09b4078e22b845e',
   'src/services/evidenceSwot.ts': '88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4',
   'src/services/reportGenerator.ts': '6377cdcc08004128737a289ec227bc0ded44984ad1e433ab5508dcf014132038',
   'src/pages/Processing.tsx': '6f8a6259d8bc5b450d6f46e0ded14b3b6dd8fd2a156743dc5d1dddc448667a27',
