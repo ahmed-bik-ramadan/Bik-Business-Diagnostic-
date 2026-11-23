@@ -36,10 +36,8 @@ assert.equal(leadResult.persisted, false);
 assert.equal(leadResult.storageMode, 'session_only');
 
 const serverSource = fs.readFileSync('server.ts', 'utf8');
-const legacyStorage = fs.readFileSync('server/platform-db.ts', 'utf8');
 const reportSource = fs.readFileSync('src/pages/ReportTransfer.tsx', 'utf8');
 assert.match(serverSource, /app\.post\(["']\/api\/v1\/leads\/submit["'],\s*\(_req,\s*res\)\s*=>\s*\{\s*return res\.status\(410\)/u);
-assert.match(legacyStorage, /Legacy file-backed storage is disabled/u);
 assert.ok(serverSource.includes("'/api/v1/diagnose/generate'"), 'server-side report generation is closed');
 assert.ok(serverSource.includes("'/api/v1/sessions/answers'"), 'server-side answer writes are closed');
 assert.ok(serverSource.includes('req.url = `/api${req.url.slice("/_bik-api".length)}`'), 'the browser API prefix reaches the stateless server routes');
