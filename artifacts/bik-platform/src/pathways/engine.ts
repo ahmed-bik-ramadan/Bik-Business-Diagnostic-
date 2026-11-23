@@ -97,24 +97,30 @@ function arabicTokens(text: string): Set<string> {
 
 const compareById = (a: SlimPathway, b: SlimPathway) => a.id.localeCompare(b.id, 'en');
 
-export async function selectForReport(scoreResult: PathwayScoreResult | null | undefined, dialect: unknown) {
-  const weakest = axes.flatMap(axis => {
+export async function selectForReport(
+  scoreResult: PathwayScoreResult | null | undefined,
+  dialect: unknown,
+  publishedPathways?: readonly SlimPathway[],
+) {
+  const rankedAxes = axes.flatMap(axis => {
     const detail = scoreResult?.axisDetails?.[PATHWAY_AXIS_NAMES[axis]];
     if (!detail || !Number.isFinite(detail.score) || (detail.status !== 'يحتاج تحسين' && detail.status !== 'نقطة حرجة')) return [];
     return [{ axis, score: detail.score }];
-  }).sort((a, b) => a.score - b.score).slice(0, 2);
+  }).sort((a, b) => a.score - b.score);
 
   const weakIds = new Set(scoreResult?.topWeaknesses?.map(item => item.sourceQuestionId));
-  const matches = weakest.map(({ axis }) => {
+  const withTokens = rankedAxes.map(({ axis }) => {
     const labels = DIAGNOSTIC_DIMENSIONS[PATHWAY_AXIS_NAMES[axis]]
       .filter(id => weakIds.has(id))
       .map(id => QUESTION_METRIC_LABELS[id]);
     return { axis, tokens: arabicTokens(labels.join(' ')) };
-  }).filter(match => match.tokens.size > 0);
-  if (matches.length === 0) return [];
+  });
+  if (!withTokens.some(({ tokens }) => tokens.size > 0)) return [];
 
-  const pathways = await loadSlimPathways();
-  return matches.flatMap(({ axis, tokens }) => pathways
+  const pathways = publishedPathways ?? await loadSlimPathways();
+  const publishedAxes = new Set(pathways.map(pathway => pathway.axis));
+  const selectedAxes = withTokens.filter(({ axis }) => publishedAxes.has(axis)).slice(0, 2);
+  return selectedAxes.filter(({ tokens }) => tokens.size > 0).flatMap(({ axis, tokens }) => pathways
     .filter(pathway => pathway.axis === axis)
     .map(pathway => ({
       pathway,

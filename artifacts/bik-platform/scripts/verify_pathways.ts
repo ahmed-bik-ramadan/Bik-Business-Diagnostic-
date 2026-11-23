@@ -81,6 +81,31 @@ const financialMatches = await selectForReport({
 }, 'fusha');
 assert.deepEqual(financialMatches.map(pathway => pathway.id), ['PW-AX2-011', 'PW-AX2-014']);
 
+const ranked = {
+  axisDetails: {
+    ...result.axisDetails,
+    [PATHWAY_AXIS_NAMES.AX2]: { score: 0, status: 'نقطة حرجة' },
+  },
+  topWeaknesses: ['u06', 'u03', 'u09'].map(sourceQuestionId => ({ sourceQuestionId })),
+} as const;
+const oneAxis = await selectForReport(ranked, 'fusha');
+assert.deepEqual([...new Set(oneAxis.map(pathway => pathway.axis))], ['AX1']);
+const oneAxisMarkup = renderToStaticMarkup(createElement(PathwayCards, { pathways: oneAxis }));
+assert.equal((oneAxisMarkup.match(/<div\b/g) ?? []).length, 1, 'only the grid is rendered, with no empty axis wrapper');
+assert.equal((oneAxisMarkup.match(/<article\b/g) ?? []).length, oneAxis.length);
+assert.ok(!oneAxisMarkup.includes(PATHWAY_AXIS_NAMES.AX2), 'the unmatched axis has no heading');
+
+const noCards = await selectForReport({
+  ...ranked, topWeaknesses: [{ sourceQuestionId: 'u06' }, { sourceQuestionId: 'u09' }],
+}, 'fusha');
+assert.equal(renderToStaticMarkup(createElement(PathwayCards, { pathways: noCards })), '',
+  'nothing is rendered when neither selected axis matches, even if a third axis could match');
+
+const noFinanceCatalog = slim.filter(pathway => pathway.axis !== 'AX2');
+const backfilled = await selectForReport(ranked, 'fusha', noFinanceCatalog);
+assert.deepEqual([...new Set(backfilled.map(pathway => pathway.axis))], ['AX1', 'AX3'],
+  'the next weakest published axis takes the place of an axis with no published pathways');
+
 const groups = await listForConsultant('fusha');
 assert.deepEqual(groups.map(({ title }) => title), Object.keys(DIAGNOSTIC_DIMENSIONS));
 assert.deepEqual(groups.flatMap(({ pathways }) => pathways.map(p => p.id)).sort(), expectedIds);
@@ -103,4 +128,4 @@ const partial: SlimPathway = {
 assert.deepEqual(localizePathway(partial, 'saudi'), {
   ...localizePathway(example, 'fusha'), headline: example.platform_copy.saudi?.headline,
 });
-console.log('PATHWAYS: PASS (87 projected IDs, approved overrides, raw release counts, matching and dialect fallback)');
+console.log('PATHWAYS: PASS (87 projected IDs, release overrides, matching, empty axes and dialect fallback)');
