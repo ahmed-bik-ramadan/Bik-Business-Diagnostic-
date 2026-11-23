@@ -65,7 +65,7 @@ export default function Welcome() {
             <Sparkles size={14} /> تشخيص عملي قبل اتخاذ القرار
           </div>
           <p className="text-sm font-bold text-[#C9A961] mb-3">بإشراف أ/ أحمد رمضان — مستشار تطوير وحلول الأعمال</p>
-          <h1 className="text-4xl md:text-6xl font-black leading-[1.18] tracking-tight max-w-3xl text-[#0F172A]">قبل أن تصرف أموالك لزيادة المبيعات… <span className="text-[#C9A961]">اعرف أين تختنق أرباحك.</span></h1>
+          <h1 className="bik-welcome-title text-4xl md:text-6xl font-black leading-[1.18] tracking-tight max-w-3xl text-[#0F172A]">قبل أن تصرف أموالك لزيادة المبيعات… <span className="text-[#C9A961]">اعرف أين تختنق أرباحك.</span></h1>
           <p className="mt-7 text-lg md:text-xl text-slate-600 leading-loose max-w-2xl">BIK هي عينك الثالثة؛ ترى ما يغيب عنك وسط انشغالك اليومي: أين تختنق أرباح شركتك، ولماذا، وماذا يكلّفك تجاهل ذلك. ويمكنك إرسال التقرير إلى أ/ أحمد رمضان عبر واتساب لمناقشته في المكالمة.</p>
           {resume && <button onClick={() => navigate(resume)} className="mt-9 w-full sm:w-auto rounded-2xl border-2 border-[#C9A961] bg-white px-7 py-4 font-bold text-[#0F172A] hover:bg-[#F6F0DF]" data-testid="resume-session">تابع جلستك من حيث توقفت</button>}
           <button type="button" className="mt-4 block min-h-11 text-sm font-bold underline" onClick={() => { resetSession(); window.location.reload(); }}>ابدأ من جديد</button>
@@ -111,7 +111,7 @@ export default function Welcome() {
           <span className="w-full text-xs text-slate-500">النتائج إرشادية تُقرأ على ضوء أرقامك، ولا تُعدّ وعداً بنتيجة.</span>
         </div>
       </section>
-      <div className="mx-auto max-w-7xl px-5 pb-14 pt-10 md:px-10">
+      <div className="bik-welcome-faq mx-auto max-w-7xl px-5 pb-14 pt-10 md:px-10">
         <Faq group="welcome" />
       </div>
     </main>
