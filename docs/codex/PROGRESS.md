@@ -37,3 +37,5 @@
 |---|---|---|
 | 1 | — | تخطٍّ دون حذف. يحوّل `/admin` إلى الرئيسية، وتوجد مراجع إضافية إلى `AdminDashboard.tsx` في `MANIFEST.sha256:213` و`AUDIT_BASELINE.md:8` ووثيقة المهام السابقة. اجتاز خط الأساس الفحوص الثلاثة. |
 | 2 | `d71cb5c` | حُذف `server/_core/voiceTranscription.ts` بعد التحقق من عدم استيراده، وأُزيل ذكره من وثيقة المهام. نجح فحص الأنواع والبناء والاختبارات الـ49. |
+| 3 | `c9011ad` | حُذف `server/platform-db.ts`. أُزيلت قراءته من `verify_customer_persistence.ts` وفحص وجود عبارة `Legacy file-backed storage is disabled` وحده. نجح فحص الأنواع والبناء والاختبارات الـ49. |
+| 4 | — | تخطٍّ دون حذف. يستورد `server/_core/imageGeneration.ts:18` الوحدة `server/storage.ts`. اجتاز الفرع الفحوص الثلاثة بعد المجموعة 3. |
