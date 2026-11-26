@@ -18,6 +18,8 @@ import type { QuestionDefinition, NextQuestionResult } from '../types/adaptiveDi
 // Reusing the UniversalQuestion type
 import type { UniversalQuestion } from '../data/universalQuestions';
 
+const visibleUniversalCount = universalQuestions.filter(question => question.id !== 'u35').length;
+
 const Questionnaire: React.FC = () => {
   const navigate = useNavigate();
   const { 
@@ -62,11 +64,13 @@ const Questionnaire: React.FC = () => {
       sectorL1,
       sectorL2,
       diagnosticDepth: diagnosticDepth as any,
-      answers: combinedAnswers
+      answers: combinedAnswers,
+      automaticCurrency: true,
     });
 
+    const visibleAnswerCount = Object.keys(combinedAnswers).filter(id => id !== 'u35').length;
     setAdaptiveStep(nextStep);
-    setAnsweredCount(Object.keys(combinedAnswers).length);
+    setAnsweredCount(visibleAnswerCount);
 
     if ((nextStep.isComplete || !nextStep.question) && !answeredThisVisitRef.current) {
       // Arrived on a finished questionnaire (back navigation): reopen the last question for editing.
@@ -80,7 +84,7 @@ const Questionnaire: React.FC = () => {
       markUnansweredQuestions();
 
       // Save locally, then review the visitor’s reading before processing.
-      trackEvent(sessionId, 'diagnostic_completed', { answeredCount: Object.keys(combinedAnswers).length, depth: diagnosticDepth }).catch(() => undefined);
+      trackEvent(sessionId, 'diagnostic_completed', { answeredCount: visibleAnswerCount, depth: diagnosticDepth }).catch(() => undefined);
       saveProgress(sessionId, {
         universal_answers: universalAnswers,
         sector_answers: sectorAnswers,
@@ -98,7 +102,7 @@ const Questionnaire: React.FC = () => {
 
   const question = adaptiveStep?.question;
   const diagnosticMessage = adaptiveStep?.diagnosticMessage;
-  const progressPct = adaptiveStep?.progress?.overallCoverage || Math.min(100, Math.round((answeredCount / 35) * 100));
+  const progressPct = adaptiveStep?.progress?.overallCoverage || Math.min(100, Math.round((answeredCount / visibleUniversalCount) * 100));
 
   // Canonical session ledger: record question when it becomes active/shown
   useEffect(() => {
@@ -121,9 +125,13 @@ const Questionnaire: React.FC = () => {
 
     if (storedUniversal) {
       try {
-        const parsed = JSON.parse(storedUniversal);
+        const parsed = JSON.parse(storedUniversal) as Record<string, string | number>;
+        const { u35 } = useDiagnosticStore.getState().universalAnswers;
+        // The tab's recovery copy can predate a new country selection at intake.
+        if (u35 !== undefined) parsed.u35 = u35;
         setField('universalAnswers', parsed);
-        setField('universalProgress', Math.round((Object.keys(parsed).length / universalQuestions.length) * 100));
+        const answered = Object.keys(parsed).filter(id => id !== 'u35').length;
+        setField('universalProgress', Math.round((answered / visibleUniversalCount) * 100));
       } catch (e) {
         console.error("Failed to parse stored universal answers", e);
       }
@@ -265,7 +273,7 @@ const Questionnaire: React.FC = () => {
       // Save to sessionStorage immediately after entry
       sessionStorage.setItem('bik_universal_answers', JSON.stringify(newAnswers));
 
-      if (Object.keys(newAnswers).length >= 25) {
+      if (Object.keys(newAnswers).filter(id => id !== 'u35').length >= 25) {
         try {
           const { computeInstantScore } = await import('../services/deterministicScoring');
           const scoreResult = computeInstantScore(newAnswers);
@@ -380,7 +388,7 @@ const Questionnaire: React.FC = () => {
 
             <div className="flex items-center gap-1 text-slate-500 text-sm">
               <Clock size={14} />
-              <span>{copy.remaining(Math.max(1, Math.ceil((35 - answeredCount) * (8 / 42))))}</span>
+              <span>{copy.remaining(Math.max(1, Math.ceil((visibleUniversalCount - answeredCount) * (8 / 42))))}</span>
             </div>
           </div>
 

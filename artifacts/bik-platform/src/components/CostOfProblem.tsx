@@ -5,7 +5,7 @@ import { FX_AS_OF, FX_RATES_PER_USD } from '../config/appConfig';
 import { caseStudies } from '../data/caseStudies';
 import { computeCostOfProblem, parseValueNumber, VALUE_ESTIMATE_LABEL, type ValueField } from '../services/valueModule/compute';
 import { sectorPool, selectValuePaths } from '../services/valueModule/sectorPools';
-import { answerCurrency, currencyName, displayValueInput, formatValueAmount, formatValueNumber, VALUE_CURRENCIES, type ValueCurrency } from '../services/valueModule/currency';
+import { currencyForCountry, currencyName, displayValueInput, formatValueAmount, formatValueNumber } from '../services/valueModule/currency';
 import { FINANCIAL_FIELDS, resolveValueFields, valueIdentity, valuePrefills, type ValueDrafts } from '../services/valueModule/prefill';
 import { VALUE_OFFERS, valueOfferRows } from '../services/valueModule/offers';
 
@@ -15,10 +15,8 @@ const comparisonOffers = VALUE_OFFERS.map(offer => ({
 
 export default function CostOfProblem() {
   const store = useDiagnosticStore();
-  const [currencyChoice, setCurrencyChoice] = useState<ValueCurrency | null>(null);
   const [drafts, setDrafts] = useState<ValueDrafts>({});
-  const originalCurrency = answerCurrency(store.universalAnswers.u35, store.intakeAnswers.country);
-  const currency = currencyChoice || originalCurrency;
+  const currency = currencyForCountry(store.intakeAnswers.country);
   const { fields: prefilled } = valuePrefills(store, currency);
   const resolved = resolveValueFields(drafts, prefilled, currency);
   const paths = selectValuePaths(store.sectorL1, store.axisDetails);
@@ -27,10 +25,6 @@ export default function CostOfProblem() {
   const identity = valueIdentity(store);
   const examples = caseStudies.filter(example => example.sector === store.sectorL1);
   const amount = (number: number | null) => number === null ? platformCopy['value.notCalculated'] : `${formatValueAmount(number, currency)} (${VALUE_ESTIMATE_LABEL})`;
-  const changeCurrency = (next: ValueCurrency) => {
-    setCurrencyChoice(next);
-    setDrafts(previous => Object.fromEntries(Object.entries(previous).filter(([field]) => !FINANCIAL_FIELDS.includes(field as ValueField))));
-  };
   const field = (key: ValueField, label: string) => {
     const raw = resolved.inputs[key];
     const parsed = parseValueNumber(raw);
@@ -65,14 +59,7 @@ export default function CostOfProblem() {
     </summary>
     {identity.context && <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-[#68717A]" data-testid="value-context">{identity.context}</p>}
     <p className="mt-2 text-sm leading-6 text-[#68717A]">{platformCopy['value.intro']}</p>
-    <div className="mt-3 grid grid-cols-2 items-end gap-3 md:grid-cols-4">
-      <div className="min-w-0">
-        <label htmlFor="value-currency" className="block text-xs font-bold leading-5">{platformCopy['value.currencyLabel']}</label>
-        <select id="value-currency" value={currency} onChange={event => changeCurrency(event.target.value as ValueCurrency)} data-testid="value-currency"
-          className="mt-1 block min-h-11 w-full rounded-xl border border-[#0F172A]/20 bg-white p-3 text-sm text-[#0F172A] focus:outline-[#C9A961]">
-          {VALUE_CURRENCIES.map(code => <option key={code} value={code}>{currencyName(code)}</option>)}
-        </select>
-      </div>
+    <div className="mt-3 grid grid-cols-2 items-end gap-3 md:grid-cols-3">
       {field('unitNet', formatPlatformCopy('value.unitNetLabel', { unit: platformCopy[pool.unit] }))}
       {field('margin', formatPlatformCopy('value.marginLabel', { currency: currencyName(currency) }))}
       {field('monthlyRevenue', platformCopy['value.revenueLabel'])}

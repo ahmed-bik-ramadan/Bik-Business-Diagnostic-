@@ -4,9 +4,14 @@ import { platformCopy } from '../../copy/platformCopy';
 export type ValueCurrency = keyof typeof FX_RATES_PER_USD;
 export const VALUE_CURRENCIES: readonly ValueCurrency[] = ['SAR', 'AED', 'EGP', 'KWD', 'QAR', 'USD'];
 const COUNTRIES: Readonly<Record<string, ValueCurrency>> = { 'مصر': 'EGP', 'السعودية': 'SAR', 'الإمارات': 'AED', 'الكويت': 'KWD', 'قطر': 'QAR' };
+
+export function currencyForCountry(country: unknown): ValueCurrency {
+  return typeof country === 'string' && Object.hasOwn(COUNTRIES, country) ? COUNTRIES[country] : 'USD';
+}
+
 export function answerCurrency(answer: unknown, country: unknown): ValueCurrency {
   return typeof answer === 'string' && VALUE_CURRENCIES.includes(answer as ValueCurrency) ? answer as ValueCurrency
-    : typeof country === 'string' ? COUNTRIES[country] || 'USD' : 'USD';
+    : currencyForCountry(country);
 }
 export const currencyName = (currency: ValueCurrency) => platformCopy[`value.currency.${currency}`];
 export const currencyUnit = (currency: ValueCurrency) => platformCopy[`value.currencyUnit.${currency}`];

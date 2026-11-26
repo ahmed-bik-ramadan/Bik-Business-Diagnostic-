@@ -26,6 +26,7 @@ export interface AdaptiveEngineContext {
   sectorL2?: string;
   diagnosticDepth?: 'quick' | 'deep';
   answers: Record<string, any>;
+  automaticCurrency?: boolean;
 }
 
 /**
@@ -345,12 +346,12 @@ export function calculateDiagnosticCoverage(
  * NEVER uses an LLM to choose questions.
  */
 export function getNextAdaptiveQuestion(context: AdaptiveEngineContext): NextQuestionResult {
-  const { sectorL1, sectorL2, diagnosticDepth = 'quick', answers = {} } = context;
+  const { sectorL1, sectorL2, diagnosticDepth = 'quick', answers = {}, automaticCurrency = false } = context;
 
   // 1. Build complete question catalog for the company's context
-  const universalEnriched: QuestionDefinition[] = universalQuestions.map((q) =>
-    getEnrichedQuestion(q)
-  );
+  const universalEnriched: QuestionDefinition[] = universalQuestions
+    .filter(q => !automaticCurrency || q.id !== 'u35')
+    .map(q => getEnrichedQuestion(q));
 
   const sectorEnriched = getSectorQuestions(sectorL1, sectorL2, diagnosticDepth === 'deep');
   const allQuestions: QuestionDefinition[] = [...universalEnriched, ...sectorEnriched];
@@ -374,7 +375,7 @@ export function getNextAdaptiveQuestion(context: AdaptiveEngineContext): NextQue
   const coverage = calculateDiagnosticCoverage(allQuestions, answers);
   const answeredIds = new Set(
     Object.keys(answers).filter(
-      (k) => answers[k] !== undefined && answers[k] !== '' && answers[k] !== null
+      (k) => (!automaticCurrency || k !== 'u35') && answers[k] !== undefined && answers[k] !== '' && answers[k] !== null
     )
   );
 

@@ -7,7 +7,7 @@ import {runInNewContext} from 'node:vm';
 import {build} from 'esbuild';
 import {computeCostOfProblem,parseValueNumber,VALUE_ESTIMATE_LABEL,type ValueField,type ValueInputs} from '../src/services/valueModule/compute';
 import {SECTOR_POOLS,sectorPool,selectValuePaths} from '../src/services/valueModule/sectorPools';
-import {answerCurrency,currencyName,displayValueInput,formatValueAmount,formatValueNumber,fxFreshness,VALUE_CURRENCIES} from '../src/services/valueModule/currency';
+import {answerCurrency,currencyForCountry,currencyName,displayValueInput,formatValueAmount,formatValueNumber,fxFreshness,VALUE_CURRENCIES} from '../src/services/valueModule/currency';
 import {valuePrefills,valueIdentity,VALUE_FIELDS} from '../src/services/valueModule/prefill';
 import {VALUE_OFFERS,valueOfferRows} from '../src/services/valueModule/offers';
 import {platformCopy,formatPlatformCopy} from '../src/copy/platformCopy';
@@ -17,6 +17,7 @@ import {sectors} from '../src/data/sectors';
 import {universalQuestions} from '../src/data/universalQuestions';
 import {caseStudies} from '../src/data/caseStudies';
 import {buildChatContext} from '../src/services/chatPolicy';
+import {getNextAdaptiveQuestion} from '../src/services/adaptiveDiagnosticEngine';
 
 let passed=0;
 const check=(value:unknown,message:string)=>{assert.ok(value,message);passed++;console.log('PASS: '+message);};
@@ -122,11 +123,25 @@ for(const sector of sectors){
  check(true,`${sector.id}: complete wording and deterministic P/W rules, always retaining L and R`);
 }
 assert.deepEqual(VALUE_CURRENCIES,[...universalQuestions.find(q=>q.id==='u35')!.options!.map(o=>o.value)]);
-check(true,'the currency selector offers exactly the six real u35 currencies in the same order');
+check(true,'the original u35 bank still contains its six stored currency codes');
 for(const currency of VALUE_CURRENCIES)check(answerCurrency(currency,'مصر')===currency,`${currency}: u35 overrides country`);
-for(const [country,currency]of [['مصر','EGP'],['السعودية','SAR'],['الإمارات','AED'],['الكويت','KWD'],['قطر','QAR'],['البحرين','USD'],['أخرى','USD']])
- check(answerCurrency(undefined,country)===currency,`${country}: literal CompanyIntake country maps to ${currency}`);
+const countryCurrencies = [['مصر','EGP'], ['السعودية','SAR'], ['الإمارات','AED'], ['الكويت','KWD'], ['قطر','QAR'], ['البحرين','USD']] as const;
+for (const [country, currency] of countryCurrencies) {
+  check(currencyForCountry(country) === currency && answerCurrency(undefined, country) === currency,
+    `${country}: intake and old answers without a currency both use ${currency}`);
+}
+check(currencyForCountry('toString') === 'USD' && currencyForCountry(null) === 'USD',
+  'unknown country keys use the existing USD fallback');
 check(answerCurrency('unknown',undefined)==='USD'&&answerCurrency('', 'الإمارات العربية المتحدة')==='USD','an absent/unsupported currency and an unmatched country name use USD without guessing');
+const emptyProgress = getNextAdaptiveQuestion({ answers: {}, automaticCurrency: true });
+const seededProgress = getNextAdaptiveQuestion({ answers: { u35: 'SAR' }, automaticCurrency: true });
+assert.deepEqual(seededProgress.progress, emptyProgress.progress);
+check(seededProgress.progress.answeredCount === 0 && seededProgress.question?.id === emptyProgress.question?.id,
+  'automatic currency contributes neither a question nor an answer to visitor progress');
+const allOtherAnswers = Object.fromEntries(universalQuestions.filter(q => q.id !== 'u35').map(q => [q.id, q.options?.[0].value ?? 0]));
+check(getNextAdaptiveQuestion({ answers: allOtherAnswers, diagnosticDepth: 'deep' }).question?.id === 'u35'
+  && getNextAdaptiveQuestion({ answers: allOtherAnswers, diagnosticDepth: 'deep', automaticCurrency: true }).question?.id !== 'u35',
+  'u35 stays in the original catalog and is skipped in the visitor sequence even if a legacy answer is absent');
 assert.deepEqual(FX_RATES_PER_USD,{USD:1,SAR:3.75,AED:3.6725,QAR:3.64,KWD:.307,EGP:53});
 check(FX_AS_OF==='2026-11-14','all six FX rates and the dated owner-supplied reference are exact');
 check(FOCUSED_WEEK_USD*FX_RATES_PER_USD.EGP===14416&&formatValueAmount(14416,'EGP')==='14,416 جنيهاً','272 USD converts to exactly 14416 EGP, displayed with Latin digits and en-US grouping');
@@ -242,16 +257,21 @@ try{
  check(find(tree,'value-field-unitNet').props.value==='40'&&text(find(tree,'value-total'))===estimate('4,000 جنيهاً'),'changing the source answer then rendering updates the input and result, including a formerly edited prefill');
  check(Boolean(find(tree,'value-prefilled-unitNet')),'a newly read source answer carries its prefill marker');
  edit('unitNet','50');check(text(find(tree,'value-total'))===estimate('5,000 جنيهاً')&&app.store().sectorAnswers.hd01===40,'local editing changes the result without changing the store answer');
- const preCurrency=JSON.stringify(app.store());find(tree,'value-currency').props.onChange({target:{value:'SAR'}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value===''&&find(tree,'value-field-monthlyRevenue').props.value===''&&find(tree,'value-field-lostUnits').props.value==='40','changing currency clears financial fields and preserves counts without conversion');
- edit('unitNet','20');edit('monthlyRevenue','100000');
- check(text(find(tree,'value-total'))===estimate('2,000 ريالاً'),'new-currency inputs use their declared values without converting visitor numbers');
- find(tree,'value-currency').props.onChange({target:{value:'EGP'}});tree=app.render();
- check(find(tree,'value-field-unitNet').props.value==='40'&&find(tree,'value-field-monthlyRevenue').props.value==='100,000','returning to the answer currency refills current answers rather than restoring another-currency drafts');
- check(JSON.stringify(app.store())===preCurrency,'all currency operations leave the store unchanged');
+ for (const [country, currency] of countryCurrencies) {
+   const countryTree = mount({...store, intakeAnswers:{country}, universalAnswers:{...store.universalAnswers, u35:currency}}).render();
+   check(!nodes(countryTree).some(node => node.type === 'select') &&
+     text(find(countryTree,'value-fx-note')) === formatPlatformCopy('value.fxNote', {
+       rate: formatValueNumber(FX_RATES_PER_USD[currency], 4),
+       currency: estimate(currencyName(currency)), date: FX_AS_OF
+     }), `${country}: the calculator has no selector and uses the existing ${currency} FX reference`);
+ }
+ const legacyCurrency = mount({...store, intakeAnswers:{country:'السعودية'}}).render();
+ check(find(legacyCurrency,'value-field-monthlyRevenue').props.value === '' &&
+   text(find(legacyCurrency,'value-fx-note')).includes(currencyName('SAR')),
+   'a legacy EGP answer is not relabelled as a Saudi prefill before the next intake submission');
  app.setStore({...store,axisDetails:{'الفريق والعمليات':{status:'نقطة حرجة'},'الموقع التنافسي':{status:'مستقر'}}});tree=app.render();edit('monthlyWaste','8172639');
  check(Boolean(find(tree,'value-field-monthlyWaste'))&&!nodes(tree).some(n=>n.props['data-testid']==='value-field-underPct'),'the actual component replaces P with W without showing four paths');
- check(writes===0&&requests===0,'typing every applicable field and changing currency writes no browser storage and makes no requests');
+ check(writes===0&&requests===0,'typing every applicable field writes no browser storage and makes no requests');
  const context=JSON.stringify(buildChatContext({sector:'healthcare',axisDetails:store.axisDetails} as any));
  check(!context.includes('8172639')&&!/unitNet|monthlyWaste|dormantCount|returnsPerYear|underPct/.test(context),'local cost inputs never enter the existing chat context');
  assert.equal(before,JSON.stringify(store));check(true,'initial accepted answers remain byte-identical');
@@ -264,6 +284,47 @@ try{
  for(const p of nodes(tree).filter(n=>['p','output','label','option','button'].includes(n.type)))assert.ok(text(p).trim(),p.type);
  check(!/undefined|NaN|Infinity|[٠-٩۰-۹]/.test(text(tree)),'filled output text has no empty templates, Arabic-Indic numerals or non-finite values');
 }finally{globalThis.fetch=originalFetch;for(const [name,descriptor]of descriptors){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete (globalThis as any)[name];}}
+
+// Exercise the intake submit button with an existing, different u35 and an earlier answer.
+const intake = await build({
+  entryPoints: [path.join(root,'src/pages/CompanyIntake.tsx')], bundle: true, write: false, platform: 'node', format: 'cjs',
+  external: ['react', 'react/jsx-runtime', 'react-router-dom', 'framer-motion', 'lucide-react', '../store/diagnosticStore', '../services/supabase'],
+  logLevel: 'silent',
+});
+const intakeModule = { exports: {} as { default: () => Element } };
+const state = {
+  sessionId: 'legacy', companyName: 'Test', universalAnswers: { u35: 'EGP', u01: 'never' },
+  setField(key: string, value: unknown) { Object.assign(state, { [key]: value }); },
+};
+const form = {
+  firstName: 'Test', companyName: 'Test', country: 'السعودية', city: 'Test',
+  companyAge: '1-3 سنوات', founderExperience: '3-7', businessMotivation: ['خبرة سابقة'],
+  modelsApplied: ['لم أطبق أياً من الأعلى'], breakEven: 'لا بعد', roi: 'لا أحسبه', hasDebt: 'لا',
+  differentiators: ['السرعة'], geographicScope: 'وطني',
+};
+const jsx = (type: unknown, props: unknown) => ({ type, props });
+const destinations: string[] = [];
+const dependencies = {
+  react: { useState: () => [form, () => {}], useEffect: () => {} },
+  'react/jsx-runtime': { jsx, jsxs: jsx },
+  'react-router-dom': { useNavigate: () => (target: string) => destinations.push(target) },
+  'framer-motion': { AnimatePresence: 'fragment', motion: { section: 'section', div: 'div' } },
+  'lucide-react': { Clock: 'clock' },
+  '../store/diagnosticStore': { useDiagnosticStore: Object.assign(() => state, { getState: () => state }) },
+  '../services/supabase': { trackEvent: async () => {}, saveProgress: async () => {} },
+};
+runInNewContext(intake.outputFiles[0].text, { module: intakeModule, exports: intakeModule.exports,
+  require: (name: keyof typeof dependencies) => dependencies[name] });
+for (const [country, currency] of [['السعودية','SAR'], ['الكويت','KWD']] as const) {
+  form.country = country;
+  const submit = nodes(intakeModule.exports.default()).find(node => node.type === 'button' && text(node) === 'ابدأ التشخيص الكامل');
+  assert.ok(submit && !submit.props.disabled);
+  await submit.props.onClick();
+  assert.equal(state.universalAnswers.u01, 'never');
+  check(state.universalAnswers.u35 === currency && destinations.at(-1) === '/questionnaire',
+    `${country}: resubmitting a legacy session replaces u35 and preserves its other answers`);
+}
+
 const source=fs.readFileSync(path.join(root,'src/components/CostOfProblem.tsx'),'utf8');
 check(!/\b(?:fetch|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB|setField|setState)\b/.test(source),'component source has no storage, network or store-write sinks');
 check(!/slider|type="range"|gradient|shadow-|lucide|<svg|<img/.test(source),'the module introduces no sliders, gradients, shadows, icons or images');

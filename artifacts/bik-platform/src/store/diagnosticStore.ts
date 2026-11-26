@@ -167,7 +167,7 @@ export const useDiagnosticStore = create<DiagnosticStore>()(
         const state = get();
         const answered = state.questionHistory
           .map((entry, index) => ({ entry, index }))
-          .filter(({ entry }) => entry.status === 'answered' || entry.status === 'skipped');
+          .filter(({ entry }) => entry.questionId !== 'u35' && (entry.status === 'answered' || entry.status === 'skipped'));
         if (answered.length === 0) return null;
         const last = answered.reduce((a, b) => ((b.entry.answeredAt ?? 0) >= (a.entry.answeredAt ?? 0) ? b : a));
         const removedId = last.entry.questionId;

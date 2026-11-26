@@ -56,6 +56,10 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
   'scoring rules and categorical answer keys match v11');
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
+  // Mission 28 derives currency at intake and excludes it from the visitor question flow.
+  'src/pages/CompanyIntake.tsx': 'a4651b5408b6744aa4d9f0716168ed71ff74dc90dda6f8425c4ccdef5784b980',
+  'src/pages/Questionnaire.tsx': 'ff90ed01f5f9663054888df7707d84decca314b95b3e6e2f6dcfa22fb9066176',
+  'src/services/adaptiveDiagnosticEngine.ts': '0f0065f5c10c4eb20a771b7e4e9be1f16c2d66e391b34cb48ebef326daad4538',
   'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',
   'src/services/evidenceSwot.ts': '88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4',
   'src/services/reportGenerator.ts': '6377cdcc08004128737a289ec227bc0ded44984ad1e433ab5508dcf014132038',
@@ -70,7 +74,6 @@ const revisedStructure = {
   'src/components/OfferCards.tsx': 'a78a50ade808d798181ac3bb84c525b43656e1cef4a0bbfb580a73b374fb5615',
   'src/config/appConfig.ts': 'f05db41691ad87f60e473e61d40f939b3935c17a79aa4c83aa9c6323753be1a9',
   'src/pages/LeadGate.tsx': 'ad7f053f51f51261b7618636d2ec31a9c7f12f67f9b2a5ae2dfd6c105daca126',
-  'src/pages/Questionnaire.tsx': 'edeabe6cbbfa021fc4573b192b47e43c8530ff62cf6c00a4b7be26c6ebf11c48',
   'src/pages/Report.tsx': '28d33fd2219b83467ab3c79f3f5983748974824f0c4709cac381055b98d35f08',
   'src/pages/ReportTransfer.tsx': '79e5a13201c9494afd1d3ef98fb6e5d22bf7aeea8a33f5733ed8287f089c0c73',
   'src/pages/Welcome.tsx': 'b29cfdda70130ad681f2afcab3b9226460bbb771b337cbf8d4fe0f21f1c024c0',

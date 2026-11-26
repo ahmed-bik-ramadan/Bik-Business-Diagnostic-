@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { useDiagnosticStore } from '../store/diagnosticStore';
 import { trackEvent, saveProgress } from '../services/supabase';
+import { currencyForCountry } from '../services/valueModule/currency';
 
 const CompanyIntake: React.FC = () => {
   const navigate = useNavigate();
@@ -78,6 +79,10 @@ const CompanyIntake: React.FC = () => {
     setField('userName', form.firstName);
     setField('companyName', form.companyName);
     setField('intakeAnswers', form);
+    setField('universalAnswers', {
+      ...useDiagnosticStore.getState().universalAnswers,
+      u35: currencyForCountry(form.country),
+    });
     
     // Attempt saving to backend
     try {
