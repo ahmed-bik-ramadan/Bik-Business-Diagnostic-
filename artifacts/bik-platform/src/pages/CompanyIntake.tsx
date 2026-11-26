@@ -5,6 +5,8 @@ import { Clock } from 'lucide-react';
 import { useDiagnosticStore } from '../store/diagnosticStore';
 import { trackEvent, saveProgress } from '../services/supabase';
 import { currencyForCountry } from '../services/valueModule/currency';
+import { dialectForCountry } from '../services/dialect';
+import { intakeCopy } from '../copy/intakeCopy';
 
 const CompanyIntake: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +36,10 @@ const CompanyIntake: React.FC = () => {
     geographicScope: ''
   });
 
+  const copy = intakeCopy(dialectForCountry(form.country));
+  const noModel = copy.option('planning.model.none');
+  const unknownDifference = copy.option('market.difference.unknown');
+
   useEffect(() => {
     trackEvent(sessionId, 'page_view', { page: 'company_intake' }).catch(console.error);
     window.scrollTo(0, 0);
@@ -52,9 +58,9 @@ const CompanyIntake: React.FC = () => {
       
       // Handle exclusive options like "لم أطبق أياً من الأعلى"
       if (field === 'modelsApplied') {
-        if (value === 'لم أطبق أياً من الأعلى') {
+        if (value === noModel.value) {
           return { ...prev, [field]: [value] };
-        } else if (current.includes('لم أطبق أياً من الأعلى')) {
+        } else if (current.includes(noModel.value)) {
           return { ...prev, [field]: [value] };
         }
       }
@@ -184,50 +190,50 @@ const CompanyIntake: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
               >
-                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">القسم 2: التاريخ والخبرة</h2>
-                <p className="text-xs font-bold text-[#146B4F]">لماذا نسأل</p>
-                <p className="text-sm leading-7 text-slate-500 mb-5">طريق شركتك حتى اليوم يفسّر ما تواجهه الآن: التحولات وسنوات الخبرة تخبرنا أين مكمن القوة الذي يُبنى عليه القرار.</p>
+                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">{copy.text('history.heading')}</h2>
+                <p className="text-xs font-bold text-[#146B4F]">{copy.text('history.whyHeading')}</p>
+                <p className="text-sm leading-7 text-slate-500 mb-5">{copy.text('history.why')}</p>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-2">عمر الشركة <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('history.companyAge')} <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {['أقل من سنة', '1-3 سنوات', '3-7 سنوات', 'أكثر من 7 سنوات'].map((v, optionIndex) => (
+                    {copy.options('companyAge').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => updateForm('companyAge', v)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.companyAge === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => updateForm('companyAge', value)}
+                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.companyAge === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {["أقل من سنة", "سنة إلى أقل من 3 سنوات", "3 إلى أقل من 7 سنوات", "7 سنوات فأكثر"][optionIndex]}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-2">خبرتك في المجال <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('history.founderExperience')} <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {['أقل من 3', '3-7', '7-15', 'أكثر من 15 سنة'].map((v, optionIndex) => (
+                    {copy.options('founderExperience').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => updateForm('founderExperience', v)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.founderExperience === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => updateForm('founderExperience', value)}
+                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.founderExperience === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {["أقل من 3 سنوات", "3 إلى أقل من 7 سنوات", "7 إلى أقل من 15 سنة", "15 سنة فأكثر"][optionIndex]}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-2">ما الذي دفعك لاختيار هذا النشاط؟ (اختر ما ينطبق) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('history.businessMotivation')} <span className="text-red-500">*</span></label>
                   <div className="flex flex-wrap gap-2">
-                    {['خبرة سابقة', 'رؤية سوقية', 'ميراث عائلي', 'فرصة ظهرت', 'شغف شخصي', 'أخرى'].map(v => (
+                    {copy.options('businessMotivation').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => toggleMultiSelect('businessMotivation', v)}
-                        className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.businessMotivation.includes(v) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => toggleMultiSelect('businessMotivation', value)}
+                        className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.businessMotivation.includes(value) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -243,35 +249,35 @@ const CompanyIntake: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
               >
-                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">القسم 3: التخطيط الأولي</h2>
-                <p className="text-xs font-bold text-[#146B4F]">لماذا نسأل</p>
-                <p className="text-sm leading-7 text-slate-500 mb-5">ما خططت له قبل البدء، ومدى تطابقه مع الواقع، يساعداننا على قراءة أرقامك بما يناسب شركتك.</p>
+                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">{copy.text('planning.heading')}</h2>
+                <p className="text-xs font-bold text-[#146B4F]">{copy.text('planning.whyHeading')}</p>
+                <p className="text-sm leading-7 text-slate-500 mb-5">{copy.text('planning.why')}</p>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-2">هل طبقت أياً من هذه قبل البدء؟ <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('planning.modelsApplied')} <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {['أبحاث سوقية', 'نموذج عمل Business Model Canvas', 'خطة عمل Business Plan', 'استراتيجية تسويقية', 'تحليل منافسين', 'دراسة جدوى مالية'].map(v => (
+                    {copy.options('modelsApplied').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => toggleMultiSelect('modelsApplied', v)}
-                        className={`text-right p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.modelsApplied.includes(v) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => toggleMultiSelect('modelsApplied', value)}
+                        className={`text-right p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.modelsApplied.includes(value) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                     <button 
                       type="button"
-                      onClick={() => toggleMultiSelect('modelsApplied', 'لم أطبق أياً من الأعلى')}
-                      className={`text-right p-3 rounded-xl border-2 text-sm font-medium transition-colors md:col-span-2 cursor-pointer ${form.modelsApplied.includes('لم أطبق أياً من الأعلى') ? 'border-slate-400 bg-slate-50 text-slate-700 font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                      onClick={() => toggleMultiSelect('modelsApplied', noModel.value)}
+                      className={`text-right p-3 rounded-xl border-2 text-sm font-medium transition-colors md:col-span-2 cursor-pointer ${form.modelsApplied.includes(noModel.value) ? 'border-slate-400 bg-slate-50 text-slate-700 font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                     >
-                      لم أطبق أياً من الأعلى
+                      {noModel.label}
                     </button>
                   </div>
                 </div>
 
-                {form.modelsApplied.length > 0 && !form.modelsApplied.includes('لم أطبق أياً من الأعلى') && (
+                {form.modelsApplied.length > 0 && !form.modelsApplied.includes(noModel.value) && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-2">
-                    <label className="block text-sm font-medium text-text-dark mb-4">نسبة تطابق الواقع مع ما خططت له: <span className="text-luxury-accent font-bold mx-1">{form.modelSuccessRate}%</span></label>
+                    <label className="block text-sm font-medium text-text-dark mb-4">{copy.text('planning.modelSuccessRate')} <span className="text-luxury-accent font-bold mx-1">{form.modelSuccessRate}%</span></label>
                     <input 
                       type="range" min="0" max="100" step="5"
                       value={form.modelSuccessRate}
@@ -280,8 +286,8 @@ const CompanyIntake: React.FC = () => {
                       dir="rtl"
                     />
                     <div className="flex justify-between text-xs text-slate-500 mt-1 px-1">
-                      <span>0% (مختلف تماماً)</span>
-                      <span>100% (تطابق تام)</span>
+                      <span>{copy.text('planning.successRateMin')}</span>
+                      <span>{copy.text('planning.successRateMax')}</span>
                     </div>
                   </motion.div>
                 )}
@@ -296,20 +302,20 @@ const CompanyIntake: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
               >
-                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">القسم 4: الصحة المالية</h2>
-                <p className="text-xs font-bold text-[#146B4F]">لماذا نسأل</p>
-                <p className="text-sm leading-7 text-slate-500 mb-5">تساعد بيانات هذا القسم على قراءة الوضع المالي من إجاباتك. تُعالج في المتصفح ولا يتلقاها خادم BIK لتوليد التقرير؛ وما يصل إلى المستشار هو ما ترسله أنت عبر واتساب.</p>
+                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">{copy.text('finance.heading')}</h2>
+                <p className="text-xs font-bold text-[#146B4F]">{copy.text('finance.whyHeading')}</p>
+                <p className="text-sm leading-7 text-slate-500 mb-5">{copy.text('finance.why')}</p>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-2">هل حققت نقطة التعادل (Break Even)؟ <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.breakEven')} <span className="text-red-500">*</span></label>
                   <div className="flex gap-3">
-                    {['نعم', 'لا بعد'].map(v => (
+                    {copy.options('breakEven').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => { updateForm('breakEven', v); if(v==='لا بعد') updateForm('breakEvenTime', ''); }}
-                        className={`flex-1 p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.breakEven === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => { updateForm('breakEven', value); if(value==='لا بعد') updateForm('breakEvenTime', ''); }}
+                        className={`flex-1 p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.breakEven === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -317,15 +323,15 @@ const CompanyIntake: React.FC = () => {
 
                 {form.breakEven === 'نعم' && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6">
-                    <label className="block text-sm font-medium text-text-dark mb-2">كم استغرق ذلك؟ <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.breakEvenTime')} <span className="text-red-500">*</span></label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                       {['أقل من 6 أشهر', '6-12 شهراً', '1-2 سنة', 'أكثر من سنتين'].map((v, optionIndex) => (
+                       {copy.options('breakEvenTime').map(({ value, label }) => (
                         <button 
                           type="button"
-                          key={v} onClick={() => updateForm('breakEvenTime', v)}
-                          className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.breakEvenTime === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                          key={value} onClick={() => updateForm('breakEvenTime', value)}
+                          className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.breakEvenTime === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                         >
-                          {["أقل من 6 أشهر", "6 أشهر إلى أقل من سنة", "سنة إلى سنتين", "أكثر من سنتين"][optionIndex]}
+                          {label}
                         </button>
                       ))}
                     </div>
@@ -333,30 +339,30 @@ const CompanyIntake: React.FC = () => {
                 )}
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-2">معدل العائد على الاستثمار (ROI) منذ التأسيس <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.roi')} <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {['خسارة حتى الآن', '0-10%', '10-30%', '30-100%', 'أكثر من 100%', 'لا أحسبه'].map(v => (
+                    {copy.options('roi').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => updateForm('roi', v)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.roi === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => updateForm('roi', value)}
+                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.roi === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-text-dark mb-2">هل لدى شركتك قروض أو التزامات خارجية؟ <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.hasDebt')} <span className="text-red-500">*</span></label>
                   <div className="flex gap-3">
-                    {['لا', 'نعم'].map(v => (
+                    {copy.options('hasDebt').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => { updateForm('hasDebt', v); if(v==='لا'){ updateForm('debtDuration',''); updateForm('debtMonthlyPct',0); } }}
-                        className={`flex-1 p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.hasDebt === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => { updateForm('hasDebt', value); if(value==='لا'){ updateForm('debtDuration',''); updateForm('debtMonthlyPct',0); } }}
+                        className={`flex-1 p-3 rounded-xl border-2 text-sm font-medium transition-colors cursor-pointer ${form.hasDebt === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -365,21 +371,21 @@ const CompanyIntake: React.FC = () => {
                 {form.hasDebt === 'نعم' && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-dark mb-2">إجمالي الديون كعدد أشهر من إيراداتك <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.debtDuration')} <span className="text-red-500">*</span></label>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                         {['أقل من 3', '3-6', '6-12', 'أكثر من 12'].map((v, optionIndex) => (
+                         {copy.options('debtDuration').map(({ value, label }) => (
                           <button 
                             type="button"
-                            key={v} onClick={() => updateForm('debtDuration', v)}
-                            className={`p-2 rounded-xl border-2 text-sm transition-colors cursor-pointer ${form.debtDuration === v ? 'border-luxury-accent bg-white text-luxury-accent font-bold' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                            key={value} onClick={() => updateForm('debtDuration', value)}
+                            className={`p-2 rounded-xl border-2 text-sm transition-colors cursor-pointer ${form.debtDuration === value ? 'border-luxury-accent bg-white text-luxury-accent font-bold' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
                           >
-                            {["أقل من 3", "3 إلى أقل من 6", "6 إلى أقل من 12", "12 فأكثر"][optionIndex]}
+                            {label}
                           </button>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-dark mb-2">الأقساط الشهرية كنسبة من إيراداتك: <span className="text-luxury-accent font-bold">{form.debtMonthlyPct}%</span></label>
+                      <label className="block text-sm font-medium text-text-dark mb-2">{copy.text('finance.debtMonthlyPct')} <span className="text-luxury-accent font-bold">{form.debtMonthlyPct}%</span></label>
                       <input 
                         type="range" min="0" max="60" step="5"
                         value={form.debtMonthlyPct}
@@ -392,7 +398,7 @@ const CompanyIntake: React.FC = () => {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-4">إجمالي تكاليفك الثابتة الشهرية كنسبة من إيراداتك: <span className="text-luxury-accent font-bold mx-1">{form.fixedCostsPct}%</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-4">{copy.text('finance.fixedCostsPct')} <span className="text-luxury-accent font-bold mx-1">{form.fixedCostsPct}%</span></label>
                   <input 
                     type="range" min="0" max="100" step="5"
                     value={form.fixedCostsPct}
@@ -412,51 +418,51 @@ const CompanyIntake: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
               >
-                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">القسم 5: التنافسية والسوق</h2>
-                <p className="text-xs font-bold text-[#146B4F]">لماذا نسأل</p>
-                <p className="text-sm leading-7 text-slate-500 mb-5">السوق الذي تتنافس فيه يحدد ما يُعدّ انتصاراً: هنا يُضبط ميزان المقارنة قبل أن تُقرأ أرقامك.</p>
+                <h2 className="text-xl font-bold text-text-dark mb-2 border-b pb-2 font-display">{copy.text('market.heading')}</h2>
+                <p className="text-xs font-bold text-[#146B4F]">{copy.text('market.whyHeading')}</p>
+                <p className="text-sm leading-7 text-slate-500 mb-5">{copy.text('market.why')}</p>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-3">من أقوى منافسيك؟ (اختياري)</label>
+                  <label className="block text-sm font-medium text-text-dark mb-3">{copy.text('market.competitors')}</label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" placeholder="المنافس الأول" value={form.comp1} onChange={(e) => updateForm('comp1', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
-                    <input type="text" placeholder="المنافس الثاني" value={form.comp2} onChange={(e) => updateForm('comp2', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
-                    <input type="text" placeholder="المنافس الثالث" value={form.comp3} onChange={(e) => updateForm('comp3', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
+                    <input type="text" placeholder={copy.text('market.competitor.first')} value={form.comp1} onChange={(e) => updateForm('comp1', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
+                    <input type="text" placeholder={copy.text('market.competitor.second')} value={form.comp2} onChange={(e) => updateForm('comp2', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
+                    <input type="text" placeholder={copy.text('market.competitor.third')} value={form.comp3} onChange={(e) => updateForm('comp3', e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none text-text-dark" />
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-text-dark mb-3">ما الذي يميزك عنهم؟ <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-3">{copy.text('market.differentiators')} <span className="text-red-500">*</span></label>
                   <div className="flex flex-wrap gap-2">
-                    {['السعر الأقل', 'الجودة الأعلى', 'السرعة', 'الموقع الجغرافي', 'العلاقة الشخصية', 'التخصص الدقيق', 'ما بعد البيع'].map(v => (
+                    {copy.options('differentiators').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => toggleMultiSelect('differentiators', v)}
-                        className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.differentiators.includes(v) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => toggleMultiSelect('differentiators', value)}
+                        className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.differentiators.includes(value) ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                     <button 
                       type="button"
-                      onClick={() => toggleMultiSelect('differentiators', 'لا أعرف بالضبط')}
-                      className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.differentiators.includes('لا أعرف بالضبط') ? 'border-slate-400 bg-slate-50 text-slate-700 font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                      onClick={() => toggleMultiSelect('differentiators', unknownDifference.value)}
+                      className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors cursor-pointer ${form.differentiators.includes(unknownDifference.value) ? 'border-slate-400 bg-slate-50 text-slate-700 font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                     >
-                      لا أعرف بالضبط
+                      {unknownDifference.label}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-3">النطاق الجغرافي لعملك <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-text-dark mb-3">{copy.text('market.geographicScope')} <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {['محلي مدينة واحدة', 'إقليمي عدة مدن', 'وطني', 'خليجي أو أفريقي', 'دولي'].map(v => (
+                    {copy.options('geographicScope').map(({ value, label }) => (
                       <button 
                         type="button"
-                        key={v} onClick={() => updateForm('geographicScope', v)}
-                        className={`p-2 rounded-xl border-2 text-sm text-center font-medium transition-colors flex items-center justify-center cursor-pointer ${form.geographicScope === v ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        key={value} onClick={() => updateForm('geographicScope', value)}
+                        className={`p-2 rounded-xl border-2 text-sm text-center font-medium transition-colors flex items-center justify-center cursor-pointer ${form.geographicScope === value ? 'border-luxury-accent bg-luxury-accent/5 text-luxury-accent font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
                       >
-                        {v}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -475,10 +481,10 @@ const CompanyIntake: React.FC = () => {
                 ${isSectionEValid ? 'bg-luxury-accent text-white hover:bg-luxury-accent-hover cursor-pointer hover:shadow-lg' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}
               `}
             >
-              ابدأ التشخيص الكامل
+              {copy.text('form.submit')}
             </button>
             {!isSectionEValid && (
-              <p className="text-center text-sm text-slate-500 mt-3 font-medium">أكمل جميع الحقول المطلوبة للمتابعة</p>
+              <p className="text-center text-sm text-slate-500 mt-3 font-medium">{copy.text('form.incomplete')}</p>
             )}
           </div>
 

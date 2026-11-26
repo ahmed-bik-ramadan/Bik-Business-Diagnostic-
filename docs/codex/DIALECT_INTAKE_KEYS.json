@@ -1,0 +1,484 @@
+[
+  {
+    "key": "history.heading",
+    "fusha": "القسم 2: التاريخ والخبرة",
+    "kind": "heading"
+  },
+  {
+    "key": "history.whyHeading",
+    "fusha": "لماذا نسأل",
+    "kind": "heading"
+  },
+  {
+    "key": "history.why",
+    "fusha": "طريق شركتك حتى اليوم يفسّر ما تواجهه الآن: التحولات وسنوات الخبرة تخبرنا أين مكمن القوة الذي يُبنى عليه القرار.",
+    "kind": "hint"
+  },
+  {
+    "key": "history.companyAge",
+    "fusha": "عمر الشركة",
+    "kind": "label"
+  },
+  {
+    "key": "history.age.underYear",
+    "fusha": "أقل من سنة",
+    "kind": "option",
+    "value": "أقل من سنة"
+  },
+  {
+    "key": "history.age.oneToThree",
+    "fusha": "سنة إلى أقل من 3 سنوات",
+    "kind": "option",
+    "value": "1-3 سنوات"
+  },
+  {
+    "key": "history.age.threeToSeven",
+    "fusha": "3 إلى أقل من 7 سنوات",
+    "kind": "option",
+    "value": "3-7 سنوات"
+  },
+  {
+    "key": "history.age.sevenOrMore",
+    "fusha": "7 سنوات فأكثر",
+    "kind": "option",
+    "value": "أكثر من 7 سنوات"
+  },
+  {
+    "key": "history.founderExperience",
+    "fusha": "خبرتك في المجال",
+    "kind": "label"
+  },
+  {
+    "key": "history.experience.underThree",
+    "fusha": "أقل من 3 سنوات",
+    "kind": "option",
+    "value": "أقل من 3"
+  },
+  {
+    "key": "history.experience.threeToSeven",
+    "fusha": "3 إلى أقل من 7 سنوات",
+    "kind": "option",
+    "value": "3-7"
+  },
+  {
+    "key": "history.experience.sevenToFifteen",
+    "fusha": "7 إلى أقل من 15 سنة",
+    "kind": "option",
+    "value": "7-15"
+  },
+  {
+    "key": "history.experience.fifteenOrMore",
+    "fusha": "15 سنة فأكثر",
+    "kind": "option",
+    "value": "أكثر من 15 سنة"
+  },
+  {
+    "key": "history.businessMotivation",
+    "fusha": "ما الذي دفعك لاختيار هذا النشاط؟ (اختر ما ينطبق)",
+    "kind": "label"
+  },
+  {
+    "key": "history.motivation.experience",
+    "fusha": "خبرة سابقة",
+    "kind": "option",
+    "value": "خبرة سابقة"
+  },
+  {
+    "key": "history.motivation.market",
+    "fusha": "رؤية سوقية",
+    "kind": "option",
+    "value": "رؤية سوقية"
+  },
+  {
+    "key": "history.motivation.family",
+    "fusha": "ميراث عائلي",
+    "kind": "option",
+    "value": "ميراث عائلي"
+  },
+  {
+    "key": "history.motivation.opportunity",
+    "fusha": "فرصة ظهرت",
+    "kind": "option",
+    "value": "فرصة ظهرت"
+  },
+  {
+    "key": "history.motivation.passion",
+    "fusha": "شغف شخصي",
+    "kind": "option",
+    "value": "شغف شخصي"
+  },
+  {
+    "key": "history.motivation.other",
+    "fusha": "أخرى",
+    "kind": "option",
+    "value": "أخرى"
+  },
+  {
+    "key": "planning.heading",
+    "fusha": "القسم 3: التخطيط الأولي",
+    "kind": "heading"
+  },
+  {
+    "key": "planning.whyHeading",
+    "fusha": "لماذا نسأل",
+    "kind": "heading"
+  },
+  {
+    "key": "planning.why",
+    "fusha": "ما خططت له قبل البدء، ومدى تطابقه مع الواقع، يساعداننا على قراءة أرقامك بما يناسب شركتك.",
+    "kind": "hint"
+  },
+  {
+    "key": "planning.modelsApplied",
+    "fusha": "هل طبقت أياً من هذه قبل البدء؟",
+    "kind": "label"
+  },
+  {
+    "key": "planning.model.marketResearch",
+    "fusha": "أبحاث سوقية",
+    "kind": "option",
+    "value": "أبحاث سوقية"
+  },
+  {
+    "key": "planning.model.canvas",
+    "fusha": "نموذج عمل Business Model Canvas",
+    "kind": "option",
+    "value": "نموذج عمل Business Model Canvas"
+  },
+  {
+    "key": "planning.model.businessPlan",
+    "fusha": "خطة عمل Business Plan",
+    "kind": "option",
+    "value": "خطة عمل Business Plan"
+  },
+  {
+    "key": "planning.model.marketing",
+    "fusha": "استراتيجية تسويقية",
+    "kind": "option",
+    "value": "استراتيجية تسويقية"
+  },
+  {
+    "key": "planning.model.competitors",
+    "fusha": "تحليل منافسين",
+    "kind": "option",
+    "value": "تحليل منافسين"
+  },
+  {
+    "key": "planning.model.feasibility",
+    "fusha": "دراسة جدوى مالية",
+    "kind": "option",
+    "value": "دراسة جدوى مالية"
+  },
+  {
+    "key": "planning.model.none",
+    "fusha": "لم أطبق أياً من الأعلى",
+    "kind": "option",
+    "value": "لم أطبق أياً من الأعلى"
+  },
+  {
+    "key": "planning.modelSuccessRate",
+    "fusha": "نسبة تطابق الواقع مع ما خططت له:",
+    "kind": "label"
+  },
+  {
+    "key": "planning.successRateMin",
+    "fusha": "0% (مختلف تماماً)",
+    "kind": "hint"
+  },
+  {
+    "key": "planning.successRateMax",
+    "fusha": "100% (تطابق تام)",
+    "kind": "hint"
+  },
+  {
+    "key": "finance.heading",
+    "fusha": "القسم 4: الصحة المالية",
+    "kind": "heading"
+  },
+  {
+    "key": "finance.whyHeading",
+    "fusha": "لماذا نسأل",
+    "kind": "heading"
+  },
+  {
+    "key": "finance.why",
+    "fusha": "تساعد بيانات هذا القسم على قراءة الوضع المالي من إجاباتك. تُعالج في المتصفح ولا يتلقاها خادم BIK لتوليد التقرير؛ وما يصل إلى المستشار هو ما ترسله أنت عبر واتساب.",
+    "kind": "hint"
+  },
+  {
+    "key": "finance.breakEven",
+    "fusha": "هل حققت نقطة التعادل (Break Even)؟",
+    "kind": "label"
+  },
+  {
+    "key": "finance.breakEvenChoice.yes",
+    "fusha": "نعم",
+    "kind": "option",
+    "value": "نعم"
+  },
+  {
+    "key": "finance.breakEvenChoice.notYet",
+    "fusha": "لا بعد",
+    "kind": "option",
+    "value": "لا بعد"
+  },
+  {
+    "key": "finance.breakEvenTime",
+    "fusha": "كم استغرق ذلك؟",
+    "kind": "label"
+  },
+  {
+    "key": "finance.breakEvenPeriod.underSixMonths",
+    "fusha": "أقل من 6 أشهر",
+    "kind": "option",
+    "value": "أقل من 6 أشهر"
+  },
+  {
+    "key": "finance.breakEvenPeriod.sixToTwelveMonths",
+    "fusha": "6 أشهر إلى أقل من سنة",
+    "kind": "option",
+    "value": "6-12 شهراً"
+  },
+  {
+    "key": "finance.breakEvenPeriod.oneToTwoYears",
+    "fusha": "سنة إلى سنتين",
+    "kind": "option",
+    "value": "1-2 سنة"
+  },
+  {
+    "key": "finance.breakEvenPeriod.overTwoYears",
+    "fusha": "أكثر من سنتين",
+    "kind": "option",
+    "value": "أكثر من سنتين"
+  },
+  {
+    "key": "finance.roi",
+    "fusha": "معدل العائد على الاستثمار (ROI) منذ التأسيس",
+    "kind": "label"
+  },
+  {
+    "key": "finance.roiChoice.loss",
+    "fusha": "خسارة حتى الآن",
+    "kind": "option",
+    "value": "خسارة حتى الآن"
+  },
+  {
+    "key": "finance.roiChoice.zeroToTen",
+    "fusha": "0-10%",
+    "kind": "option",
+    "value": "0-10%"
+  },
+  {
+    "key": "finance.roiChoice.tenToThirty",
+    "fusha": "10-30%",
+    "kind": "option",
+    "value": "10-30%"
+  },
+  {
+    "key": "finance.roiChoice.thirtyToHundred",
+    "fusha": "30-100%",
+    "kind": "option",
+    "value": "30-100%"
+  },
+  {
+    "key": "finance.roiChoice.overHundred",
+    "fusha": "أكثر من 100%",
+    "kind": "option",
+    "value": "أكثر من 100%"
+  },
+  {
+    "key": "finance.roiChoice.unknown",
+    "fusha": "لا أحسبه",
+    "kind": "option",
+    "value": "لا أحسبه"
+  },
+  {
+    "key": "finance.hasDebt",
+    "fusha": "هل لدى شركتك قروض أو التزامات خارجية؟",
+    "kind": "label"
+  },
+  {
+    "key": "finance.debtChoice.no",
+    "fusha": "لا",
+    "kind": "option",
+    "value": "لا"
+  },
+  {
+    "key": "finance.debtChoice.yes",
+    "fusha": "نعم",
+    "kind": "option",
+    "value": "نعم"
+  },
+  {
+    "key": "finance.debtDuration",
+    "fusha": "إجمالي الديون كعدد أشهر من إيراداتك",
+    "kind": "label"
+  },
+  {
+    "key": "finance.debtPeriod.underThree",
+    "fusha": "أقل من 3",
+    "kind": "option",
+    "value": "أقل من 3"
+  },
+  {
+    "key": "finance.debtPeriod.threeToSix",
+    "fusha": "3 إلى أقل من 6",
+    "kind": "option",
+    "value": "3-6"
+  },
+  {
+    "key": "finance.debtPeriod.sixToTwelve",
+    "fusha": "6 إلى أقل من 12",
+    "kind": "option",
+    "value": "6-12"
+  },
+  {
+    "key": "finance.debtPeriod.twelveOrMore",
+    "fusha": "12 فأكثر",
+    "kind": "option",
+    "value": "أكثر من 12"
+  },
+  {
+    "key": "finance.debtMonthlyPct",
+    "fusha": "الأقساط الشهرية كنسبة من إيراداتك:",
+    "kind": "label"
+  },
+  {
+    "key": "finance.fixedCostsPct",
+    "fusha": "إجمالي تكاليفك الثابتة الشهرية كنسبة من إيراداتك:",
+    "kind": "label"
+  },
+  {
+    "key": "market.heading",
+    "fusha": "القسم 5: التنافسية والسوق",
+    "kind": "heading"
+  },
+  {
+    "key": "market.whyHeading",
+    "fusha": "لماذا نسأل",
+    "kind": "heading"
+  },
+  {
+    "key": "market.why",
+    "fusha": "السوق الذي تتنافس فيه يحدد ما يُعدّ انتصاراً: هنا يُضبط ميزان المقارنة قبل أن تُقرأ أرقامك.",
+    "kind": "hint"
+  },
+  {
+    "key": "market.competitors",
+    "fusha": "من أقوى منافسيك؟ (اختياري)",
+    "kind": "label"
+  },
+  {
+    "key": "market.competitor.first",
+    "fusha": "المنافس الأول",
+    "kind": "hint"
+  },
+  {
+    "key": "market.competitor.second",
+    "fusha": "المنافس الثاني",
+    "kind": "hint"
+  },
+  {
+    "key": "market.competitor.third",
+    "fusha": "المنافس الثالث",
+    "kind": "hint"
+  },
+  {
+    "key": "market.differentiators",
+    "fusha": "ما الذي يميزك عنهم؟",
+    "kind": "label"
+  },
+  {
+    "key": "market.difference.price",
+    "fusha": "السعر الأقل",
+    "kind": "option",
+    "value": "السعر الأقل"
+  },
+  {
+    "key": "market.difference.quality",
+    "fusha": "الجودة الأعلى",
+    "kind": "option",
+    "value": "الجودة الأعلى"
+  },
+  {
+    "key": "market.difference.speed",
+    "fusha": "السرعة",
+    "kind": "option",
+    "value": "السرعة"
+  },
+  {
+    "key": "market.difference.location",
+    "fusha": "الموقع الجغرافي",
+    "kind": "option",
+    "value": "الموقع الجغرافي"
+  },
+  {
+    "key": "market.difference.relationship",
+    "fusha": "العلاقة الشخصية",
+    "kind": "option",
+    "value": "العلاقة الشخصية"
+  },
+  {
+    "key": "market.difference.speciality",
+    "fusha": "التخصص الدقيق",
+    "kind": "option",
+    "value": "التخصص الدقيق"
+  },
+  {
+    "key": "market.difference.afterSales",
+    "fusha": "ما بعد البيع",
+    "kind": "option",
+    "value": "ما بعد البيع"
+  },
+  {
+    "key": "market.difference.unknown",
+    "fusha": "لا أعرف بالضبط",
+    "kind": "option",
+    "value": "لا أعرف بالضبط"
+  },
+  {
+    "key": "market.geographicScope",
+    "fusha": "النطاق الجغرافي لعملك",
+    "kind": "label"
+  },
+  {
+    "key": "market.scope.local",
+    "fusha": "محلي مدينة واحدة",
+    "kind": "option",
+    "value": "محلي مدينة واحدة"
+  },
+  {
+    "key": "market.scope.regional",
+    "fusha": "إقليمي عدة مدن",
+    "kind": "option",
+    "value": "إقليمي عدة مدن"
+  },
+  {
+    "key": "market.scope.national",
+    "fusha": "وطني",
+    "kind": "option",
+    "value": "وطني"
+  },
+  {
+    "key": "market.scope.gulfOrAfrica",
+    "fusha": "خليجي أو أفريقي",
+    "kind": "option",
+    "value": "خليجي أو أفريقي"
+  },
+  {
+    "key": "market.scope.international",
+    "fusha": "دولي",
+    "kind": "option",
+    "value": "دولي"
+  },
+  {
+    "key": "form.submit",
+    "fusha": "ابدأ التشخيص الكامل",
+    "kind": "button"
+  },
+  {
+    "key": "form.incomplete",
+    "fusha": "أكمل جميع الحقول المطلوبة للمتابعة",
+    "kind": "hint"
+  }
+]

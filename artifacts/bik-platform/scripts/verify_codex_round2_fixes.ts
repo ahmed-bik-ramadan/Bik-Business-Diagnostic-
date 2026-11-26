@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { BIK_OFFERS } from '../src/config/appConfig';
+import { intakeCopy } from '../src/copy/intakeCopy';
 import { handleChat } from '../server/chatHandler.ts';
 
 // ---- Report A: pnpm build scripts are approved in the workspace config ----
@@ -25,19 +26,23 @@ import { handleChat } from '../server/chatHandler.ts';
 // ---- م1: every intake section carries the لماذا نسأل heading ----
 {
   const src = fs.readFileSync('src/pages/CompanyIntake.tsx', 'utf8');
-  const headings = src.split('<p className="text-xs font-bold text-[#146B4F]">لماذا نسأل</p>').length - 1;
+  const heading = '<p className="text-xs font-bold text-[#146B4F]">';
+  const headings = src.split(heading).length - 1;
   assert.equal(headings, 5, 'exactly 5 لماذا نسأل headings, one per section');
-  for (const desc of [
-    'بيانات هذا القسم تصف لمن نتحدث',
-    'طريق شركتك حتى اليوم يفسّر',
-    'ما خططت له قبل البدء، ومدى تطابقه مع الواقع',
-    'تساعد بيانات هذا القسم على قراءة الوضع المالي',
-    'السوق الذي تتنافس فيه يحدد'
-  ]) {
-    const idx = src.indexOf(desc);
-    assert.ok(idx > 0, `section description exists: ${desc.slice(0, 20)}…`);
-    const before = src.slice(Math.max(0, idx - 400), idx);
-    assert.ok(before.includes('لماذا نسأل'), `heading precedes: ${desc.slice(0, 20)}…`);
+  const descriptions = [
+    ['history', 'طريق شركتك حتى اليوم يفسّر'],
+    ['planning', 'ما خططت له قبل البدء، ومدى تطابقه مع الواقع'],
+    ['finance', 'تساعد بيانات هذا القسم على قراءة الوضع المالي'],
+    ['market', 'السوق الذي تتنافس فيه يحدد'],
+  ] as const;
+  const identity = src.indexOf('بيانات هذا القسم تصف لمن نتحدث');
+  assert.ok(identity > 0 && src.slice(identity - 400, identity).includes(heading + 'لماذا نسأل</p>'));
+  const copy = intakeCopy('fusha');
+  for (const [section, desc] of descriptions) {
+    assert.equal(copy.text(`${section}.whyHeading`), 'لماذا نسأل');
+    assert.ok(copy.text(`${section}.why`).startsWith(desc), section);
+    const idx = src.indexOf(`{copy.text('${section}.why')}`);
+    assert.ok(idx > 0 && src.slice(idx - 400, idx).includes(`${heading}{copy.text('${section}.whyHeading')}</p>`), section);
   }
 }
 

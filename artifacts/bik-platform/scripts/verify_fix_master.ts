@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { platformCopy } from '../src/copy/platformCopy';
+import { INTAKE_COPY_ENTRIES, INTAKE_OPTION_GROUPS, intakeCopy } from '../src/copy/intakeCopy';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import ts from 'typescript';
@@ -57,7 +58,7 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
   // Mission 28 derives currency at intake and excludes it from the visitor question flow.
-  'src/pages/CompanyIntake.tsx': 'a4651b5408b6744aa4d9f0716168ed71ff74dc90dda6f8425c4ccdef5784b980',
+  'src/pages/CompanyIntake.tsx': '63c09e91921204c860b39bd0cccf667445eed172fcdaab38c8d48bb7e0b30b6e',
   'src/pages/Questionnaire.tsx': 'ff90ed01f5f9663054888df7707d84decca314b95b3e6e2f6dcfa22fb9066176',
   'src/services/adaptiveDiagnosticEngine.ts': '0f0065f5c10c4eb20a771b7e4e9be1f16c2d66e391b34cb48ebef326daad4538',
   'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',
@@ -124,8 +125,25 @@ function collectArrays(node: ts.Node) {
   ts.forEachChild(node, collectArrays);
 }
 collectArrays(intake);
-check(digest(storedArrays) === baseline.intakeValueArrays, 'B-009 changes presentation labels while all mapped intake value arrays match v11');
-check((source('src/pages/CompanyIntake.tsx').match(/\[optionIndex\]/g) || []).length === 4, 'four intake label groups are separated from their stored values');
+const fushaIntake = intakeCopy('fusha');
+const optionGroups = Object.values(INTAKE_OPTION_GROUPS).map(keys => keys.map(fushaIntake.option));
+check(digest([...storedArrays, ...optionGroups.map(group => group.map(option => option.value))]) === baseline.intakeValueArrays,
+  'all mapped intake values and their ordering still match v11');
+check(optionGroups.filter(group => group.some(option => option.label !== option.value)).length === 4,
+  'four intake label groups are separated from their stored values');
+assert.equal(fushaIntake.option('planning.model.none').value, 'لم أطبق أياً من الأعلى');
+assert.equal(fushaIntake.option('market.difference.unknown').value, 'لا أعرف بالضبط');
+const intakeKeys = JSON.parse(source('../../docs/codex/DIALECT_INTAKE_KEYS.json'));
+assert.deepEqual(intakeKeys, Object.entries(INTAKE_COPY_ENTRIES).map(([key, entry]) => ({ key, ...entry })));
+const saudiIntake = JSON.parse(source('src/copy/saudi_intake.json')) as Partial<Record<keyof typeof INTAKE_COPY_ENTRIES, string>>;
+for (const [key, entry] of Object.entries(INTAKE_COPY_ENTRIES)) {
+  const intakeKey = key as keyof typeof INTAKE_COPY_ENTRIES;
+  for (const dialect of ['egyptian', 'emirati', 'gulf', 'fusha'] as const) {
+    assert.equal(intakeCopy(dialect).text(intakeKey), entry.fusha, key);
+  }
+  assert.equal(intakeCopy('saudi').text(intakeKey), saudiIntake[intakeKey] ?? entry.fusha, key);
+}
+check(true, 'the ordered intake handoff matches the fields and current text for every dialect');
 
 assert.deepEqual(Object.keys(BIK_OFFERS), ['executiveProject', 'monthlyRetainer', 'focusedWeek']);
 assert.deepEqual([EXECUTIVE_PROJECT_USD, MONTHLY_RETAINER_USD, FOCUSED_WEEK_USD], [5000, 499, 272]);
