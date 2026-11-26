@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import type { Locator, Page } from 'playwright-core';
 import { universalQuestions } from '../../src/data/universalQuestions';
+import { localizeQuestion } from '../../src/copy/dialectQuestions';
+import { dialectForCountry } from '../../src/services/dialect';
+import { currencyForCountry, type ValueCurrency } from '../../src/services/valueModule/currency';
 import { getSectorQuestions } from '../../src/data/sectorRegistry';
 import type { QuestionDefinition } from '../../src/types/adaptiveDiagnostic';
 import { normalizedOmanPhone, omanPhone, visitorName, type Answer, type JourneyFixture } from './fixtures';
@@ -12,7 +15,7 @@ function button(scope: Page | Locator, name: string) {
   return scope.getByRole('button', { name, exact: true });
 }
 
-export async function startIntake(page: Page, origin: string, fixture: JourneyFixture) {
+export async function startIntake(page: Page, origin: string, fixture: JourneyFixture, legacyCurrency?: ValueCurrency) {
   await page.goto(origin + '/');
   await page.getByTestId('start-analysis').click();
   await page.waitForURL('**/sector-select');
@@ -35,6 +38,11 @@ export async function startIntake(page: Page, origin: string, fixture: JourneyFi
   const breakEven = page.locator('label').filter({ hasText: 'هل حققت نقطة التعادل' }).locator('..');
   for (const value of fixture.intake) {
     await button(value === 'نعم' ? breakEven : page, value).click();
+  }
+  if (legacyCurrency) {
+    await page.evaluate(currency => {
+      sessionStorage.setItem('bik_universal_answers', JSON.stringify({ u35: currency }));
+    }, legacyCurrency);
   }
   await button(page, 'ابدأ التشخيص الكامل').click();
   await page.waitForURL('**/questionnaire');
@@ -80,8 +88,9 @@ async function answerQuestion(card: Locator, question: QuestionDefinition, answe
 }
 
 async function answerQuestionnaire(page: Page, fixture: JourneyFixture) {
+  const dialect = dialectForCountry(fixture.country);
   const catalog = [
-    ...universalQuestions.map(question => ({ ...question, label: question.label ?? question.question })),
+    ...universalQuestions.map(question => localizeQuestion({ ...question, label: question.label ?? question.question }, dialect)),
     ...getSectorQuestions(fixture.sector, fixture.subsector),
   ];
   const normalize = (title: string) => title.trim().replace(/\s+/gu, ' ');
@@ -92,6 +101,7 @@ async function answerQuestionnaire(page: Page, fixture: JourneyFixture) {
     const matches = catalog.filter(question => normalize(question.question ?? '') === heading);
     assert.equal(matches.length, 1, `Expected one question for: ${heading}`);
     const question = matches[0];
+    assert.notEqual(question.id, 'u35', 'Automatic currency is excluded from the questionnaire');
     assert.ok(!answered.has(question.id), `Question ${question.id} repeated`);
     assert.ok(Object.hasOwn(fixture.answers, question.id), `Missing scripted answer for ${question.id}`);
     await answerQuestion(card, question, fixture.answers[question.id]);
@@ -104,11 +114,21 @@ async function answerQuestionnaire(page: Page, fixture: JourneyFixture) {
     }, { selector: questionCard, previous: heading });
   }
   await page.waitForURL('**/review/1');
-  const history = await page.evaluate(key => {
+  const { questionHistory: history, universalAnswers } = await page.evaluate(key => {
     const saved = sessionStorage.getItem(key);
     if (!saved) throw new Error('Questionnaire did not save a tab session');
-    return JSON.parse(saved).state.questionHistory as { questionId: string; status: string; answerValue: Answer }[];
+    return JSON.parse(saved).state as {
+      questionHistory: { questionId: string; status: string; answerValue: Answer; questionText: string; answerText: string }[];
+      universalAnswers: Record<string, Answer>;
+    };
   }, storeKey);
+  assert.equal(universalAnswers.u35, currencyForCountry(fixture.country));
+  const opener = history.find(entry => entry.questionId === 'u01');
+  const canonical = universalQuestions.find(question => question.id === 'u01');
+  assert.ok(opener && canonical);
+  assert.equal(opener.questionText, canonical.question, 'The saved question uses the original wording');
+  assert.equal(opener.answerText, canonical.options?.find(option => option.value === opener.answerValue)?.label,
+    'The saved answer label uses the original wording');
   assert.ok(answered.size >= 28, 'The quick diagnostic completed with its full required minimum');
   assert.deepEqual(history.filter(entry => entry.status !== 'answered'), []);
   assert.deepEqual(history.map(entry => entry.questionId).sort(), [...answered].sort());
@@ -261,6 +281,20 @@ export async function completeJourney(page: Page, origin: string, fixture: Journ
   const reportTitle = page.getByRole('heading', { level: 1 });
   assert.ok((await reportTitle.innerText()).includes(fixture.company), 'The generated report names the test company');
   return { answers, processingMs };
+}
+
+export async function completeDialectPreview(page: Page, origin: string, fixture: JourneyFixture, firstQuestion: string) {
+  const legacyCurrency = fixture.country === 'السعودية' ? 'EGP' : undefined;
+  await startIntake(page, origin, fixture, legacyCurrency);
+  const card = page.locator(questionCard);
+  assert.equal(await card.getByRole('heading', { level: 2 }).textContent(), firstQuestion);
+  assert.equal(await card.getByText('السؤال 1', { exact: true }).count(), 1);
+  assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuenow'), '0');
+  const answers = await answerQuestionnaire(page, fixture);
+  await confirmReviewsAndWatchProcessing(page);
+  await page.getByTestId('locked-preview').waitFor();
+  await checkStorage(page, fixture.company);
+  return `country=${fixture.country} answers=${answers} preview=/lead-gate`;
 }
 
 export async function checkStorage(page: Page, company: string) {

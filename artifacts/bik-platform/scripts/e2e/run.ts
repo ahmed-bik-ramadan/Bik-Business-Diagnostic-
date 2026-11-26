@@ -6,7 +6,9 @@ import { chromium, type Browser, type Page } from 'playwright-core';
 import { preview } from 'vite';
 import { checkConsultantPathways, checkDirectRoutes, checkFaq, checkOffers, checkPayments, checkReportPathways } from './checks';
 import { strong, weak, type JourneyFixture } from './fixtures';
-import { checkStorage, completeJourney, startIntake } from './journey';
+import { checkStorage, completeDialectPreview, completeJourney, startIntake } from './journey';
+import { universalQuestions } from '../../src/data/universalQuestions';
+import saudiBatch from '../../src/copy/saudi_universal_batch1.json';
 
 const mobile = { width: 390, height: 844 };
 const desktop = { width: 1280, height: 800 };
@@ -31,6 +33,10 @@ function reportTest(fixture: JourneyFixture, viewport: Viewport, size: string): 
       }
       const { answers, processingMs } = await completeJourney(page, origin, fixture);
       await checkReportPathways(page, fixture.expectPathways);
+      const estimator = page.getByTestId('cost-of-problem');
+      await estimator.waitFor();
+      assert.equal(await estimator.locator('select').count(), 0,
+        'The report calculator has no currency selector');
       if (checkKeyboard) await checkFaq(page);
       const contrast = fixture.expectPathways ? await checkOffers(page) : '';
       await page.getByTestId('header-consultant-link').click();
@@ -87,6 +93,23 @@ for (const [size, viewport] of [['mobile', mobile], ['desktop', desktop]] as con
   );
 }
 tests.push(reportTest(weak, desktop, 'desktop'), reportTest(strong, desktop, 'desktop'));
+
+const originalOpening = universalQuestions.find(question => question.id === 'u01')!.question;
+const egyptIntake = { ...strong, country: weak.country, city: weak.city, dialect: weak.dialect };
+for (const [size, viewport] of [['mobile', mobile], ['desktop', desktop]] as const) {
+  tests.push(
+    {
+      name: 'dialect-saudi-' + size,
+      viewport,
+      run: (page, origin) => completeDialectPreview(page, origin, strong, saudiBatch.items.u01.question),
+    },
+    {
+      name: 'dialect-egypt-' + size,
+      viewport,
+      run: (page, origin) => completeDialectPreview(page, origin, egyptIntake, originalOpening),
+    },
+  );
+}
 
 async function startPreview() {
   const index = await readFile(new URL('../../dist/index.html', import.meta.url), 'utf8');
