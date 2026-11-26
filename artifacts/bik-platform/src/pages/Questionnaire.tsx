@@ -9,6 +9,7 @@ import { DEEP_TIER_QUESTIONS } from '../data/sectorFinancialTaxonomy';
 import { deltaQuestions } from '../data/deltaQuestions';
 import { toastMessages } from '../data/toastMessages';
 import { dialectForCountry, questionnaireCopy, DIALECT_NAMES } from '../services/dialect';
+import { localizeQuestion } from '../copy/dialectQuestions';
 import { saveProgress, trackEvent } from '../services/supabase';
 import { getNextAdaptiveQuestion } from '../services/adaptiveDiagnosticEngine';
 import { normalizeMultiChoice, validateQuestionAnswer } from '../services/questionAnswerValidation';
@@ -333,6 +334,7 @@ const Questionnaire: React.FC = () => {
   };
 
   if (!question) return null;
+  const displayQuestion = localizeQuestion(question, dialect);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24 rtl font-arabic relative overflow-hidden">
@@ -415,7 +417,7 @@ const Questionnaire: React.FC = () => {
               السؤال {answeredCount + 1}
             </span>
             <h2 className="text-xl md:text-2xl font-bold text-text-dark mb-8 leading-relaxed tracking-[-0.01em]">
-              {question.question}
+              {displayQuestion.question}
             </h2>
 
             <div className="h-px bg-slate-100 mb-6" />
@@ -423,7 +425,7 @@ const Questionnaire: React.FC = () => {
             <div className="space-y-4">
               
               {/* SINGLE CHOICE */}
-              {question.type === 'single_choice' && question.options?.map((opt) => (
+              {question.type === 'single_choice' && displayQuestion.options?.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => handleSingleSelect(opt.value)}
@@ -448,7 +450,7 @@ const Questionnaire: React.FC = () => {
               {question.type === 'multi_choice' && (
                 <>
                   <div className="space-y-3 mb-6">
-                    {question.options?.map((opt) => {
+                    {displayQuestion.options?.map((opt) => {
                       const isSelected = Array.isArray(currentValue) && currentValue.includes(opt.value);
                       return (
                         <button
@@ -488,7 +490,7 @@ const Questionnaire: React.FC = () => {
                     <span className="text-4xl font-bold text-luxury-accent">
                       {currentValue !== null ? currentValue : (question.min || 0)}
                     </span>
-                    {question.unit && <span className="text-slate-500 mr-2 text-lg">{question.unit}</span>}
+                    {displayQuestion.unit && <span className="text-slate-500 mr-2 text-lg">{displayQuestion.unit}</span>}
                   </div>
                   <input
                     type="range"
@@ -532,23 +534,23 @@ const Questionnaire: React.FC = () => {
                         const val = e.target.value === '' ? '' : parseFloat(e.target.value);
                         setCurrentValue(val);
                       }}
-                      placeholder={question.placeholder || "أدخل القيمة الرقمية…"}
+                      placeholder={displayQuestion.placeholder || "أدخل القيمة الرقمية…"}
                       className="w-full border-2 border-slate-200 rounded-xl p-4 text-xl font-bold text-slate-900 focus:border-luxury-accent focus:outline-none pl-16 text-left dir-ltr"
                       dir="ltr"
                     />
-                    {question.unit && (
+                    {displayQuestion.unit && (
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-sm font-semibold">
-                        {question.unit}
+                        {displayQuestion.unit}
                       </div>
                     )}
                   </div>
 
                   {/* Preset Options (e.g. for u06 net margin fallback) */}
-                  {question.options && question.options.length > 0 && (
+                  {displayQuestion.options && displayQuestion.options.length > 0 && (
                     <div className="pt-2">
                       <p className="text-xs font-semibold text-slate-500 mb-2">أو اختر نطاقاً تقديرياً:</p>
                       <div className="grid grid-cols-1 gap-2">
-                        {question.options.map((opt) => (
+                        {displayQuestion.options.map((opt) => (
                           <button
                             key={opt.value}
                             type="button"
@@ -599,7 +601,7 @@ const Questionnaire: React.FC = () => {
                   <textarea
                     value={currentValue || ''}
                     onChange={(e) => setCurrentValue(e.target.value)}
-                    placeholder={question.placeholder || "اكتب إجابتك هنا…"}
+                    placeholder={displayQuestion.placeholder || "اكتب إجابتك هنا…"}
                     className="w-full border-2 border-slate-200 rounded-xl p-4 min-h-[150px] focus:border-luxury-accent focus:outline-none resize-none text-lg text-text-dark"
                   />
                   

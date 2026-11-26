@@ -59,7 +59,7 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
 const revisedStructure = {
   // Mission 28 derives currency at intake and excludes it from the visitor question flow.
   'src/pages/CompanyIntake.tsx': '63c09e91921204c860b39bd0cccf667445eed172fcdaab38c8d48bb7e0b30b6e',
-  'src/pages/Questionnaire.tsx': 'ff90ed01f5f9663054888df7707d84decca314b95b3e6e2f6dcfa22fb9066176',
+  'src/pages/Questionnaire.tsx': '5f9097a5951f88a8a2db049906adc4d3eabf05749465a64d33ef3b20eac195dd',
   'src/services/adaptiveDiagnosticEngine.ts': '0f0065f5c10c4eb20a771b7e4e9be1f16c2d66e391b34cb48ebef326daad4538',
   'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',
   'src/services/evidenceSwot.ts': '88584caaaa5395076d73c8560ce05a6bde5a3c5609c1af290a451e38b3210af4',
