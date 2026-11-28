@@ -58,7 +58,7 @@ check(digest({ DIAGNOSTIC_DIMENSIONS, POSITIVE_SIGNALS, NEGATIVE_SIGNALS, DATA_G
 // Missions 10 and 10B revise the following interfaces and storage calls.
 const revisedStructure = {
   // Mission 28 derives currency at intake and excludes it from the visitor question flow.
-  'src/pages/CompanyIntake.tsx': '63c09e91921204c860b39bd0cccf667445eed172fcdaab38c8d48bb7e0b30b6e',
+  'src/pages/CompanyIntake.tsx': '643c87ce782dc90f382ee1ee8e59c66cc7941968e5754b500398a4660736b846',
   'src/pages/Questionnaire.tsx': '5f9097a5951f88a8a2db049906adc4d3eabf05749465a64d33ef3b20eac195dd',
   'src/services/adaptiveDiagnosticEngine.ts': '0f0065f5c10c4eb20a771b7e4e9be1f16c2d66e391b34cb48ebef326daad4538',
   'src/services/dialect.ts': '7633c45b6d299fddac9f94267814b0d02d738d13d320a27a04319441314abd1d',

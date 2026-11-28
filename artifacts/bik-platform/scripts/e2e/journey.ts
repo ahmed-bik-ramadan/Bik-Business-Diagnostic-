@@ -6,6 +6,7 @@ import { intakeCopy } from '../../src/copy/intakeCopy';
 import { dialectForCountry } from '../../src/services/dialect';
 import { currencyForCountry, type ValueCurrency } from '../../src/services/valueModule/currency';
 import { getSectorQuestions } from '../../src/data/sectorRegistry';
+import adminDivisions from '../../src/data/adminDivisions.json';
 import type { QuestionDefinition } from '../../src/types/adaptiveDiagnostic';
 import { normalizedOmanPhone, omanPhone, visitorName, type Answer, type JourneyFixture } from './fixtures';
 
@@ -38,8 +39,11 @@ export async function startIntake(page: Page, origin: string, fixture: JourneyFi
   assert.equal(await fields.count(), 3, 'Intake has name, company and city fields');
   await fields.nth(0).fill(visitorName);
   await fields.nth(1).fill(fixture.company);
-  await identity.getByRole('combobox').selectOption(fixture.country);
-  await fields.nth(2).fill(fixture.city);
+  await identity.locator('#intake-country').selectOption(fixture.country);
+  const city = identity.locator('#intake-city');
+  if (Object.hasOwn(adminDivisions, fixture.country)) await city.selectOption(fixture.city);
+  else await city.fill(fixture.city);
+  assert.equal(await city.inputValue(), fixture.city);
 
   if (options.expectedWhy) {
     const history = page.locator('section').nth(1);
@@ -133,15 +137,17 @@ async function answerQuestionnaire(page: Page, fixture: JourneyFixture) {
     }, { selector: questionCard, previous: heading });
   }
   await page.waitForURL('**/review/1');
-  const { questionHistory: history, universalAnswers } = await page.evaluate(key => {
+  const { questionHistory: history, universalAnswers, intakeAnswers } = await page.evaluate(key => {
     const saved = sessionStorage.getItem(key);
     if (!saved) throw new Error('Questionnaire did not save a tab session');
     return JSON.parse(saved).state as {
       questionHistory: { questionId: string; status: string; answerValue: Answer; questionText: string; answerText: string }[];
       universalAnswers: Record<string, Answer>;
+      intakeAnswers: { city: string };
     };
   }, storeKey);
   assert.equal(universalAnswers.u35, currencyForCountry(fixture.country));
+  assert.equal(intakeAnswers.city, fixture.city, 'The chosen location is stored verbatim under city');
   const opener = history.find(entry => entry.questionId === 'u01');
   const canonical = universalQuestions.find(question => question.id === 'u01');
   assert.ok(opener && canonical);
@@ -314,6 +320,50 @@ export async function completeDialectPreview(page: Page, origin: string, fixture
   await page.getByTestId('locked-preview').waitFor();
   await checkStorage(page, fixture.company);
   return `country=${fixture.country} answers=${answers} preview=/lead-gate`;
+}
+
+export async function checkAdminDivisions(page: Page, origin: string) {
+  await page.goto(origin + '/company-intake');
+  const country = page.locator('#intake-country');
+  const city = page.locator('#intake-city');
+  const label = page.locator('label[for="intake-city"]');
+  await country.waitFor();
+  assert.equal(await city.evaluate(element => element.tagName), 'INPUT');
+
+  for (const [name, division] of Object.entries(adminDivisions)) {
+    await country.selectOption(name);
+    assert.equal(await city.inputValue(), '', name + ': changing country clears the preceding location');
+    assert.equal((await label.textContent())?.replace(/\s*\*$/u, ''), division.label);
+    const options = city.locator('option');
+    assert.equal(await options.first().textContent(), 'اختر…');
+    assert.deepEqual(await options.evaluateAll(elements => elements.map(element => (element as HTMLOptionElement).value)),
+      ['', ...division.items], name + ': option count, order and values');
+    assert.deepEqual((await options.allTextContents()).slice(1), division.items, name + ': exact labels');
+    await city.selectOption(division.items[0]);
+  }
+
+  for (const name of ['أخرى', 'تونس', 'ليبيا', '']) {
+    await country.selectOption(name);
+    assert.equal(await city.evaluate(element => element.tagName), 'INPUT', name);
+    assert.equal(await city.inputValue(), '', name);
+    assert.equal((await label.textContent())?.replace(/\s*\*$/u, ''), 'المدينة');
+    await city.fill('مدينة الاختبار');
+  }
+
+  for (const [oldCountry, oldCity] of [['مصر', 'القاهرة'], ['السعودية', 'الرياض']]) {
+    await page.evaluate(({ key, country, city }) => {
+      sessionStorage.setItem(key, JSON.stringify({ state: { intakeAnswers: { country, city } }, version: 0 }));
+    }, { key: storeKey, country: oldCountry, city: oldCity });
+    await page.reload();
+    await country.waitFor();
+    assert.equal(await country.inputValue(), oldCountry);
+    assert.equal(await city.inputValue(), oldCity);
+    assert.equal(await city.locator('option:checked').textContent(), oldCity);
+    assert.equal(await page.evaluate(key => JSON.parse(sessionStorage.getItem(key)!).state.intakeAnswers.city, storeKey), oldCity);
+  }
+  await country.selectOption('مصر');
+  assert.equal(await city.inputValue(), '', 'An explicit country change also clears a legacy value');
+  return '8 lists in order, 4 free-text cases, clearing and both legacy location cases';
 }
 
 export async function checkStorage(page: Page, company: string) {

@@ -113,8 +113,10 @@ async function enterIntake(page: Page) {
   const inputs = identity.getByRole('textbox');
   await inputs.nth(0).fill(visitor.name);
   await inputs.nth(1).fill(visitor.company);
-  await identity.getByRole('combobox').selectOption('مصر');
-  await inputs.nth(2).fill(visitor.city);
+  await identity.locator('#intake-country').selectOption('مصر');
+  const city = identity.locator('#intake-city');
+  await city.selectOption(visitor.city);
+  assert.equal(await city.inputValue(), visitor.city);
   for (const answer of ['أقل من سنة', 'أقل من 3 سنوات', 'خبرة سابقة', 'لم أطبق أياً من الأعلى', 'لا بعد', 'لا أحسبه', 'لا', 'الجودة الأعلى', 'محلي مدينة واحدة']) {
     await button(page, answer).click();
   }

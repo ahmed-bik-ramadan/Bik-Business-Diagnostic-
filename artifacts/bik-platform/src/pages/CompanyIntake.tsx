@@ -7,16 +7,17 @@ import { trackEvent, saveProgress } from '../services/supabase';
 import { currencyForCountry } from '../services/valueModule/currency';
 import { dialectForCountry } from '../services/dialect';
 import { intakeCopy } from '../copy/intakeCopy';
+import adminDivisions from '../data/adminDivisions.json';
 
 const CompanyIntake: React.FC = () => {
   const navigate = useNavigate();
-  const { sessionId, companyName, setField } = useDiagnosticStore();
+  const { sessionId, companyName, setField, intakeAnswers = {} } = useDiagnosticStore();
 
   const [form, setForm] = useState({
     firstName: '',
     companyName: companyName || '',
-    country: '',
-    city: '',
+    country: typeof intakeAnswers.country === 'string' ? intakeAnswers.country : '',
+    city: typeof intakeAnswers.city === 'string' ? intakeAnswers.city : '',
     companyAge: '',
     founderExperience: '',
     businessMotivation: [] as string[],
@@ -36,6 +37,10 @@ const CompanyIntake: React.FC = () => {
     geographicScope: ''
   });
 
+  const division = Object.hasOwn(adminDivisions, form.country)
+    ? adminDivisions[form.country as keyof typeof adminDivisions]
+    : undefined;
+  const legacyCity = division && form.city && !division.items.includes(form.city) ? form.city : '';
   const copy = intakeCopy(dialectForCountry(form.country));
   const noModel = copy.option('planning.model.none');
   const unknownDifference = copy.option('market.difference.unknown');
@@ -159,10 +164,14 @@ const CompanyIntake: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-dark mb-1">الدولة <span className="text-red-500">*</span></label>
-                <select 
-                  value={form.country} 
-                  onChange={(e) => updateForm('country', e.target.value)}
+                <label htmlFor="intake-country" className="block text-sm font-medium text-text-dark mb-1">الدولة <span className="text-red-500">*</span></label>
+                <select
+                  id="intake-country"
+                  value={form.country}
+                  onChange={event => {
+                    const country = event.currentTarget.value;
+                    setForm(previous => previous.country === country ? previous : { ...previous, country, city: '' });
+                  }}
                   className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none transition-colors bg-white text-text-dark"
                 >
                   <option value="">اختر الدولة…</option>
@@ -172,13 +181,27 @@ const CompanyIntake: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-dark mb-1">المدينة <span className="text-red-500">*</span></label>
-                <input 
-                  type="text" 
-                  value={form.city} 
-                  onChange={(e) => updateForm('city', e.target.value)}
-                  className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none transition-colors text-text-dark"
-                />
+                <label htmlFor="intake-city" className="block text-sm font-medium text-text-dark mb-1">{division?.label ?? 'المدينة'} <span className="text-red-500">*</span></label>
+                {division ? (
+                  <select
+                    id="intake-city"
+                    value={form.city}
+                    onChange={event => updateForm('city', event.currentTarget.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none transition-colors bg-white text-text-dark"
+                  >
+                    <option value="">اختر…</option>
+                    {division.items.map(item => <option key={item} value={item}>{item}</option>)}
+                    {legacyCity && <option value={legacyCity} disabled>{legacyCity}</option>}
+                  </select>
+                ) : (
+                  <input
+                    id="intake-city"
+                    type="text"
+                    value={form.city}
+                    onChange={event => updateForm('city', event.currentTarget.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-luxury-accent focus:outline-none transition-colors text-text-dark"
+                  />
+                )}
               </div>
             </div>
           </section>

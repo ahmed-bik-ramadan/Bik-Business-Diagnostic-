@@ -95,7 +95,7 @@ export const weak: JourneyFixture = {
 
 export const strong: JourneyFixture = {
   country: 'السعودية',
-  city: 'الرياض',
+  city: 'منطقة الرياض',
   company: 'عيادة الاختبار القوية',
   sector: 'healthcare',
   subsector: 'عيادة أسنان',

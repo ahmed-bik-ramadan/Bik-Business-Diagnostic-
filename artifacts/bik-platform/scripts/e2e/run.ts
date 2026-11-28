@@ -6,7 +6,7 @@ import { chromium, type Browser, type Page } from 'playwright-core';
 import { preview } from 'vite';
 import { checkConsultantPathways, checkDirectRoutes, checkFaq, checkOffers, checkPayments, checkReportPathways } from './checks';
 import { strong, weak, type JourneyFixture } from './fixtures';
-import { checkStorage, completeDialectPreview, completeJourney, startIntake } from './journey';
+import { checkAdminDivisions, checkStorage, completeDialectPreview, completeJourney, startIntake } from './journey';
 import { universalQuestions } from '../../src/data/universalQuestions';
 import saudiBatch from '../../src/copy/saudi_universal_batch1.json';
 
@@ -117,6 +117,11 @@ for (const [size, viewport] of [['mobile', mobile], ['desktop', desktop]] as con
       name: 'intake-egypt-' + size,
       viewport,
       run: (page, origin) => completeDialectPreview(page, origin, egyptIntake, originalOpening, 'لماذا نسأل'),
+    },
+    {
+      name: 'admin-divisions-' + size,
+      viewport,
+      run: checkAdminDivisions,
     },
   );
 }
