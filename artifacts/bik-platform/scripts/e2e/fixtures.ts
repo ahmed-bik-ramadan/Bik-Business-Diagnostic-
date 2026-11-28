@@ -1,4 +1,7 @@
+import type { intakeCopy } from '../../src/copy/intakeCopy';
+
 export type Answer = string | number | readonly string[];
+type IntakeOptionKey = Parameters<ReturnType<typeof intakeCopy>['option']>[0];
 
 export interface JourneyFixture {
   country: string;
@@ -6,7 +9,7 @@ export interface JourneyFixture {
   company: string;
   sector: string;
   subsector: string;
-  intake: readonly string[];
+  intake: readonly IntakeOptionKey[];
   answers: Readonly<Record<string, Answer>>;
   dialect: 'egypt' | 'saudi';
   expectPathways: boolean;
@@ -34,15 +37,15 @@ export const weak: JourneyFixture = {
   sector: 'fnb',
   subsector: 'مطعم فاخر',
   intake: [
-    'أقل من سنة',
-    'أقل من 3 سنوات',
-    'خبرة سابقة',
-    'لم أطبق أياً من الأعلى',
-    'لا بعد',
-    'خسارة حتى الآن',
-    'لا',
-    'الجودة الأعلى',
-    'محلي مدينة واحدة',
+    'history.age.underYear',
+    'history.experience.underThree',
+    'history.motivation.experience',
+    'planning.model.none',
+    'finance.breakEvenChoice.notYet',
+    'finance.roiChoice.loss',
+    'finance.debtChoice.no',
+    'market.difference.quality',
+    'market.scope.local',
   ],
   answers: {
     ...sharedAnswers,
@@ -97,16 +100,16 @@ export const strong: JourneyFixture = {
   sector: 'healthcare',
   subsector: 'عيادة أسنان',
   intake: [
-    '7 سنوات فأكثر',
-    '15 سنة فأكثر',
-    'خبرة سابقة',
-    'أبحاث سوقية',
-    'نعم',
-    'أقل من 6 أشهر',
-    'أكثر من 100%',
-    'لا',
-    'التخصص الدقيق',
-    'وطني',
+    'history.age.sevenOrMore',
+    'history.experience.fifteenOrMore',
+    'history.motivation.experience',
+    'planning.model.marketResearch',
+    'finance.breakEvenChoice.yes',
+    'finance.breakEvenPeriod.underSixMonths',
+    'finance.roiChoice.overHundred',
+    'finance.debtChoice.no',
+    'market.difference.speciality',
+    'market.scope.national',
   ],
   answers: {
     ...sharedAnswers,

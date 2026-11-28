@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import type { Locator, Page } from 'playwright-core';
 import { universalQuestions } from '../../src/data/universalQuestions';
 import { localizeQuestion } from '../../src/copy/dialectQuestions';
+import { intakeCopy } from '../../src/copy/intakeCopy';
 import { dialectForCountry } from '../../src/services/dialect';
 import { currencyForCountry, type ValueCurrency } from '../../src/services/valueModule/currency';
 import { getSectorQuestions } from '../../src/data/sectorRegistry';
@@ -15,7 +16,12 @@ function button(scope: Page | Locator, name: string) {
   return scope.getByRole('button', { name, exact: true });
 }
 
-export async function startIntake(page: Page, origin: string, fixture: JourneyFixture, legacyCurrency?: ValueCurrency) {
+interface IntakeTestOptions {
+  legacyCurrency?: ValueCurrency;
+  expectedWhy?: string;
+}
+
+export async function startIntake(page: Page, origin: string, fixture: JourneyFixture, options: IntakeTestOptions = {}) {
   await page.goto(origin + '/');
   await page.getByTestId('start-analysis').click();
   await page.waitForURL('**/sector-select');
@@ -35,16 +41,29 @@ export async function startIntake(page: Page, origin: string, fixture: JourneyFi
   await identity.getByRole('combobox').selectOption(fixture.country);
   await fields.nth(2).fill(fixture.city);
 
-  const breakEven = page.locator('label').filter({ hasText: 'هل حققت نقطة التعادل' }).locator('..');
-  for (const value of fixture.intake) {
-    await button(value === 'نعم' ? breakEven : page, value).click();
+  if (options.expectedWhy) {
+    const history = page.locator('section').nth(1);
+    const why = history.getByText(options.expectedWhy, { exact: true });
+    await why.waitFor();
+    assert.equal(await why.textContent(), options.expectedWhy, 'Section 2 renders the expected locale');
   }
-  if (legacyCurrency) {
+
+  const copy = intakeCopy(dialectForCountry(fixture.country));
+  const groupLabels = {
+    'finance.breakEvenChoice': copy.text('finance.breakEven'),
+    'finance.debtChoice': copy.text('finance.hasDebt'),
+  } as Record<string, string>;
+  for (const key of fixture.intake) {
+    const group = groupLabels[key.slice(0, key.lastIndexOf('.'))];
+    const scope = group ? page.locator('label').filter({ hasText: group }).locator('..') : page;
+    await button(scope, copy.option(key).label).click();
+  }
+  if (options.legacyCurrency) {
     await page.evaluate(currency => {
       sessionStorage.setItem('bik_universal_answers', JSON.stringify({ u35: currency }));
-    }, legacyCurrency);
+    }, options.legacyCurrency);
   }
-  await button(page, 'ابدأ التشخيص الكامل').click();
+  await button(page, copy.text('form.submit')).click();
   await page.waitForURL('**/questionnaire');
   await page.locator(questionCard).getByRole('heading', { level: 2 }).waitFor();
 }
@@ -283,9 +302,9 @@ export async function completeJourney(page: Page, origin: string, fixture: Journ
   return { answers, processingMs };
 }
 
-export async function completeDialectPreview(page: Page, origin: string, fixture: JourneyFixture, firstQuestion: string) {
+export async function completeDialectPreview(page: Page, origin: string, fixture: JourneyFixture, firstQuestion: string, expectedWhy?: string) {
   const legacyCurrency = fixture.country === 'السعودية' ? 'EGP' : undefined;
-  await startIntake(page, origin, fixture, legacyCurrency);
+  await startIntake(page, origin, fixture, { legacyCurrency, expectedWhy });
   const card = page.locator(questionCard);
   assert.equal(await card.getByRole('heading', { level: 2 }).textContent(), firstQuestion);
   assert.equal(await card.getByText('السؤال 1', { exact: true }).count(), 1);

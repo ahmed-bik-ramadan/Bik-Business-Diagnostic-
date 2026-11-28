@@ -108,6 +108,16 @@ for (const [size, viewport] of [['mobile', mobile], ['desktop', desktop]] as con
       viewport,
       run: (page, origin) => completeDialectPreview(page, origin, egyptIntake, originalOpening),
     },
+    {
+      name: 'intake-saudi-' + size,
+      viewport,
+      run: (page, origin) => completeDialectPreview(page, origin, strong, saudiBatch.items.u01.question, 'ليش نسأل؟'),
+    },
+    {
+      name: 'intake-egypt-' + size,
+      viewport,
+      run: (page, origin) => completeDialectPreview(page, origin, egyptIntake, originalOpening, 'لماذا نسأل'),
+    },
   );
 }
 
